@@ -14,7 +14,357 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      buzzer_queue: {
+        Row: {
+          created_at: string
+          id: string
+          judged_at: string | null
+          player_id: string
+          session_id: string
+          status: string
+          tile_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          judged_at?: string | null
+          player_id: string
+          session_id: string
+          status?: string
+          tile_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          judged_at?: string | null
+          player_id?: string
+          session_id?: string
+          status?: string
+          tile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buzzer_queue_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buzzer_queue_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buzzer_queue_tile_id_fkey"
+            columns: ["tile_id"]
+            isOneToOne: false
+            referencedRelation: "tiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          game_id: string
+          id: string
+          position: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          game_id: string
+          id?: string
+          position?: number
+          title?: string
+        }
+        Update: {
+          created_at?: string
+          game_id?: string
+          id?: string
+          position?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      final_answers: {
+        Row: {
+          answer: string
+          id: string
+          judged: boolean | null
+          session_id: string
+          submitted_at: string
+          team: string
+          wager: number
+        }
+        Insert: {
+          answer?: string
+          id?: string
+          judged?: boolean | null
+          session_id: string
+          submitted_at?: string
+          team: string
+          wager?: number
+        }
+        Update: {
+          answer?: string
+          id?: string
+          judged?: boolean | null
+          session_id?: string
+          submitted_at?: string
+          team?: string
+          wager?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "final_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          created_at: string
+          host_id: string
+          id: string
+          join_code: string
+          theme: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          host_id: string
+          id?: string
+          join_code: string
+          theme?: Json
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          host_id?: string
+          id?: string
+          join_code?: string
+          theme?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          avatar: string
+          created_at: string
+          id: string
+          locked_out: boolean
+          name: string
+          session_id: string
+          team: string
+        }
+        Insert: {
+          avatar?: string
+          created_at?: string
+          id?: string
+          locked_out?: boolean
+          name: string
+          session_id: string
+          team?: string
+        }
+        Update: {
+          avatar?: string
+          created_at?: string
+          id?: string
+          locked_out?: boolean
+          name?: string
+          session_id?: string
+          team?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      sessions: {
+        Row: {
+          active_player_id: string | null
+          created_at: string
+          current_tile_id: string | null
+          daily_double_tile_ids: string[]
+          dd_wager: number | null
+          final_answer: string | null
+          final_question: string | null
+          game_id: string
+          host_id: string
+          id: string
+          phase: string
+          score_alpha: number
+          score_bravo: number
+          status: string
+          timer_ends_at: string | null
+          updated_at: string
+          used_tile_ids: string[]
+        }
+        Insert: {
+          active_player_id?: string | null
+          created_at?: string
+          current_tile_id?: string | null
+          daily_double_tile_ids?: string[]
+          dd_wager?: number | null
+          final_answer?: string | null
+          final_question?: string | null
+          game_id: string
+          host_id: string
+          id?: string
+          phase?: string
+          score_alpha?: number
+          score_bravo?: number
+          status?: string
+          timer_ends_at?: string | null
+          updated_at?: string
+          used_tile_ids?: string[]
+        }
+        Update: {
+          active_player_id?: string | null
+          created_at?: string
+          current_tile_id?: string | null
+          daily_double_tile_ids?: string[]
+          dd_wager?: number | null
+          final_answer?: string | null
+          final_question?: string | null
+          game_id?: string
+          host_id?: string
+          id?: string
+          phase?: string
+          score_alpha?: number
+          score_bravo?: number
+          status?: string
+          timer_ends_at?: string | null
+          updated_at?: string
+          used_tile_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_current_tile_id_fkey"
+            columns: ["current_tile_id"]
+            isOneToOne: false
+            referencedRelation: "tiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tiles: {
+        Row: {
+          answer: string
+          audio_url: string | null
+          category_id: string
+          created_at: string
+          hint: string | null
+          id: string
+          image_url: string | null
+          points: number
+          question: string
+          row_index: number
+        }
+        Insert: {
+          answer?: string
+          audio_url?: string | null
+          category_id: string
+          created_at?: string
+          hint?: string | null
+          id?: string
+          image_url?: string | null
+          points?: number
+          question?: string
+          row_index?: number
+        }
+        Update: {
+          answer?: string
+          audio_url?: string | null
+          category_id?: string
+          created_at?: string
+          hint?: string | null
+          id?: string
+          image_url?: string | null
+          points?: number
+          question?: string
+          row_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tiles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

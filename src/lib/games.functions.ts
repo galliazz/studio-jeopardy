@@ -66,9 +66,11 @@ export const updateGame = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const patch: Database["public"]["Tables"]["games"]["Update"] = {
+      updated_at: new Date().toISOString(),
+    };
     if (data.title !== undefined) patch.title = data.title;
-    if (data.theme !== undefined) patch.theme = { ...DEFAULT_THEME, ...data.theme };
+    if (data.theme !== undefined) patch.theme = { ...DEFAULT_THEME, ...data.theme } as unknown as Json;
     const { error } = await context.supabase.from("games").update(patch).eq("id", data.gameId);
     if (error) throw new Error(error.message);
     return { ok: true };

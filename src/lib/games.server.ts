@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { generateJoinCode } from "@/lib/join-code";
 import { DEFAULT_THEME } from "@/lib/types";
 
@@ -8,7 +8,7 @@ type Client = SupabaseClient<Database>;
 export async function createEmptyBoard(client: Client, hostId: string, title: string) {
   const { data: game, error } = await client
     .from("games")
-    .insert({ host_id: hostId, title, join_code: generateJoinCode(), theme: DEFAULT_THEME })
+    .insert({ host_id: hostId, title, join_code: generateJoinCode(), theme: DEFAULT_THEME as unknown as Json })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -98,7 +98,7 @@ export async function seedDemoGame(client: Client, hostId: string) {
       host_id: hostId,
       title: "Demo: Friday Night Trivia",
       join_code: generateJoinCode(),
-      theme: DEFAULT_THEME,
+      theme: DEFAULT_THEME as unknown as Json,
     })
     .select()
     .single();

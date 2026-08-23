@@ -275,7 +275,7 @@ function HostPage() {
 
 /* ------------------------------- Score pill ------------------------------- */
 
-function ScorePill({ team, score, players }: { team: Team; score: number; players: Player[] }) {
+function ScorePill({ team, name, score, players }: { team: Team; name: string; score: number; players: Player[] }) {
   const members = players.filter((p) => p.team === team);
   return (
     <motion.div
@@ -295,12 +295,25 @@ function ScorePill({ team, score, players }: { team: Team; score: number; player
         ))}
       </div>
       <div className="text-white">
-        <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">
-          {team === "alpha" ? "Alpha" : "Bravo"}
-        </div>
-        <div className="font-display text-base font-black leading-none">${score}</div>
+        <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">{name}</div>
+        <div className="font-display text-base font-black leading-none">{score}</div>
       </div>
     </motion.div>
+  );
+}
+
+/* -------------------------------- Join card ------------------------------- */
+
+function JoinCard({ joinCode }: { joinCode: string }) {
+  const joinUrl = `${window.location.origin}/play/${joinCode}`;
+  return (
+    <div className="rounded-[24px] bg-card p-4 text-center">
+      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Players join anytime</h3>
+      <div className="mx-auto mb-2 w-fit rounded-2xl bg-white p-2">
+        <QRCodeSVG value={joinUrl} size={112} />
+      </div>
+      <p className="font-display text-2xl font-black tracking-[0.2em] text-gold">{joinCode}</p>
+    </div>
   );
 }
 

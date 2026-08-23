@@ -9,6 +9,7 @@ import {
   MoreVertical,
   Copy,
   Download,
+  FileSpreadsheet,
   Trash2,
   Upload,
   LogOut,
@@ -109,6 +110,29 @@ function StudioPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Exported as JSON");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    }
+  };
+
+  const handleExportXlsx = async (gameId: string) => {
+    setOpenMenu(null);
+    try {
+      const payload = await exportGame({ data: { gameId } });
+      const XLSX = await import("xlsx");
+      const rows = payload.categories.flatMap((cat) =>
+        cat.tiles.map((t) => ({
+          Category: cat.title,
+          Points: t.points,
+          Clue: t.question,
+          Answer: t.answer,
+          Hint: t.hint ?? "",
+        })),
+      );
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Board");
+      XLSX.writeFile(wb, `${payload.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.xlsx`);
+      toast.success("Exported as Excel");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
     }
@@ -252,6 +276,7 @@ function StudioPage() {
                 onToggleMenu={() => setOpenMenu(openMenu === game.id ? null : game.id)}
                 onDuplicate={() => void handleDuplicate(game.id)}
                 onExport={() => void handleExport(game.id)}
+                onExportXlsx={() => void handleExportXlsx(game.id)}
                 onDelete={() => void handleDelete(game.id)}
               />
             ))}
@@ -269,6 +294,7 @@ function GameCard({
   onToggleMenu,
   onDuplicate,
   onExport,
+  onExportXlsx,
   onDelete,
 }: {
   game: Game;
@@ -277,6 +303,7 @@ function GameCard({
   onToggleMenu: () => void;
   onDuplicate: () => void;
   onExport: () => void;
+  onExportXlsx: () => void;
   onDelete: () => void;
 }) {
   const theme = themeOf(game);
@@ -306,6 +333,7 @@ function GameCard({
               {[
                 { icon: Copy, label: "Duplicate", fn: onDuplicate },
                 { icon: Download, label: "Export JSON", fn: onExport },
+                { icon: FileSpreadsheet, label: "Export Excel", fn: onExportXlsx },
                 { icon: Trash2, label: "Delete", fn: onDelete, danger: true },
               ].map((item) => (
                 <button

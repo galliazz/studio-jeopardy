@@ -18,6 +18,7 @@ import {
   Flag,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   getHostState,
@@ -42,6 +43,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl } from "@/lib/media";
 import {
   themeOf,
+  teamName,
   formatDelta,
   type Player,
   type Session,

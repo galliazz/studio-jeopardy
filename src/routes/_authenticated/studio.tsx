@@ -25,7 +25,10 @@ import {
   deleteGame,
   exportGame,
   importGame,
+  updateGame,
+  updateProfile,
 } from "@/lib/games.functions";
+import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -135,6 +138,27 @@ function StudioPage() {
       toast.success("Exported as Excel");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
+    }
+  };
+
+  const start = useServerFn(startSession);
+  const handlePlay = async (gameId: string) => {
+    try {
+      const { session } = await start({ data: { gameId } });
+      void navigate({ to: "/host/$sessionId", params: { sessionId: session.id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start session");
+    }
+  };
+
+  const handleRename = async (gameId: string, title: string) => {
+    setOpenMenu(null);
+    try {
+      await updateGame({ data: { gameId, title } });
+      toast.success("Board renamed");
+      void refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Rename failed");
     }
   };
 

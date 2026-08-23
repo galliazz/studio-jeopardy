@@ -619,6 +619,7 @@ function QuestionOverlay({
           </div>
         </>
       )}
+      </motion.div>
     </motion.div>
   );
 }

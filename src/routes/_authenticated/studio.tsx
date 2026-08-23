@@ -193,9 +193,13 @@ function StudioPage() {
               <Zap className="h-6 w-6 text-gold" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">
-                Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
-              </p>
+              <EditableUsername
+                username={data?.profile?.username ?? ""}
+                onSave={async (username) => {
+                  await updateProfile({ data: { username } });
+                  void refresh();
+                }}
+              />
               <h1 className="font-display text-3xl font-black tracking-tight">Your Jeopardy Studio</h1>
             </div>
           </div>
@@ -298,6 +302,9 @@ function StudioPage() {
                 index={i}
                 menuOpen={openMenu === game.id}
                 onToggleMenu={() => setOpenMenu(openMenu === game.id ? null : game.id)}
+                onCloseMenu={() => setOpenMenu(null)}
+                onPlay={() => void handlePlay(game.id)}
+                onRename={(title) => void handleRename(game.id, title)}
                 onDuplicate={() => void handleDuplicate(game.id)}
                 onExport={() => void handleExport(game.id)}
                 onExportXlsx={() => void handleExportXlsx(game.id)}

@@ -133,25 +133,29 @@ function HostPage() {
     <div className="dark min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
         {/* Header */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <Link
-            to="/edit/$gameId"
-            params={{ gameId: game.id }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
-            aria-label="Back to editor"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
-            <p className="text-xs text-muted-foreground">
-              Code <span className="font-mono font-bold text-gold">{game.join_code}</span> ·{" "}
-              {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
-            </p>
+        <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/edit/$gameId"
+              params={{ gameId: game.id }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+              aria-label="Back to editor"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
+              <p className="text-xs text-muted-foreground">
+                Code <span className="font-mono font-bold text-gold">{game.join_code}</span> ·{" "}
+                {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
+              </p>
+            </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <ScorePill team="alpha" score={session.score_alpha} players={players} />
-            <ScorePill team="bravo" score={session.score_bravo} players={players} />
+          <div className="flex items-center justify-center gap-2">
+            <ScorePill team="alpha" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
+            <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
+          </div>
+          <div className="flex items-center justify-end">
             <button
               onClick={async () => {
                 await resetBoard({ data: { sessionId } });
@@ -167,6 +171,7 @@ function HostPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
           {/* LEFT: preview + soundboard + tools */}
           <div className="order-2 space-y-4 lg:order-1">
+            <JoinCard joinCode={game.join_code} />
             <AnswerPreview tile={currentTile} phase={session.phase} />
             <Soundboard game={game} />
             <div className="rounded-[24px] bg-card p-4">
@@ -250,7 +255,7 @@ function HostPage() {
           <div className="order-3 space-y-4">
             <QueuePanel session={session} players={players} queue={queue} />
             {session.status === "final" && (
-              <FinalPanel session={session} finalAnswers={finalAnswers} players={players} />
+              <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
             )}
           </div>
         </div>
@@ -262,7 +267,7 @@ function HostPage() {
       </AnimatePresence>
       <AnimatePresence>{finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}</AnimatePresence>
       <AnimatePresence>
-        {session.status === "finished" && <Podium session={session} players={players} />}
+        {session.status === "finished" && <Podium session={session} players={players} theme={theme} />}
       </AnimatePresence>
     </div>
   );

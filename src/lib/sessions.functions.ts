@@ -205,13 +205,32 @@ export const judgeAnswer = createServerFn({ method: "POST" })
         .eq("status", "queued");
       const { error: sErr } = await supabase
         .from("sessions")
-        .update({ phase: "reveal", ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }) })
+        .update({
+          phase: "reveal",
+          dd_wager: null,
+          ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
+        })
         .eq("id", data.sessionId);
       if (sErr) throw new Error(sErr.message);
       return { outcome: "correct" as const, delta };
     }
 
     await supabase.from("players").update({ locked_out: true }).eq("id", player.id);
+
+    // Daily Doubles have no queue to promote — straight to reveal.
+    if (isDD) {
+      const { error: sErr } = await supabase
+        .from("sessions")
+        .update({
+          phase: "reveal",
+          dd_wager: null,
+          timer_ends_at: null,
+          ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
+        })
+        .eq("id", data.sessionId);
+      if (sErr) throw new Error(sErr.message);
+      return { outcome: "dd_wrong" as const, delta };
+    }
 
     const { data: queued } = await supabase
       .from("buzzer_queue")

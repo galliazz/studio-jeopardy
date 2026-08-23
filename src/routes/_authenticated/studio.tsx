@@ -276,6 +276,7 @@ function StudioPage() {
                 onToggleMenu={() => setOpenMenu(openMenu === game.id ? null : game.id)}
                 onDuplicate={() => void handleDuplicate(game.id)}
                 onExport={() => void handleExport(game.id)}
+                onExportXlsx={() => void handleExportXlsx(game.id)}
                 onDelete={() => void handleDelete(game.id)}
               />
             ))}
@@ -293,6 +294,7 @@ function GameCard({
   onToggleMenu,
   onDuplicate,
   onExport,
+  onExportXlsx,
   onDelete,
 }: {
   game: Game;
@@ -301,6 +303,7 @@ function GameCard({
   onToggleMenu: () => void;
   onDuplicate: () => void;
   onExport: () => void;
+  onExportXlsx: () => void;
   onDelete: () => void;
 }) {
   const theme = themeOf(game);

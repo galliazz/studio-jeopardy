@@ -6,6 +6,8 @@ export interface ThemeSettings {
   accent: string;
   radius: number;
   rowPoints: number[];
+  teamAlpha?: string;
+  teamBravo?: string;
   customSounds?: { name: string; path: string }[];
 }
 
@@ -128,6 +130,11 @@ export const PLAYER_AVATARS = [
 
 export function themeOf(game: Game): ThemeSettings {
   return { ...DEFAULT_THEME, ...(game.theme ?? {}) };
+}
+
+export function teamName(theme: ThemeSettings, team: Team): string {
+  const name = team === "alpha" ? theme.teamAlpha : theme.teamBravo;
+  return name?.trim() || (team === "alpha" ? "Alpha" : "Bravo");
 }
 
 export function formatDelta(ms: number): string {

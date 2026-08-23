@@ -169,6 +169,17 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
   }
+
+  /* Hide native number input spinners (up/down arrows) */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }
 
 @layer utilities {

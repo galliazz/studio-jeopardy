@@ -1,5 +1,6 @@
 /*
  * Synthesized sound effects via the Web Audio API — no audio assets required.
+ * Fun, game-show-style percussion set: drums, claps, rimshots, trombone.
  * All functions are safe to call during SSR (they no-op without window).
  */
 
@@ -41,50 +42,147 @@ function tone(freq: number, duration: number, opts: ToneOpts = {}) {
   osc.stop(t0 + duration + 0.05);
 }
 
+let noiseBuffer: AudioBuffer | null = null;
+
+function getNoiseBuffer(audio: AudioContext): AudioBuffer {
+  if (!noiseBuffer) {
+    const len = audio.sampleRate * 1;
+    noiseBuffer = audio.createBuffer(1, len, audio.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuffer;
+}
+
+interface NoiseOpts {
+  gain?: number;
+  delay?: number;
+  /** bandpass center frequency */
+  freq?: number;
+  /** bandpass Q */
+  q?: number;
+}
+
+/** Filtered noise burst — the building block for drums, claps and cymbals. */
+function noise(duration: number, opts: NoiseOpts = {}) {
+  const audio = ac();
+  if (!audio) return;
+  const { gain = 0.2, delay = 0, freq = 1800, q = 1 } = opts;
+  const t0 = audio.currentTime + delay;
+  const src = audio.createBufferSource();
+  src.buffer = getNoiseBuffer(audio);
+  const filter = audio.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = freq;
+  filter.Q.value = q;
+  const amp = audio.createGain();
+  amp.gain.setValueAtTime(0, t0);
+  amp.gain.linearRampToValueAtTime(gain, t0 + 0.004);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+  src.connect(filter).connect(amp).connect(audio.destination);
+  src.start(t0);
+  src.stop(t0 + duration + 0.05);
+}
+
+/** Kick drum: pitched thump. */
+function kick(delay = 0, gain = 0.3) {
+  tone(120, 0.18, { type: "sine", gain, delay, slideTo: 45 });
+}
+
+/** Snare/clap: bandpassed noise burst. */
+function clap(delay = 0, gain = 0.22) {
+  noise(0.09, { gain, delay, freq: 1600, q: 1.2 });
+  noise(0.05, { gain: gain * 0.6, delay: delay + 0.02, freq: 2400, q: 2 });
+}
+
+/** Crowd clap applause over ~1s. */
+function applause(delay = 0) {
+  for (let i = 0; i < 14; i++) {
+    clap(delay + i * 0.07 + Math.random() * 0.03, 0.08 + Math.random() * 0.06);
+  }
+}
+
+/** Cymbal crash. */
+function crash(delay = 0, gain = 0.14) {
+  noise(0.6, { gain, delay, freq: 5200, q: 0.7 });
+}
+
+/** Drum roll for ~0.9s then a crash. */
+function drumRoll(delay = 0) {
+  let t = delay;
+  let step = 0.11;
+  for (let i = 0; i < 11; i++) {
+    kick(t, 0.16);
+    t += step;
+    step = Math.max(0.045, step * 0.86);
+  }
+  crash(t, 0.16);
+  kick(t, 0.3);
+}
+
 export const sfx = {
   /** short local click when a buzz registers */
   click() {
     tone(1400, 0.06, { type: "square", gain: 0.06 });
   },
-  /** player buzzer */
+  /** player buzzer — punchy two-tone horn */
   buzz() {
-    tone(220, 0.28, { type: "sawtooth", gain: 0.14 });
-    tone(110, 0.28, { type: "square", gain: 0.08, delay: 0.02 });
+    tone(392, 0.16, { type: "square", gain: 0.1 });
+    tone(523.25, 0.22, { type: "square", gain: 0.1, delay: 0.14 });
+    kick(0, 0.2);
   },
-  /** correct answer ding */
+  /** correct answer — happy chime + claps */
   ding() {
-    tone(880, 0.35, { gain: 0.14 });
-    tone(1318.5, 0.5, { gain: 0.1, delay: 0.08 });
+    tone(783.99, 0.18, { type: "triangle", gain: 0.16 });
+    tone(1046.5, 0.3, { type: "triangle", gain: 0.16, delay: 0.1 });
+    tone(1318.5, 0.45, { type: "triangle", gain: 0.12, delay: 0.2 });
+    applause(0.1);
   },
-  /** wrong answer buzzer */
+  /** wrong answer — sad trombone (womp womp womppp) */
   wrong() {
-    tone(160, 0.5, { type: "sawtooth", gain: 0.16, slideTo: 90 });
+    const wah = (freq: number, delay: number, dur: number, slideTo?: number) => {
+      tone(freq, dur, { type: "sawtooth", gain: 0.09, delay, slideTo });
+      tone(freq / 2, dur, { type: "triangle", gain: 0.07, delay, slideTo: slideTo ? slideTo / 2 : undefined });
+    };
+    wah(233.08, 0, 0.22);
+    wah(220, 0.26, 0.22);
+    wah(207.65, 0.52, 0.22);
+    wah(196, 0.78, 0.65, 185);
   },
-  /** steady tick 15s..6s */
+  /** steady tick 15s..6s — soft woodblock */
   tick() {
-    tone(660, 0.05, { type: "sine", gain: 0.05 });
+    noise(0.04, { gain: 0.07, freq: 2000, q: 6 });
+    tone(840, 0.03, { type: "sine", gain: 0.03 });
   },
-  /** urgency tick 5s..1s — fixed volume, no crescendo */
+  /** urgency tick 5s..1s — brighter woodblock */
   urgentTick() {
-    tone(990, 0.07, { type: "square", gain: 0.08 });
+    noise(0.05, { gain: 0.1, freq: 2600, q: 6 });
+    tone(1180, 0.04, { type: "sine", gain: 0.04 });
   },
-  /** timer expiration alarm */
+  /** timer expiration — drum fill + big crash */
   alarm() {
-    for (let i = 0; i < 3; i++) {
-      tone(740, 0.18, { type: "square", gain: 0.12, delay: i * 0.22 });
-      tone(523, 0.18, { type: "square", gain: 0.12, delay: i * 0.22 + 0.11 });
-    }
+    kick(0, 0.28);
+    clap(0.12, 0.2);
+    kick(0.24, 0.28);
+    clap(0.36, 0.22);
+    kick(0.48, 0.3);
+    crash(0.6, 0.18);
+    tone(523.25, 0.5, { type: "triangle", gain: 0.1, delay: 0.6, slideTo: 392 });
   },
-  /** daily double reveal sweep */
+  /** daily double reveal — drum roll + crash */
   dailyDouble() {
-    tone(300, 0.7, { type: "sawtooth", gain: 0.1, slideTo: 1200 });
-    tone(600, 0.7, { type: "sine", gain: 0.08, delay: 0.1, slideTo: 2400 });
+    drumRoll(0);
   },
-  /** victory fanfare */
+  /** victory fanfare — brass riff + drum roll + applause */
   fanfare() {
+    drumRoll(0);
     const notes = [523.25, 659.25, 783.99, 1046.5];
-    notes.forEach((n, i) => tone(n, 0.35, { type: "triangle", gain: 0.14, delay: i * 0.16 }));
-    tone(1046.5, 0.9, { type: "triangle", gain: 0.12, delay: 0.7 });
+    notes.forEach((n, i) => {
+      tone(n, 0.3, { type: "triangle", gain: 0.14, delay: 1.0 + i * 0.15 });
+      tone(n / 2, 0.3, { type: "sawtooth", gain: 0.05, delay: 1.0 + i * 0.15 });
+    });
+    tone(1046.5, 0.9, { type: "triangle", gain: 0.13, delay: 1.65 });
+    applause(1.7);
   },
 };
 

@@ -77,7 +77,7 @@ function PlayerPage() {
     );
   }
 
-  const theme = (data.game.theme ?? {}) as ThemeSettings;
+  const theme = (data.game.theme ?? {}) as unknown as ThemeSettings;
 
   return (
     <PlayerLobby

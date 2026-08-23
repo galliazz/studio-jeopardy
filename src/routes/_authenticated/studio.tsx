@@ -333,6 +333,7 @@ function GameCard({
               {[
                 { icon: Copy, label: "Duplicate", fn: onDuplicate },
                 { icon: Download, label: "Export JSON", fn: onExport },
+                { icon: FileSpreadsheet, label: "Export Excel", fn: onExportXlsx },
                 { icon: Trash2, label: "Delete", fn: onDelete, danger: true },
               ].map((item) => (
                 <button

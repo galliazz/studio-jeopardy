@@ -75,7 +75,14 @@ function PlayerPage() {
     );
   }
 
-  return <PlayerLobby key={data.session.id} session={data.session} gameTitle={data.game.title} code={code} />;
+  return (
+    <PlayerLobby
+      key={data.session.id}
+      session={data.session as unknown as Session}
+      gameTitle={data.game.title}
+      code={code}
+    />
+  );
 }
 
 function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle: string; code: string }) {
@@ -130,7 +137,12 @@ function JoinForm({
         return;
       }
       vibrate(30);
-      onJoined({ playerId: res.player.id, name: res.player.name, avatar: res.player.avatar, team: res.player.team });
+      onJoined({
+        playerId: res.player.id,
+        name: res.player.name,
+        avatar: res.player.avatar,
+        team: res.player.team as Team,
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not join");
     } finally {

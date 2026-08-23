@@ -171,6 +171,17 @@ export const judgeAnswer = createServerFn({ method: "POST" })
     const { data: player } = await supabase.from("players").select("*").eq("id", session.active_player_id).single();
     if (!tile || !player) throw new Error("Missing tile or player");
 
+    // Guard against double-judging: there must be an active queue row.
+    const { data: activeRow } = await supabase
+      .from("buzzer_queue")
+      .select("id")
+      .eq("session_id", data.sessionId)
+      .eq("tile_id", session.current_tile_id)
+      .eq("player_id", session.active_player_id)
+      .eq("status", "active")
+      .maybeSingle();
+    if (!activeRow && session.dd_wager == null) throw new Error("Already judged");
+
     const isDD = session.dd_wager != null;
     const value = session.dd_wager ?? tile.points;
     const delta = data.correct ? value : -(isDD ? value : Math.round(value / 2));

@@ -205,7 +205,7 @@ function HostPage() {
                     return (
                       <motion.button
                         key={tile.id}
-                        whileTap={used ? undefined : { scale: 0.94 }}
+                        {...(used ? {} : { whileTap: { scale: 0.94 } })}
                         disabled={used || session.status === "final" || session.status === "finished"}
                         onClick={() => void openTile({ data: { sessionId, tileId: tile.id } })}
                         className="flex min-h-14 items-center justify-center font-display text-base font-black transition-all sm:min-h-20 sm:text-2xl"
@@ -534,7 +534,7 @@ function QuestionOverlay({
                 Reveal answer
               </button>
             )}
-            {activePlayer && !alreadyJudged && session.phase !== "daily_double_wager" && (
+            {activePlayer && !alreadyJudged && (
               <>
                 <motion.button
                   whileTap={{ scale: 0.94 }}

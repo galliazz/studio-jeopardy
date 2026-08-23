@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedEditGameIdRouteImport } from './routes/_authenticated/edit.$gameId'
+import { Route as AuthenticatedHostSessionIdRouteImport } from './routes/_authenticated/host.$sessionId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +40,26 @@ const AuthenticatedEditGameIdRoute = AuthenticatedEditGameIdRouteImport.update({
   path: '/edit/$gameId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHostSessionIdRoute =
+  AuthenticatedHostSessionIdRouteImport.update({
+    id: '/host/$sessionId',
+    path: '/host/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/studio': typeof AuthenticatedStudioRoute
   '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
+  '/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/studio': typeof AuthenticatedStudioRoute
   '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
+  '/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +68,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
   '/_authenticated/edit/$gameId': typeof AuthenticatedEditGameIdRoute
+  '/_authenticated/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/studio' | '/edit/$gameId'
+  fullPaths: '/' | '/auth' | '/studio' | '/edit/$gameId' | '/host/$sessionId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/studio' | '/edit/$gameId'
+  to: '/' | '/auth' | '/studio' | '/edit/$gameId' | '/host/$sessionId'
   id:
     | '__root__'
     | '/'
@@ -72,6 +82,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/studio'
     | '/_authenticated/edit/$gameId'
+    | '/_authenticated/host/$sessionId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,17 +128,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditGameIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/host/$sessionId': {
+      id: '/_authenticated/host/$sessionId'
+      path: '/host/$sessionId'
+      fullPath: '/host/$sessionId'
+      preLoaderRoute: typeof AuthenticatedHostSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
   AuthenticatedEditGameIdRoute: typeof AuthenticatedEditGameIdRoute
+  AuthenticatedHostSessionIdRoute: typeof AuthenticatedHostSessionIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
   AuthenticatedEditGameIdRoute: AuthenticatedEditGameIdRoute,
+  AuthenticatedHostSessionIdRoute: AuthenticatedHostSessionIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

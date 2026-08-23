@@ -689,8 +689,17 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
 
   return (
-    <div className="rounded-[24px] bg-card p-4">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
+    <div className="relative rounded-[24px] bg-card p-4">
+      <h3 className="mb-3 pr-10 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
+      <button
+        onClick={() => void clearQueue({ data: { sessionId: session.id } })}
+        disabled={!session.current_tile_id}
+        aria-label="Clear queue"
+        title="Clear queue"
+        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive disabled:opacity-40"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
       {tileQueue.length === 0 ? (
         <p className="py-4 text-center text-sm text-muted-foreground">
           {session.current_tile_id ? "Buzzers are live — waiting…" : "Open a tile to arm the buzzers"}
@@ -731,15 +740,6 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
           })}
         </ol>
       )}
-      <div className="mt-4 flex flex-col gap-2">
-        <button
-          onClick={() => void clearQueue({ data: { sessionId: session.id } })}
-          disabled={!session.current_tile_id}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-secondary py-2.5 text-xs font-bold text-secondary-foreground disabled:opacity-40"
-        >
-          <Trash2 className="h-3.5 w-3.5" /> Clear Queue
-        </button>
-      </div>
     </div>
   );
 }

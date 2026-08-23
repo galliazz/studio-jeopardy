@@ -11,10 +11,12 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
 import {
   PLAYER_AVATARS,
+  teamName,
   type Player,
   type Session,
   type QueueEntry,
   type Team,
+  type ThemeSettings,
 } from "@/lib/types";
 
 export const Route = createFileRoute("/play/$code")({
@@ -75,17 +77,30 @@ function PlayerPage() {
     );
   }
 
+  const theme = (data.game.theme ?? {}) as ThemeSettings;
+
   return (
     <PlayerLobby
       key={data.session.id}
       session={data.session as unknown as Session}
       gameTitle={data.game.title}
       code={code}
+      theme={theme}
     />
   );
 }
 
-function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle: string; code: string }) {
+function PlayerLobby({
+  session,
+  gameTitle,
+  code,
+  theme,
+}: {
+  session: Session;
+  gameTitle: string;
+  code: string;
+  theme: ThemeSettings;
+}) {
   const storageKey = `jd:player:${session.id}`;
   const [identity, setIdentity] = useState<StoredIdentity | null>(() => {
     try {
@@ -101,6 +116,7 @@ function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle
       <JoinForm
         code={code}
         gameTitle={gameTitle}
+        theme={theme}
         onJoined={(id) => {
           localStorage.setItem(storageKey, JSON.stringify(id));
           setIdentity(id);
@@ -108,7 +124,7 @@ function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle
       />
     );
   }
-  return <LivePlayer sessionId={session.id} identity={identity} gameTitle={gameTitle} />;
+  return <LivePlayer sessionId={session.id} identity={identity} gameTitle={gameTitle} theme={theme} />;
 }
 
 /* -------------------------------- Join form ------------------------------- */
@@ -116,10 +132,12 @@ function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle
 function JoinForm({
   code,
   gameTitle,
+  theme,
   onJoined,
 }: {
   code: string;
   gameTitle: string;
+  theme: ThemeSettings;
   onJoined: (id: StoredIdentity) => void;
 }) {
   const [name, setName] = useState("");

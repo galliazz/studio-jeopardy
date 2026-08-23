@@ -277,7 +277,7 @@ export const importGame = createServerFn({ method: "POST" })
         host_id: userId,
         title: data.title,
         join_code: generateJoinCode(),
-        theme: { ...DEFAULT_THEME, ...(data.theme ?? {}) },
+        theme: { ...DEFAULT_THEME, ...(data.theme ?? {}) } as unknown as Json,
       })
       .select()
       .single();

@@ -9,6 +9,7 @@ import {
   MoreVertical,
   Copy,
   Download,
+  FileSpreadsheet,
   Trash2,
   Upload,
   LogOut,
@@ -109,6 +110,29 @@ function StudioPage() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Exported as JSON");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
+    }
+  };
+
+  const handleExportXlsx = async (gameId: string) => {
+    setOpenMenu(null);
+    try {
+      const payload = await exportGame({ data: { gameId } });
+      const XLSX = await import("xlsx");
+      const rows = payload.categories.flatMap((cat) =>
+        cat.tiles.map((t) => ({
+          Category: cat.title,
+          Points: t.points,
+          Clue: t.question,
+          Answer: t.answer,
+          Hint: t.hint ?? "",
+        })),
+      );
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Board");
+      XLSX.writeFile(wb, `${payload.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.xlsx`);
+      toast.success("Exported as Excel");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Export failed");
     }

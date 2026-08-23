@@ -462,6 +462,12 @@ function QuestionOverlay({
   const countdown = useCountdown(session.timer_ends_at);
   const lastSecond = useRef<number | null>(null);
   const alarmed = useRef<string | null>(null);
+  /** Only flash/alarm when THIS timer was actually observed running first. */
+  const armed = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (session.timer_ends_at && !countdown.expired) armed.current = session.timer_ends_at;
+  }, [session.timer_ends_at, countdown.expired]);
 
   useEffect(() => {
     if (countdown.seconds == null) return;
@@ -470,40 +476,53 @@ function QuestionOverlay({
       else sfx.tick();
       lastSecond.current = countdown.seconds;
     }
-    if (countdown.expired && alarmed.current !== session.timer_ends_at) {
+    if (
+      countdown.expired &&
+      alarmed.current !== session.timer_ends_at &&
+      armed.current === session.timer_ends_at
+    ) {
       alarmed.current = session.timer_ends_at;
       sfx.alarm();
     }
   }, [countdown.seconds, countdown.expired, session.timer_ends_at]);
 
-  const flashRed = countdown.expired && session.phase === "answering";
+  const flashRed =
+    countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 200, damping: 22 }}
-      className={`absolute inset-0 z-20 flex flex-col overflow-hidden p-5 sm:p-8 ${
-        flashRed ? "animate-pulse" : ""
-      }`}
-      style={{
-        backgroundColor: flashRed ? "#3d0a12" : "rgba(10,10,26,0.97)",
-        borderRadius: "inherit",
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8"
     >
+      <motion.div
+        initial={{ scale: 0.9, y: 24 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.94, y: 12 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22 }}
+        className="pointer-events-auto flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-[32px] p-6 shadow-2xl ring-1 ring-white/10 sm:p-10"
+        style={{ backgroundColor: "#0a0a1a" }}
+      >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />
       ) : (
         <>
-          <div className="flex items-center justify-between gap-2">
-            <span className="rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: accent, color: "#0a0a1a" }}>
-              {category?.title ?? "Question"} · {session.dd_wager ? `DD $${session.dd_wager}` : `$${tile.points}`}
-            </span>
+          <div className="flex items-center justify-end gap-2">
             {countdown.seconds != null && (
-              <span className={`font-display text-2xl font-black ${countdown.seconds <= 5 ? "text-red-400" : "text-gold"}`}>
+              <motion.span
+                animate={flashRed ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+                transition={flashRed ? { repeat: Infinity, duration: 0.5 } : { duration: 0.15 }}
+                className={`rounded-2xl px-4 py-2 font-display text-3xl font-black ${
+                  flashRed
+                    ? "bg-red-500/20 text-red-400"
+                    : countdown.seconds <= 5
+                      ? "bg-red-500/10 text-red-400"
+                      : "bg-white/5 text-gold"
+                }`}
+              >
                 0:{String(countdown.seconds).padStart(2, "0")}
-              </span>
+              </motion.span>
             )}
           </div>
 
@@ -515,6 +534,16 @@ function QuestionOverlay({
               />
             </div>
           )}
+
+          {/* Category + value, big and centered */}
+          <div className="mt-4 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-muted-foreground sm:text-sm">
+              {category?.title ?? "Question"}
+            </p>
+            <p className="font-display text-4xl font-black sm:text-6xl" style={{ color: accent }}>
+              {session.dd_wager ? `DD ${session.dd_wager}` : tile.points}
+            </p>
+          </div>
 
           <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto py-4 text-center">
             <div

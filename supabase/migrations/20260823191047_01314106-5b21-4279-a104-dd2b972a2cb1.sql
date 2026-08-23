@@ -1,0 +1,1 @@
+revoke execute on function public.on_buzz() from public, anon, authenticated;

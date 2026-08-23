@@ -53,6 +53,7 @@ import {
   type FinalAnswer,
   type Game,
   type Team,
+  type ThemeSettings,
 } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({

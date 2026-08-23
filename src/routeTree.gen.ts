@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
+import { Route as AuthenticatedEditGameIdRouteImport } from './routes/_authenticated/edit.$gameId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -33,16 +34,23 @@ const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEditGameIdRoute = AuthenticatedEditGameIdRouteImport.update({
+  id: '/edit/$gameId',
+  path: '/edit/$gameId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -50,13 +58,20 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
+  '/_authenticated/edit/$gameId': typeof AuthenticatedEditGameIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/studio'
+  fullPaths: '/' | '/auth' | '/studio' | '/edit/$gameId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/studio'
-  id: '__root__' | '/' | '/_authenticated' | '/auth' | '/_authenticated/studio'
+  to: '/' | '/auth' | '/studio' | '/edit/$gameId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/studio'
+    | '/_authenticated/edit/$gameId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,15 +110,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/edit/$gameId': {
+      id: '/_authenticated/edit/$gameId'
+      path: '/edit/$gameId'
+      fullPath: '/edit/$gameId'
+      preLoaderRoute: typeof AuthenticatedEditGameIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
+  AuthenticatedEditGameIdRoute: typeof AuthenticatedEditGameIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedStudioRoute: AuthenticatedStudioRoute,
+  AuthenticatedEditGameIdRoute: AuthenticatedEditGameIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

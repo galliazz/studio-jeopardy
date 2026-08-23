@@ -341,8 +341,16 @@ function TileEditor({
     }
   }, [tile.id, tile.question]);
 
+  interface TilePatch {
+    question?: string;
+    answer?: string;
+    hint?: string | null;
+    points?: number;
+    image_url?: string | null;
+    audio_url?: string | null;
+  }
   const save = useCallback(
-    async (patch: Parameters<typeof updateTile>[0]["data"] extends infer D ? Omit<D & object, "tileId"> : never) => {
+    async (patch: TilePatch) => {
       await updateTile({ data: { tileId: tile.id, ...patch } });
       onSaved();
     },

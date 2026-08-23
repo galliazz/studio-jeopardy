@@ -140,10 +140,10 @@ export const setRowPoints = createServerFn({ method: "POST" })
         .eq("row_index", row);
       if (error) throw new Error(error.message);
     }
-    const theme = { ...DEFAULT_THEME, ...(game.theme as object), rowPoints: data.rowPoints };
+    const theme = { ...DEFAULT_THEME, ...(game.theme as Record<string, unknown>), rowPoints: data.rowPoints };
     const { error } = await supabase
       .from("games")
-      .update({ theme, updated_at: new Date().toISOString() })
+      .update({ theme: theme as unknown as Json, updated_at: new Date().toISOString() })
       .eq("id", data.gameId);
     if (error) throw new Error(error.message);
     return { ok: true };

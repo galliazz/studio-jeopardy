@@ -141,8 +141,8 @@ export const sfx = {
   /** wrong answer — sad trombone (womp womp womppp) */
   wrong() {
     const wah = (freq: number, delay: number, dur: number, slideTo?: number) => {
-      tone(freq, dur, { type: "sawtooth", gain: 0.09, delay, slideTo });
-      tone(freq / 2, dur, { type: "triangle", gain: 0.07, delay, slideTo: slideTo ? slideTo / 2 : undefined });
+      tone(freq, dur, { type: "sawtooth", gain: 0.09, delay, ...(slideTo ? { slideTo } : {}) });
+      tone(freq / 2, dur, { type: "triangle", gain: 0.07, delay, ...(slideTo ? { slideTo: slideTo / 2 } : {}) });
     };
     wah(233.08, 0, 0.22);
     wah(220, 0.26, 0.22);

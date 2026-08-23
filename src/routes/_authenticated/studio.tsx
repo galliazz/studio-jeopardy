@@ -57,7 +57,7 @@ function StudioPage() {
   const importRef = useRef<HTMLInputElement>(null);
 
   const games = useMemo(() => {
-    const all = (data?.games ?? []) as Game[];
+    const all = (data?.games ?? []) as unknown as Game[];
     if (!search.trim()) return all;
     return all.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()));
   }, [data, search]);

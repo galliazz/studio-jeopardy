@@ -18,6 +18,7 @@ import {
   Flag,
 } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
   getHostState,
@@ -42,6 +43,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl } from "@/lib/media";
 import {
   themeOf,
+  teamName,
   formatDelta,
   type Player,
   type Session,
@@ -51,6 +53,7 @@ import {
   type FinalAnswer,
   type Game,
   type Team,
+  type ThemeSettings,
 } from "@/lib/types";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
@@ -131,25 +134,29 @@ function HostPage() {
     <div className="dark min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
         {/* Header */}
-        <div className="mb-4 flex flex-wrap items-center gap-3">
-          <Link
-            to="/edit/$gameId"
-            params={{ gameId: game.id }}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
-            aria-label="Back to editor"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
-            <p className="text-xs text-muted-foreground">
-              Code <span className="font-mono font-bold text-gold">{game.join_code}</span> ·{" "}
-              {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
-            </p>
+        <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/edit/$gameId"
+              params={{ gameId: game.id }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+              aria-label="Back to editor"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
+              <p className="text-xs text-muted-foreground">
+                Code <span className="font-mono font-bold text-gold">{game.join_code}</span> ·{" "}
+                {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
+              </p>
+            </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <ScorePill team="alpha" score={session.score_alpha} players={players} />
-            <ScorePill team="bravo" score={session.score_bravo} players={players} />
+          <div className="flex items-center justify-center gap-2">
+            <ScorePill team="alpha" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
+            <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
+          </div>
+          <div className="flex items-center justify-end">
             <button
               onClick={async () => {
                 await resetBoard({ data: { sessionId } });
@@ -165,6 +172,7 @@ function HostPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
           {/* LEFT: preview + soundboard + tools */}
           <div className="order-2 space-y-4 lg:order-1">
+            <JoinCard joinCode={game.join_code} />
             <AnswerPreview tile={currentTile} phase={session.phase} />
             <Soundboard game={game} />
             <div className="rounded-[24px] bg-card p-4">
@@ -248,7 +256,7 @@ function HostPage() {
           <div className="order-3 space-y-4">
             <QueuePanel session={session} players={players} queue={queue} />
             {session.status === "final" && (
-              <FinalPanel session={session} finalAnswers={finalAnswers} players={players} />
+              <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
             )}
           </div>
         </div>
@@ -260,7 +268,7 @@ function HostPage() {
       </AnimatePresence>
       <AnimatePresence>{finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}</AnimatePresence>
       <AnimatePresence>
-        {session.status === "finished" && <Podium session={session} players={players} />}
+        {session.status === "finished" && <Podium session={session} players={players} theme={theme} />}
       </AnimatePresence>
     </div>
   );
@@ -268,7 +276,7 @@ function HostPage() {
 
 /* ------------------------------- Score pill ------------------------------- */
 
-function ScorePill({ team, score, players }: { team: Team; score: number; players: Player[] }) {
+function ScorePill({ team, name, score, players }: { team: Team; name: string; score: number; players: Player[] }) {
   const members = players.filter((p) => p.team === team);
   return (
     <motion.div
@@ -288,12 +296,25 @@ function ScorePill({ team, score, players }: { team: Team; score: number; player
         ))}
       </div>
       <div className="text-white">
-        <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">
-          {team === "alpha" ? "Alpha" : "Bravo"}
-        </div>
-        <div className="font-display text-base font-black leading-none">${score}</div>
+        <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">{name}</div>
+        <div className="font-display text-base font-black leading-none">{score}</div>
       </div>
     </motion.div>
+  );
+}
+
+/* -------------------------------- Join card ------------------------------- */
+
+function JoinCard({ joinCode }: { joinCode: string }) {
+  const joinUrl = `${window.location.origin}/play/${joinCode}`;
+  return (
+    <div className="rounded-[24px] bg-card p-4 text-center">
+      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Players join anytime</h3>
+      <div className="mx-auto mb-2 w-fit rounded-2xl bg-white p-2">
+        <QRCodeSVG value={joinUrl} size={112} />
+      </div>
+      <p className="font-display text-2xl font-black tracking-[0.2em] text-gold">{joinCode}</p>
+    </div>
   );
 }
 
@@ -442,6 +463,12 @@ function QuestionOverlay({
   const countdown = useCountdown(session.timer_ends_at);
   const lastSecond = useRef<number | null>(null);
   const alarmed = useRef<string | null>(null);
+  /** Only flash/alarm when THIS timer was actually observed running first. */
+  const armed = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (session.timer_ends_at && !countdown.expired) armed.current = session.timer_ends_at;
+  }, [session.timer_ends_at, countdown.expired]);
 
   useEffect(() => {
     if (countdown.seconds == null) return;
@@ -450,40 +477,53 @@ function QuestionOverlay({
       else sfx.tick();
       lastSecond.current = countdown.seconds;
     }
-    if (countdown.expired && alarmed.current !== session.timer_ends_at) {
+    if (
+      countdown.expired &&
+      alarmed.current !== session.timer_ends_at &&
+      armed.current === session.timer_ends_at
+    ) {
       alarmed.current = session.timer_ends_at;
       sfx.alarm();
     }
   }, [countdown.seconds, countdown.expired, session.timer_ends_at]);
 
-  const flashRed = countdown.expired && session.phase === "answering";
+  const flashRed =
+    countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 200, damping: 22 }}
-      className={`absolute inset-0 z-20 flex flex-col overflow-hidden p-5 sm:p-8 ${
-        flashRed ? "animate-pulse" : ""
-      }`}
-      style={{
-        backgroundColor: flashRed ? "#3d0a12" : "rgba(10,10,26,0.97)",
-        borderRadius: "inherit",
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8"
     >
+      <motion.div
+        initial={{ scale: 0.9, y: 24 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.94, y: 12 }}
+        transition={{ type: "spring", stiffness: 200, damping: 22 }}
+        className="pointer-events-auto flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-[32px] p-6 shadow-2xl ring-1 ring-white/10 sm:p-10"
+        style={{ backgroundColor: "#0a0a1a" }}
+      >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />
       ) : (
         <>
-          <div className="flex items-center justify-between gap-2">
-            <span className="rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: accent, color: "#0a0a1a" }}>
-              {category?.title ?? "Question"} · {session.dd_wager ? `DD $${session.dd_wager}` : `$${tile.points}`}
-            </span>
+          <div className="flex items-center justify-end gap-2">
             {countdown.seconds != null && (
-              <span className={`font-display text-2xl font-black ${countdown.seconds <= 5 ? "text-red-400" : "text-gold"}`}>
+              <motion.span
+                animate={flashRed ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+                transition={flashRed ? { repeat: Infinity, duration: 0.5 } : { duration: 0.15 }}
+                className={`rounded-2xl px-4 py-2 font-display text-3xl font-black ${
+                  flashRed
+                    ? "bg-red-500/20 text-red-400"
+                    : countdown.seconds <= 5
+                      ? "bg-red-500/10 text-red-400"
+                      : "bg-white/5 text-gold"
+                }`}
+              >
                 0:{String(countdown.seconds).padStart(2, "0")}
-              </span>
+              </motion.span>
             )}
           </div>
 
@@ -495,6 +535,16 @@ function QuestionOverlay({
               />
             </div>
           )}
+
+          {/* Category + value, big and centered */}
+          <div className="mt-4 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-muted-foreground sm:text-sm">
+              {category?.title ?? "Question"}
+            </p>
+            <p className="font-display text-4xl font-black sm:text-6xl" style={{ color: accent }}>
+              {session.dd_wager ? `DD ${session.dd_wager}` : tile.points}
+            </p>
+          </div>
 
           <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto py-4 text-center">
             <div
@@ -570,6 +620,7 @@ function QuestionOverlay({
           </div>
         </>
       )}
+      </motion.div>
     </motion.div>
   );
 }
@@ -639,8 +690,17 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
 
   return (
-    <div className="rounded-[24px] bg-card p-4">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
+    <div className="relative rounded-[24px] bg-card p-4">
+      <h3 className="mb-3 pr-10 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
+      <button
+        onClick={() => void clearQueue({ data: { sessionId: session.id } })}
+        disabled={!session.current_tile_id}
+        aria-label="Clear queue"
+        title="Clear queue"
+        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive disabled:opacity-40"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
       {tileQueue.length === 0 ? (
         <p className="py-4 text-center text-sm text-muted-foreground">
           {session.current_tile_id ? "Buzzers are live — waiting…" : "Open a tile to arm the buzzers"}
@@ -681,15 +741,6 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
           })}
         </ol>
       )}
-      <div className="mt-4 flex flex-col gap-2">
-        <button
-          onClick={() => void clearQueue({ data: { sessionId: session.id } })}
-          disabled={!session.current_tile_id}
-          className="flex items-center justify-center gap-2 rounded-2xl bg-secondary py-2.5 text-xs font-bold text-secondary-foreground disabled:opacity-40"
-        >
-          <Trash2 className="h-3.5 w-3.5" /> Clear Queue
-        </button>
-      </div>
     </div>
   );
 }
@@ -859,10 +910,12 @@ function FinalPanel({
   session,
   finalAnswers,
   players,
+  theme,
 }: {
   session: Session;
   finalAnswers: FinalAnswer[];
   players: Player[];
+  theme: ThemeSettings;
 }) {
   const teams: Team[] = ["alpha", "bravo"];
   return (
@@ -876,7 +929,7 @@ function FinalPanel({
               const submitted = finalAnswers.some((f) => f.team === t);
               return (
                 <span key={t} className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${submitted ? "bg-emerald-500/20 text-emerald-400" : "bg-secondary text-muted-foreground"}`}>
-                  {t} {submitted ? "✓ wagered" : "…"}
+                  {teamName(theme, t)} {submitted ? "✓ wagered" : "…"}
                 </span>
               );
             })}
@@ -899,13 +952,13 @@ function FinalPanel({
             return (
               <div key={t} className="rounded-2xl bg-secondary p-3">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha" : "text-team-bravo"}`}>{t}</span>
+                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha" : "text-team-bravo"}`}>{teamName(theme, t)}</span>
                   <span className="text-[10px] text-muted-foreground">{members || "no players"}</span>
                 </div>
                 {entry ? (
                   <>
                     <p className="text-sm">“{entry.answer}”</p>
-                    <p className="mb-2 text-xs text-muted-foreground">Wager: ${entry.wager}</p>
+                    <p className="mb-2 text-xs text-muted-foreground">Wager: {entry.wager}</p>
                     {entry.judged === null ? (
                       <div className="flex gap-2">
                         <button
@@ -953,7 +1006,7 @@ function FinalPanel({
 
 /* --------------------------------- Podium --------------------------------- */
 
-function Podium({ session, players }: { session: Session; players: Player[] }) {
+function Podium({ session, players, theme }: { session: Session; players: Player[]; theme: ThemeSettings }) {
   const winner: Team = session.score_alpha >= session.score_bravo ? "alpha" : "bravo";
   const loser: Team = winner === "alpha" ? "bravo" : "alpha";
   const winScore = winner === "alpha" ? session.score_alpha : session.score_bravo;
@@ -975,9 +1028,9 @@ function Podium({ session, players }: { session: Session; players: Player[] }) {
       >
         <Crown className="mx-auto mb-3 h-12 w-12 text-gold" />
         <h2 className="font-display text-3xl font-black text-gold text-glow-gold">
-          Team {winner === "alpha" ? "Alpha" : "Bravo"} wins!
+          {teamName(theme, winner)} wins!
         </h2>
-        <p className="mt-1 font-display text-5xl font-black">${winScore}</p>
+        <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">
           {winners.map((p) => (
             <span key={p.id} className="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold">
@@ -987,7 +1040,7 @@ function Podium({ session, players }: { session: Session; players: Player[] }) {
         </div>
         <div className="mt-6 rounded-2xl bg-secondary p-4">
           <p className="text-xs font-bold uppercase text-muted-foreground">
-            Team {loser === "alpha" ? "Alpha" : "Bravo"} — ${loseScore}
+            {teamName(theme, loser)} — {loseScore}
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
             {losers.map((p) => (

@@ -11,10 +11,12 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
 import {
   PLAYER_AVATARS,
+  teamName,
   type Player,
   type Session,
   type QueueEntry,
   type Team,
+  type ThemeSettings,
 } from "@/lib/types";
 
 export const Route = createFileRoute("/play/$code")({
@@ -75,17 +77,30 @@ function PlayerPage() {
     );
   }
 
+  const theme = (data.game.theme ?? {}) as unknown as ThemeSettings;
+
   return (
     <PlayerLobby
       key={data.session.id}
       session={data.session as unknown as Session}
       gameTitle={data.game.title}
       code={code}
+      theme={theme}
     />
   );
 }
 
-function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle: string; code: string }) {
+function PlayerLobby({
+  session,
+  gameTitle,
+  code,
+  theme,
+}: {
+  session: Session;
+  gameTitle: string;
+  code: string;
+  theme: ThemeSettings;
+}) {
   const storageKey = `jd:player:${session.id}`;
   const [identity, setIdentity] = useState<StoredIdentity | null>(() => {
     try {
@@ -101,6 +116,7 @@ function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle
       <JoinForm
         code={code}
         gameTitle={gameTitle}
+        theme={theme}
         onJoined={(id) => {
           localStorage.setItem(storageKey, JSON.stringify(id));
           setIdentity(id);
@@ -108,7 +124,7 @@ function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle
       />
     );
   }
-  return <LivePlayer sessionId={session.id} identity={identity} gameTitle={gameTitle} />;
+  return <LivePlayer sessionId={session.id} identity={identity} gameTitle={gameTitle} theme={theme} />;
 }
 
 /* -------------------------------- Join form ------------------------------- */
@@ -116,10 +132,12 @@ function PlayerLobby({ session, gameTitle, code }: { session: Session; gameTitle
 function JoinForm({
   code,
   gameTitle,
+  theme,
   onJoined,
 }: {
   code: string;
   gameTitle: string;
+  theme: ThemeSettings;
   onJoined: (id: StoredIdentity) => void;
 }) {
   const [name, setName] = useState("");
@@ -197,7 +215,7 @@ function JoinForm({
                 t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
               } ${team === t ? "ring-4 ring-gold" : "opacity-40"}`}
             >
-              {t}
+              {teamName(theme, t)}
             </button>
           ))}
         </div>
@@ -227,10 +245,12 @@ function LivePlayer({
   sessionId,
   identity,
   gameTitle,
+  theme,
 }: {
   sessionId: string;
   identity: StoredIdentity;
   gameTitle: string;
+  theme: ThemeSettings;
 }) {
   const fetchState = useServerFn(getPlayerState);
   const { data } = useQuery({
@@ -310,14 +330,14 @@ function LivePlayer({
       <div className="flex w-full flex-col items-center">
         {/* Scoreboard strip */}
         <div className="mb-5 flex w-full items-center justify-between gap-2">
-          <TeamScore team="alpha" score={session?.score_alpha ?? 0} mine={myTeam === "alpha"} />
+          <TeamScore team="alpha" name={teamName(theme, "alpha")} score={session?.score_alpha ?? 0} mine={myTeam === "alpha"} />
           <div className="text-center">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{gameTitle}</p>
             <p className="text-xs text-muted-foreground">
               {identity.avatar} {identity.name}
             </p>
           </div>
-          <TeamScore team="bravo" score={session?.score_bravo ?? 0} mine={myTeam === "bravo"} />
+          <TeamScore team="bravo" name={teamName(theme, "bravo")} score={session?.score_bravo ?? 0} mine={myTeam === "bravo"} />
         </div>
 
         <AnimatePresence mode="wait">
@@ -404,7 +424,7 @@ function LivePlayer({
           )}
 
           {(status === "final" || phase === "final_wager" || phase === "final_answer") && status !== "finished" && (
-            <FinalForm key="final" session={session!} identity={identity} myTeam={myTeam} />
+            <FinalForm key="final" session={session!} identity={identity} myTeam={myTeam} theme={theme} />
           )}
 
           {status === "finished" && (
@@ -416,10 +436,10 @@ function LivePlayer({
             >
               <Trophy className="mb-3 h-14 w-14 text-gold" />
               <h2 className="font-display text-2xl font-black">
-                {(session?.score_alpha ?? 0) >= (session?.score_bravo ?? 0) ? "Team Alpha" : "Team Bravo"} wins!
+                {teamName(theme, (session?.score_alpha ?? 0) >= (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your team scored <span className="font-bold text-gold">${myScore ?? 0}</span>
+                Your team scored <span className="font-bold text-gold">{myScore ?? 0}</span>
               </p>
             </motion.div>
           )}
@@ -435,7 +455,17 @@ function Check2() {
 
 /* ------------------------------- Final form ------------------------------- */
 
-function FinalForm({ session, identity, myTeam }: { session: Session; identity: StoredIdentity; myTeam: Team }) {
+function FinalForm({
+  session,
+  identity,
+  myTeam,
+  theme,
+}: {
+  session: Session;
+  identity: StoredIdentity;
+  myTeam: Team;
+  theme: ThemeSettings;
+}) {
   const [wager, setWager] = useState(0);
   const [answer, setAnswer] = useState("");
   const [sent, setSent] = useState(false);
@@ -453,7 +483,7 @@ function FinalForm({ session, identity, myTeam }: { session: Session; identity: 
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full">
       <h2 className="mb-1 text-center font-display text-2xl font-black text-gold">Final Jeopardy</h2>
       <p className="mb-5 text-center text-xs text-muted-foreground">
-        One submission per team — {myTeam === "alpha" ? "Alpha" : "Bravo"} · max wager ${maxWager}
+        One submission per team — {teamName(theme, myTeam)} · max wager {maxWager}
       </p>
       <label className="mb-3 block">
         <span className="mb-1 block text-xs font-semibold text-muted-foreground">Wager</span>
@@ -500,15 +530,15 @@ function FinalForm({ session, identity, myTeam }: { session: Session; identity: 
 
 /* --------------------------------- Pieces --------------------------------- */
 
-function TeamScore({ team, score, mine }: { team: Team; score: number; mine: boolean }) {
+function TeamScore({ team, name, score, mine }: { team: Team; name: string; score: number; mine: boolean }) {
   return (
     <div
       className={`rounded-2xl px-3 py-2 text-center text-white ${team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"} ${
         mine ? "ring-2 ring-gold" : "opacity-70"
       }`}
     >
-      <p className="text-[9px] font-bold uppercase tracking-wider">{team}</p>
-      <p className="font-display text-lg font-black leading-none">${score}</p>
+      <p className="text-[9px] font-bold uppercase tracking-wider">{name}</p>
+      <p className="font-display text-lg font-black leading-none">{score}</p>
     </div>
   );
 }

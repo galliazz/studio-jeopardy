@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -25,7 +25,10 @@ import {
   deleteGame,
   exportGame,
   importGame,
+  updateGame,
+  updateProfile,
 } from "@/lib/games.functions";
+import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -138,6 +141,27 @@ function StudioPage() {
     }
   };
 
+  const start = useServerFn(startSession);
+  const handlePlay = async (gameId: string) => {
+    try {
+      const { session } = await start({ data: { gameId } });
+      void navigate({ to: "/host/$sessionId", params: { sessionId: session.id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start session");
+    }
+  };
+
+  const handleRename = async (gameId: string, title: string) => {
+    setOpenMenu(null);
+    try {
+      await updateGame({ data: { gameId, title } });
+      toast.success("Board renamed");
+      void refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Rename failed");
+    }
+  };
+
   const handleImportFile = async (file: File) => {
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
@@ -169,9 +193,13 @@ function StudioPage() {
               <Zap className="h-6 w-6 text-gold" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">
-                Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
-              </p>
+              <EditableUsername
+                username={data?.profile?.username ?? ""}
+                onSave={async (username) => {
+                  await updateProfile({ data: { username } });
+                  void refresh();
+                }}
+              />
               <h1 className="font-display text-3xl font-black tracking-tight">Your Jeopardy Studio</h1>
             </div>
           </div>
@@ -274,6 +302,9 @@ function StudioPage() {
                 index={i}
                 menuOpen={openMenu === game.id}
                 onToggleMenu={() => setOpenMenu(openMenu === game.id ? null : game.id)}
+                onCloseMenu={() => setOpenMenu(null)}
+                onPlay={() => void handlePlay(game.id)}
+                onRename={(title) => void handleRename(game.id, title)}
                 onDuplicate={() => void handleDuplicate(game.id)}
                 onExport={() => void handleExport(game.id)}
                 onExportXlsx={() => void handleExportXlsx(game.id)}
@@ -287,11 +318,55 @@ function StudioPage() {
   );
 }
 
+function EditableUsername({ username, onSave }: { username: string; onSave: (v: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(username);
+  useEffect(() => setDraft(username), [username]);
+
+  if (!editing) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Welcome,{" "}
+        <button
+          onClick={() => setEditing(true)}
+          title="Click to edit your name"
+          className="group inline-flex items-center gap-1 rounded-lg px-1 font-semibold text-foreground transition-colors hover:bg-muted"
+        >
+          {username || "…"}
+          <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />
+        </button>
+      </p>
+    );
+  }
+  return (
+    <p className="flex items-center gap-1 text-sm text-muted-foreground">
+      Welcome,
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => {
+          setEditing(false);
+          const v = draft.trim();
+          if (v.length >= 2 && v !== username) void onSave(v).then(() => toast.success("Name updated"));
+          else setDraft(username);
+        }}
+        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        maxLength={24}
+        className="w-36 rounded-lg border-2 border-electric-blue bg-background px-1.5 py-0.5 font-semibold text-foreground outline-none"
+      />
+    </p>
+  );
+}
+
 function GameCard({
   game,
   index,
   menuOpen,
   onToggleMenu,
+  onCloseMenu,
+  onPlay,
+  onRename,
   onDuplicate,
   onExport,
   onExportXlsx,
@@ -301,12 +376,26 @@ function GameCard({
   index: number;
   menuOpen: boolean;
   onToggleMenu: () => void;
+  onCloseMenu: () => void;
+  onPlay: () => void;
+  onRename: (title: string) => void;
   onDuplicate: () => void;
   onExport: () => void;
   onExportXlsx: () => void;
   onDelete: () => void;
 }) {
   const theme = themeOf(game);
+  const [renaming, setRenaming] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(game.title);
+  useEffect(() => setDraftTitle(game.title), [game.title]);
+
+  const commitRename = () => {
+    setRenaming(false);
+    const v = draftTitle.trim();
+    if (v && v !== game.title) onRename(v);
+    else setDraftTitle(game.title);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -315,7 +404,19 @@ function GameCard({
       className="group relative flex flex-col rounded-[32px] bg-card p-5 shadow-lg shadow-deep-purple/5 transition-shadow hover:shadow-xl"
     >
       <div className="mb-4 flex items-start justify-between gap-2">
-        <h3 className="font-display text-lg font-bold leading-tight">{game.title}</h3>
+        {renaming ? (
+          <input
+            autoFocus
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            maxLength={80}
+            className="w-full rounded-xl border-2 border-electric-blue bg-background px-2 py-0.5 font-display text-lg font-bold outline-none"
+          />
+        ) : (
+          <h3 className="font-display text-lg font-bold leading-tight">{game.title}</h3>
+        )}
         <div className="relative">
           <button
             onClick={onToggleMenu}
@@ -325,28 +426,37 @@ function GameCard({
             <MoreVertical className="h-4 w-4" />
           </button>
           {menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="absolute right-0 top-10 z-20 w-44 overflow-hidden rounded-2xl border border-border bg-popover p-1.5 shadow-xl"
-            >
-              {[
-                { icon: Copy, label: "Duplicate", fn: onDuplicate },
-                { icon: Download, label: "Export JSON", fn: onExport },
-                { icon: FileSpreadsheet, label: "Export Excel", fn: onExportXlsx },
-                { icon: Trash2, label: "Delete", fn: onDelete, danger: true },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={item.fn}
-                  className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
-                    item.danger ? "text-destructive" : "text-foreground"
-                  }`}
-                >
-                  <item.icon className="h-4 w-4" /> {item.label}
-                </button>
-              ))}
-            </motion.div>
+            <>
+              {/* Click-away backdrop */}
+              <button
+                aria-label="Close menu"
+                onClick={onCloseMenu}
+                className="fixed inset-0 z-10 cursor-default"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute right-0 top-10 z-20 w-44 overflow-hidden rounded-2xl border border-border bg-popover p-1.5 shadow-xl"
+              >
+                {[
+                  { icon: Pencil, label: "Rename", fn: () => { onCloseMenu(); setRenaming(true); } },
+                  { icon: Copy, label: "Duplicate", fn: onDuplicate },
+                  { icon: Download, label: "Export JSON", fn: onExport },
+                  { icon: FileSpreadsheet, label: "Export Excel", fn: onExportXlsx },
+                  { icon: Trash2, label: "Delete", fn: onDelete, danger: true },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={item.fn}
+                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
+                      item.danger ? "text-destructive" : "text-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4" /> {item.label}
+                  </button>
+                ))}
+              </motion.div>
+            </>
           )}
         </div>
       </div>
@@ -362,18 +472,26 @@ function GameCard({
         ))}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold tracking-widest text-secondary-foreground">
           {game.join_code}
         </span>
-        <Link
-          to="/edit/$gameId"
-          params={{ gameId: game.id }}
-          className="flex items-center gap-1.5 rounded-full bg-deep-purple px-4 py-2 text-xs font-bold text-lavender transition-transform hover:scale-105"
-        >
-          <Pencil className="h-3.5 w-3.5" /> Open
-          <Play className="h-3 w-3" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/edit/$gameId"
+            params={{ gameId: game.id }}
+            className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-xs font-bold text-secondary-foreground transition-transform hover:scale-105"
+          >
+            <Pencil className="h-3.5 w-3.5" /> Edit
+          </Link>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onPlay}
+            className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-md shadow-electric-blue/30 transition-transform hover:scale-105"
+          >
+            <Play className="h-3.5 w-3.5" /> Play
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );

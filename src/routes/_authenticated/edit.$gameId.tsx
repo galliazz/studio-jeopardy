@@ -116,7 +116,7 @@ function EditorPage() {
       {/* Board canvas — themed preview */}
       <div className="mx-auto max-w-7xl px-4 pt-6">
         <div
-          className="p-4 sm:p-6"
+          className="p-4 transition-[border-radius] duration-300 sm:p-6"
           style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
         >
           <div className="grid grid-cols-5 gap-2 sm:gap-3">
@@ -234,7 +234,7 @@ function CategoryHeader({
 
   return (
     <div
-      className="flex min-h-16 items-center justify-center p-2 text-center"
+      className="flex min-h-16 items-center justify-center p-2 text-center transition-[border-radius] duration-300"
       style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.75 }}
     >
       {editing ? (
@@ -543,18 +543,50 @@ function FmtBtn({ children, onClick, label }: { children: React.ReactNode; onCli
 /* -------------------------------- Theme bar ------------------------------- */
 
 function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSettings; onSaved: () => void }) {
+  const queryClient = useQueryClient();
   const [rowPoints, setRowPointsState] = useState(theme.rowPoints);
+  const [radiusEditing, setRadiusEditing] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setRowPointsState(theme.rowPoints), [theme.rowPoints]);
 
+  /** Optimistically patch the cached theme so the board reacts instantly. */
+  const patchThemeCache = useCallback(
+    (patch: Partial<ThemeSettings>) => {
+      queryClient.setQueryData(["board", gameId], (old: unknown) => {
+        const b = old as BoardData | undefined;
+        if (!b) return old;
+        return { ...b, game: { ...b.game, theme: { ...themeOf(b.game), ...patch } } };
+      });
+    },
+    [queryClient, gameId],
+  );
+
+  const saveTheme = useCallback(
+    async (patch: Partial<ThemeSettings>) => {
+      await updateGame({ data: { gameId, theme: { ...theme, ...patch } } });
+      onSaved();
+    },
+    [gameId, theme, onSaved],
+  );
+
   const applyPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
-    await updateGame({ data: { gameId, theme: { ...theme, ...preset.theme } } });
-    onSaved();
+    patchThemeCache(preset.theme);
+    await saveTheme(preset.theme);
     toast.success(`Theme: ${preset.name}`, { duration: 1200 });
   };
 
-  const applyRadius = async (radius: number) => {
-    await updateGame({ data: { gameId, theme: { ...theme, radius } } });
-    onSaved();
+  /** Instant local feedback + debounced save while dragging. */
+  const applyRadius = (radius: number) => {
+    patchThemeCache({ radius });
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void saveTheme({ radius }), 400);
+  };
+
+  const applyTeamName = async (key: "teamAlpha" | "teamBravo", value: string) => {
+    const patch = { [key]: value.trim() };
+    patchThemeCache(patch);
+    await saveTheme(patch);
+    toast.success("Team name saved", { duration: 1000 });
   };
 
   const applyRowPoints = async () => {
@@ -568,7 +600,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 24, delay: 0.2 }}
-      className="fixed bottom-5 left-1/2 z-30 w-[min(860px,calc(100vw-2rem))] -translate-x-1/2 rounded-[32px] border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md"
+      className="fixed bottom-5 left-1/2 z-30 w-[min(960px,calc(100vw-2rem))] -translate-x-1/2 rounded-[32px] border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md"
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex items-center gap-2">
@@ -583,6 +615,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
             />
           ))}
         </div>
+
         <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
           Roundness
           <input
@@ -590,11 +623,48 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
             min={0}
             max={40}
             value={theme.radius}
-            onChange={(e) => void applyRadius(Number(e.target.value))}
+            onChange={(e) => applyRadius(Number(e.target.value))}
             className="w-24 accent-[oklch(0.48_0.12_252)]"
           />
-          <span className="w-6 text-foreground">{theme.radius}</span>
+          {radiusEditing ? (
+            <input
+              autoFocus
+              type="number"
+              min={0}
+              max={40}
+              value={theme.radius}
+              onChange={(e) => applyRadius(Math.max(0, Math.min(40, Number(e.target.value))))}
+              onBlur={() => setRadiusEditing(false)}
+              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+              className="h-7 w-14 rounded-lg border-2 border-electric-blue bg-background px-1 text-center text-xs font-bold text-foreground outline-none"
+            />
+          ) : (
+            <button
+              onDoubleClick={() => setRadiusEditing(true)}
+              title="Double-click to type a value"
+              className="w-8 rounded-lg px-1 py-0.5 text-center text-foreground hover:bg-muted"
+            >
+              {theme.radius}
+            </button>
+          )}
         </label>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-muted-foreground">Teams</span>
+          <TeamNameInput
+            defaultValue={theme.teamAlpha ?? ""}
+            placeholder="Alpha"
+            swatch="bg-team-alpha"
+            onSave={(v) => void applyTeamName("teamAlpha", v)}
+          />
+          <TeamNameInput
+            defaultValue={theme.teamBravo ?? ""}
+            placeholder="Bravo"
+            swatch="bg-team-bravo"
+            onSave={(v) => void applyTeamName("teamBravo", v)}
+          />
+        </div>
+
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-semibold text-muted-foreground">Points</span>
           {rowPoints.map((p, i) => (
@@ -614,6 +684,35 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
         </div>
       </div>
     </motion.div>
+  );
+}
+
+function TeamNameInput({
+  defaultValue,
+  placeholder,
+  swatch,
+  onSave,
+}: {
+  defaultValue: string;
+  placeholder: string;
+  swatch: string;
+  onSave: (value: string) => void;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  useEffect(() => setValue(defaultValue), [defaultValue]);
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={`h-3 w-3 rounded-full ${swatch}`} />
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={() => value.trim() !== defaultValue && onSave(value)}
+        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+        placeholder={placeholder}
+        maxLength={24}
+        className="h-9 w-24 rounded-xl border-2 border-input bg-background px-2 text-xs font-bold outline-none focus:border-electric-blue"
+      />
+    </div>
   );
 }
 

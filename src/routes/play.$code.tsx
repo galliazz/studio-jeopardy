@@ -215,7 +215,7 @@ function JoinForm({
                 t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
               } ${team === t ? "ring-4 ring-gold" : "opacity-40"}`}
             >
-              {t}
+              {teamName(theme, t)}
             </button>
           ))}
         </div>
@@ -245,10 +245,12 @@ function LivePlayer({
   sessionId,
   identity,
   gameTitle,
+  theme,
 }: {
   sessionId: string;
   identity: StoredIdentity;
   gameTitle: string;
+  theme: ThemeSettings;
 }) {
   const fetchState = useServerFn(getPlayerState);
   const { data } = useQuery({

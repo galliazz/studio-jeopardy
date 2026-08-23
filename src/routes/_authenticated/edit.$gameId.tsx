@@ -116,7 +116,7 @@ function EditorPage() {
       {/* Board canvas — themed preview */}
       <div className="mx-auto max-w-7xl px-4 pt-6">
         <div
-          className="p-4 sm:p-6"
+          className="p-4 transition-[border-radius] duration-300 sm:p-6"
           style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
         >
           <div className="grid grid-cols-5 gap-2 sm:gap-3">
@@ -234,7 +234,7 @@ function CategoryHeader({
 
   return (
     <div
-      className="flex min-h-16 items-center justify-center p-2 text-center"
+      className="flex min-h-16 items-center justify-center p-2 text-center transition-[border-radius] duration-300"
       style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.75 }}
     >
       {editing ? (

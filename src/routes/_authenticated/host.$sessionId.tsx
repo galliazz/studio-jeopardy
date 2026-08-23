@@ -909,10 +909,12 @@ function FinalPanel({
   session,
   finalAnswers,
   players,
+  theme,
 }: {
   session: Session;
   finalAnswers: FinalAnswer[];
   players: Player[];
+  theme: ThemeSettings;
 }) {
   const teams: Team[] = ["alpha", "bravo"];
   return (
@@ -926,7 +928,7 @@ function FinalPanel({
               const submitted = finalAnswers.some((f) => f.team === t);
               return (
                 <span key={t} className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${submitted ? "bg-emerald-500/20 text-emerald-400" : "bg-secondary text-muted-foreground"}`}>
-                  {t} {submitted ? "✓ wagered" : "…"}
+                  {teamName(theme, t)} {submitted ? "✓ wagered" : "…"}
                 </span>
               );
             })}
@@ -949,13 +951,13 @@ function FinalPanel({
             return (
               <div key={t} className="rounded-2xl bg-secondary p-3">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha" : "text-team-bravo"}`}>{t}</span>
+                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha" : "text-team-bravo"}`}>{teamName(theme, t)}</span>
                   <span className="text-[10px] text-muted-foreground">{members || "no players"}</span>
                 </div>
                 {entry ? (
                   <>
                     <p className="text-sm">“{entry.answer}”</p>
-                    <p className="mb-2 text-xs text-muted-foreground">Wager: ${entry.wager}</p>
+                    <p className="mb-2 text-xs text-muted-foreground">Wager: {entry.wager}</p>
                     {entry.judged === null ? (
                       <div className="flex gap-2">
                         <button
@@ -1003,7 +1005,7 @@ function FinalPanel({
 
 /* --------------------------------- Podium --------------------------------- */
 
-function Podium({ session, players }: { session: Session; players: Player[] }) {
+function Podium({ session, players, theme }: { session: Session; players: Player[]; theme: ThemeSettings }) {
   const winner: Team = session.score_alpha >= session.score_bravo ? "alpha" : "bravo";
   const loser: Team = winner === "alpha" ? "bravo" : "alpha";
   const winScore = winner === "alpha" ? session.score_alpha : session.score_bravo;
@@ -1025,9 +1027,9 @@ function Podium({ session, players }: { session: Session; players: Player[] }) {
       >
         <Crown className="mx-auto mb-3 h-12 w-12 text-gold" />
         <h2 className="font-display text-3xl font-black text-gold text-glow-gold">
-          Team {winner === "alpha" ? "Alpha" : "Bravo"} wins!
+          {teamName(theme, winner)} wins!
         </h2>
-        <p className="mt-1 font-display text-5xl font-black">${winScore}</p>
+        <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">
           {winners.map((p) => (
             <span key={p.id} className="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold">
@@ -1037,7 +1039,7 @@ function Podium({ session, players }: { session: Session; players: Player[] }) {
         </div>
         <div className="mt-6 rounded-2xl bg-secondary p-4">
           <p className="text-xs font-bold uppercase text-muted-foreground">
-            Team {loser === "alpha" ? "Alpha" : "Bravo"} — ${loseScore}
+            {teamName(theme, loser)} — {loseScore}
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
             {losers.map((p) => (

@@ -1,9 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { generateJoinCode } from "@/lib/join-code";
 import { createEmptyBoard, seedDemoGame } from "@/lib/games.server";
 import { DEFAULT_THEME } from "@/lib/types";
+
+function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
+}
 
 /** First-run bootstrap: ensures a profile exists (seeding a demo game for brand-new hosts) and returns studio data. */
 export const bootstrapStudio = createServerFn({ method: "GET" })
@@ -106,7 +111,8 @@ export const updateTile = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { tileId, ...patch } = data;
+    const { tileId, ...raw } = data;
+    const patch = stripUndefined(raw) as Database["public"]["Tables"]["tiles"]["Update"];
     const { error } = await context.supabase.from("tiles").update(patch).eq("id", tileId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -243,7 +249,7 @@ export const exportGame = createServerFn({ method: "GET" })
     return {
       version: 1 as const,
       title: game.title,
-      theme: game.theme as Record<string, unknown>,
+      theme: game.theme as Record<string, Json>,
       categories: (categories ?? []).map((cat) => ({
         title: cat.title,
         tiles: (tiles ?? [])
@@ -312,7 +318,8 @@ export const updateProfile = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase.from("profiles").update(data).eq("id", context.userId);
+    const patch = stripUndefined(data) as Database["public"]["Tables"]["profiles"]["Update"];
+    const { error } = await context.supabase.from("profiles").update(patch).eq("id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

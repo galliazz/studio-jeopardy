@@ -181,16 +181,16 @@ function StudioPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lavender opacity-60 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-pastel-blue opacity-60 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-8">
-        {/* Header */}
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-deep-purple">
-              <Zap className="h-6 w-6 text-gold" />
+        {/* Greeting banner */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[36px] bg-blush p-6 elev-1 sm:p-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center bg-butter scallop">
+              <Zap className="h-7 w-7 text-ink-gold" />
             </div>
             <div>
               <EditableUsername
@@ -200,12 +200,12 @@ function StudioPage() {
                   void refresh();
                 }}
               />
-              <h1 className="font-display text-3xl font-black tracking-tight">Your Jeopardy Studio</h1>
+              <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
             </div>
           </div>
           <button
             onClick={() => void signOut()}
-            className="flex items-center gap-2 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Sign out
           </button>
@@ -213,25 +213,27 @@ function StudioPage() {
 
         {/* Action row */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <div className="flex min-w-64 flex-1 items-center gap-2 rounded-full border-2 border-input bg-card px-5">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="flex min-w-64 flex-1 items-center gap-2 rounded-full bg-card px-3 elev-1">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint">
+              <Search className="h-4 w-4 text-foreground" />
+            </span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search boards…"
-              className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+              className="h-14 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
             />
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setCreating(true)}
-            className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-lg shadow-electric-blue/30"
+            className="flex items-center gap-2 rounded-full bg-coral px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
           >
-            <Plus className="h-5 w-5" /> Create New Board
+            <Plus className="h-5 w-5" /> Create a new game
           </motion.button>
           <button
             onClick={() => importRef.current?.click()}
-            className="flex items-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
+            className="flex items-center gap-2 rounded-full bg-lilac px-6 py-4 text-sm font-bold text-foreground elev-1 transition-transform hover:scale-105"
           >
             <Upload className="h-4 w-4" /> Import JSON
           </button>
@@ -247,6 +249,7 @@ function StudioPage() {
             }}
           />
         </div>
+
 
         {/* Create dialog (inline card) */}
         {creating && (

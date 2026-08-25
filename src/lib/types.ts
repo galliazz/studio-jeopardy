@@ -12,12 +12,13 @@ export interface ThemeSettings {
 }
 
 export const DEFAULT_THEME: ThemeSettings = {
-  bg: "#070714",
-  card: "#141433",
-  accent: "#f7b731",
-  radius: 24,
+  bg: "#F4EAF8",
+  card: "#E3D3F5",
+  accent: "#5B3E77",
+  radius: 30,
   rowPoints: [200, 400, 600, 800, 1000],
 };
+
 
 export interface Profile {
   id: string;

@@ -730,8 +730,9 @@ function TeamNameInput({
 function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: string; onClose: () => void }) {
   const navigate = useNavigate();
   const start = useServerFn(startSession);
+  const [nonce] = useState(() => Date.now());
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["session-start", gameId, playDialogNonce()],
+    queryKey: ["session-start", gameId, nonce],
     queryFn: () => start({ data: { gameId } }),
     staleTime: 0,
     gcTime: 0,
@@ -788,8 +789,4 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
       </motion.div>
     </motion.div>
   );
-}
-
-function playDialogNonce() {
-  return Date.now();
 }

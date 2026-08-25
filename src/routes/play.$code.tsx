@@ -18,7 +18,6 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/play/$code")({
   head: () => ({
@@ -332,9 +331,9 @@ function LivePlayer({
         {/* Scoreboard strip */}
         <div className="mb-5 flex w-full items-center justify-between gap-2">
           <TeamScore team="alpha" name={teamName(theme, "alpha")} score={session?.score_alpha ?? 0} mine={myTeam === "alpha"} />
-          <div className="text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{gameTitle}</p>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{gameTitle}</p>
+            <p className="truncate text-xs text-muted-foreground">
               {identity.avatar} {identity.name}
             </p>
           </div>
@@ -373,7 +372,7 @@ function LivePlayer({
                   <motion.div
                     animate={{ scale: [1, 1.04, 1] }}
                     transition={{ repeat: Infinity, duration: 1.2 }}
-                    className="flex h-56 w-56 flex-col items-center justify-center rounded-full bg-butter text-center elev-3"
+                    className="flex aspect-square w-[min(72vw,16rem)] flex-col items-center justify-center rounded-full bg-butter text-center elev-3"
                   >
                     <span className="font-display text-2xl font-black text-foreground">YOU'RE UP!</span>
                     <span className="mt-1 font-display text-4xl font-black text-foreground">
@@ -394,7 +393,7 @@ function LivePlayer({
                 </StatusCard>
               ) : myEntry ? (
                 <div className="flex flex-col items-center">
-                  <div className="flex h-56 w-56 flex-col items-center justify-center bg-lilac elev-2 scallop">
+                  <div className="flex aspect-square w-[min(72vw,16rem)] flex-col items-center justify-center bg-lilac elev-2 scallop">
                     <span className="font-display text-lg font-bold text-muted-foreground">IN LINE</span>
                     <span className="font-display text-6xl font-black text-ink-gold">#{myPosition}</span>
                   </div>
@@ -405,7 +404,7 @@ function LivePlayer({
                   whileTap={{ scale: 0.92 }}
                   onClick={() => void doBuzz()}
                   disabled={!buzzerLive}
-                  className={`flex h-64 w-64 flex-col items-center justify-center rounded-full font-display elev-3 transition-colors disabled:opacity-60 ${
+                  className={`flex aspect-square w-[min(78vw,20rem)] flex-col items-center justify-center rounded-full font-display elev-3 transition-colors disabled:opacity-60 ${
                     myTeam === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
                   }`}
                 >
@@ -532,11 +531,11 @@ function FinalForm({
 function TeamScore({ team, name, score, mine }: { team: Team; name: string; score: number; mine: boolean }) {
   return (
     <div
-      className={`rounded-[22px] px-4 py-2.5 text-center text-foreground elev-1 ${team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"} ${
+      className={`max-w-[8rem] shrink-0 rounded-[22px] px-3 py-2.5 text-center text-foreground elev-1 sm:px-4 ${team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"} ${
         mine ? "ring-2 ring-gold" : "opacity-70"
       }`}
     >
-      <p className="text-[9px] font-bold uppercase tracking-wider">{name}</p>
+      <p className="truncate text-[9px] font-bold uppercase tracking-wider">{name}</p>
       <p className="font-display text-lg font-black leading-none">{score}</p>
     </div>
   );
@@ -559,9 +558,8 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-4 py-8 text-foreground">
-      <ThemeToggle className="absolute right-4 top-4 z-20" />
-      <div className="w-full max-w-md">{children}</div>
+    <div className="relative flex min-h-[100svh] items-center justify-center px-4 pb-8 pt-16 text-foreground">
+      <div className="w-full max-w-md lg:max-w-xl">{children}</div>
     </div>
   );
 }

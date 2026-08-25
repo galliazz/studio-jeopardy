@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,7 +31,7 @@ import {
 import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/studio")({
@@ -206,7 +206,6 @@ function StudioPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <button
             onClick={() => void signOut()}
             className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
@@ -393,6 +392,7 @@ function GameCard({
   onExportXlsx: () => void;
   onDelete: () => void;
 }) {
+  const navigate = useNavigate();
   const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(game.title);
@@ -413,13 +413,21 @@ function GameCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, type: "spring", stiffness: 160, damping: 20 }}
-      className={`group relative flex flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
+      role="link"
+      tabIndex={0}
+      title="Open in editor"
+      onClick={() => void navigate({ to: "/edit/$gameId", params: { gameId: game.id } })}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+      }}
+      className={`group relative flex cursor-pointer flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
     >
-      <div className="mb-4 flex items-start justify-between gap-2">
+      <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
         {renaming ? (
           <input
             autoFocus
             value={draftTitle}
+            onClick={(e) => e.stopPropagation()}
             onChange={(e) => setDraftTitle(e.target.value)}
             onBlur={commitRename}
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
@@ -427,11 +435,16 @@ function GameCard({
             className="w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
           />
         ) : (
-          <h3 className="font-display text-xl font-black leading-tight">{game.title}</h3>
+          <h3 className="min-w-0 flex-1 truncate font-display text-xl font-black leading-tight" title={game.title}>
+            {game.title}
+          </h3>
         )}
         <div className="relative">
           <button
-            onClick={onToggleMenu}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleMenu();
+            }}
             aria-label="Board options"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-card/70 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
           >
@@ -442,7 +455,10 @@ function GameCard({
               {/* Click-away backdrop */}
               <button
                 aria-label="Close menu"
-                onClick={onCloseMenu}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCloseMenu();
+                }}
                 className="fixed inset-0 z-10 cursor-default"
               />
               <motion.div
@@ -459,7 +475,10 @@ function GameCard({
                 ].map((item) => (
                   <button
                     key={item.label}
-                    onClick={item.fn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      item.fn();
+                    }}
                     className={`flex w-full items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted ${
                       item.danger ? "text-danger-ink" : "text-foreground"
                     }`}
@@ -484,26 +503,20 @@ function GameCard({
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-3">
         <span className="rounded-full bg-card px-3.5 py-1.5 font-mono text-xs font-bold tracking-widest text-foreground">
           {game.join_code}
         </span>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/edit/$gameId"
-            params={{ gameId: game.id }}
-            className="flex items-center gap-1.5 rounded-full bg-card px-5 py-2.5 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
-          >
-            <Pencil className="h-3.5 w-3.5" /> Edit
-          </Link>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={onPlay}
-            className="flex items-center gap-1.5 rounded-full bg-coral px-5 py-2.5 text-xs font-black text-foreground elev-2 transition-transform hover:scale-105"
-          >
-            <Play className="h-3.5 w-3.5" /> Play
-          </motion.button>
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay();
+          }}
+          className="flex items-center gap-2 rounded-full bg-coral px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-105"
+        >
+          <Play className="h-5 w-5" /> Play
+        </motion.button>
       </div>
 
     </motion.div>

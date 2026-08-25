@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Zap, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -57,7 +56,6 @@ function AuthPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-      <ThemeToggle className="absolute right-5 top-5 z-20" />
       <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-48 -left-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl" />
 

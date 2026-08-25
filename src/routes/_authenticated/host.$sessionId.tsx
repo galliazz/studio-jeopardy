@@ -55,7 +55,7 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
@@ -91,6 +91,7 @@ function HostPage() {
   });
   useSessionRealtime(sessionId, [["host", sessionId]]);
 
+  const queryClient = useQueryClient();
   const state = data as unknown as HostState | undefined;
   const [ddOpen, setDdOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
@@ -138,7 +139,7 @@ function HostPage() {
     <div className="min-h-screen text-foreground">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
         {/* Header */}
-        <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[32px] bg-card/80 p-4 elev-1">
+        <div className="mb-5 flex flex-col gap-3 rounded-[32px] bg-card/80 p-4 pr-14 elev-1 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-4">
           <div className="flex items-center gap-3">
             <Link
               to="/edit/$gameId"
@@ -156,12 +157,11 @@ function HostPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <ScorePill team="alpha" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
             <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
           </div>
           <div className="flex items-center justify-end gap-2">
-            <ThemeToggle />
             <button
               onClick={async () => {
                 await resetBoard({ data: { sessionId } });
@@ -199,15 +199,18 @@ function HostPage() {
 
           {/* CENTER: board + overlay */}
           <div className="relative order-1 lg:order-2">
-            <div className="p-4 elev-2 sm:p-5" style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}>
-              <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
+            <div
+              className="mx-auto w-full max-w-[1100px] p-2.5 elev-2 sm:p-5"
+              style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
+            >
+              <div className="grid grid-cols-5 gap-1 sm:gap-2.5">
                 {categories.map((cat) => (
                   <div
                     key={cat.id}
-                    className="flex min-h-12 items-center justify-center p-1.5 text-center text-[9px] font-bold uppercase leading-tight tracking-wide sm:min-h-16 sm:text-xs"
+                    className="flex min-h-10 items-center justify-center overflow-hidden p-1 text-center text-[8px] font-bold uppercase leading-tight tracking-wide sm:min-h-16 sm:p-1.5 sm:text-xs"
                     style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.6, color: theme.accent }}
                   >
-                    {cat.title}
+                    <span className="line-clamp-2 w-full break-words">{cat.title}</span>
                   </div>
                 ))}
                 {[0, 1, 2, 3, 4].map((row) =>
@@ -220,8 +223,27 @@ function HostPage() {
                         key={tile.id}
                         {...(used ? {} : { whileTap: { scale: 0.94 } })}
                         disabled={used || session.status === "final" || session.status === "finished"}
-                        onClick={() => void openTile({ data: { sessionId, tileId: tile.id } })}
-                        className="flex min-h-14 items-center justify-center font-display text-lg font-black tracking-tight transition-all sm:min-h-20 sm:text-3xl"
+                        onClick={() => {
+                          // Optimistic: show the question instantly, server confirms via realtime.
+                          queryClient.setQueryData(["host", sessionId], (old: unknown) => {
+                            const prev = old as HostState | undefined;
+                            if (!prev) return old;
+                            const isDD = prev.session.daily_double_tile_ids.includes(tile.id);
+                            return {
+                              ...prev,
+                              session: {
+                                ...prev.session,
+                                current_tile_id: tile.id,
+                                active_player_id: null,
+                                timer_ends_at: null,
+                                dd_wager: null,
+                                phase: isDD ? "daily_double_wager" : "question_open",
+                              },
+                            };
+                          });
+                          void openTile({ data: { sessionId, tileId: tile.id } });
+                        }}
+                        className="flex aspect-square items-center justify-center font-display text-base font-black tracking-tight transition-all sm:aspect-[4/3] sm:text-3xl"
                         style={{
                           backgroundColor: used ? "transparent" : theme.card,
                           borderRadius: theme.radius,
@@ -502,14 +524,14 @@ function QuestionOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-40 flex items-center justify-center rounded-[36px] bg-foreground/25 p-2 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-[65] flex items-center justify-center bg-foreground/40 p-2 backdrop-blur-sm lg:absolute lg:z-40 lg:rounded-[36px] lg:bg-foreground/25 lg:p-4"
     >
       <motion.div
         initial={{ scale: 0.9, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.94, y: 12 }}
         transition={{ type: "spring", stiffness: 200, damping: 22 }}
-        className="flex h-full w-full flex-col overflow-hidden rounded-[32px] bg-card p-5 elev-3 sm:p-8"
+        className="flex h-full max-h-[100svh] w-full flex-col overflow-y-auto rounded-[32px] bg-card p-4 elev-3 sm:p-8 lg:overflow-hidden"
       >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />

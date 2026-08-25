@@ -731,8 +731,10 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
   const navigate = useNavigate();
   const start = useServerFn(startSession);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["session-start", gameId],
+    queryKey: ["session-start", gameId, playDialogNonce()],
     queryFn: () => start({ data: { gameId } }),
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const joinUrl = `${window.location.origin}/play/${joinCode}`;
@@ -786,4 +788,8 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
       </motion.div>
     </motion.div>
   );
+}
+
+function playDialogNonce() {
+  return Date.now();
 }

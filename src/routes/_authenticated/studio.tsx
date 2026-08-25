@@ -256,10 +256,10 @@ function StudioPage() {
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="mb-8 rounded-[28px] bg-card p-6 shadow-xl shadow-deep-purple/10"
+            className="mb-8 rounded-[32px] bg-butter p-6 elev-2"
           >
-            <h2 className="mb-3 font-display text-lg font-bold">Name your board</h2>
-            <div className="flex gap-2">
+            <h2 className="mb-3 font-display text-lg font-black">Name your board</h2>
+            <div className="flex flex-wrap gap-2">
               <input
                 autoFocus
                 value={newTitle}
@@ -267,17 +267,17 @@ function StudioPage() {
                 onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
                 placeholder="e.g. Friday Night Trivia"
                 maxLength={80}
-                className="h-12 flex-1 rounded-2xl border-2 border-input bg-background px-4 text-sm outline-none focus:border-electric-blue"
+                className="h-12 min-w-48 flex-1 rounded-full bg-card px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
               />
               <button
                 onClick={() => void handleCreate()}
-                className="rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground"
+                className="rounded-full bg-coral px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
                 Create
               </button>
               <button
                 onClick={() => setCreating(false)}
-                className="rounded-full bg-muted px-5 text-sm font-semibold text-muted-foreground"
+                className="rounded-full bg-card px-6 py-3 text-sm font-semibold text-muted-foreground"
               >
                 Cancel
               </button>
@@ -287,17 +287,18 @@ function StudioPage() {
 
         {/* Game cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
           </div>
         ) : games.length === 0 ? (
-          <div className="rounded-[32px] bg-card p-12 text-center text-muted-foreground shadow">
+          <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
             No boards yet — create your first one!
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
             {games.map((game, i) => (
               <GameCard
                 key={game.id}

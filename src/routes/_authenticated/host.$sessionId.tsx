@@ -487,6 +487,7 @@ function QuestionOverlay({
   players,
   queue,
   accent,
+  onSessionPatch,
 }: {
   session: Session;
   tile: Tile;
@@ -494,6 +495,7 @@ function QuestionOverlay({
   players: Player[];
   queue: QueueEntry[];
   accent: string;
+  onSessionPatch: (patch: Partial<Session>) => void;
 }) {
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
@@ -619,7 +621,10 @@ function QuestionOverlay({
           <div className="flex flex-wrap items-center justify-center gap-3">
             {session.phase !== "reveal" && (
               <button
-                onClick={() => void revealAnswer({ data: { sessionId: session.id } })}
+                onClick={() => {
+                  onSessionPatch({ phase: "reveal" });
+                  void revealAnswer({ data: { sessionId: session.id } });
+                }}
                 className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
                 Reveal answer
@@ -631,6 +636,16 @@ function QuestionOverlay({
                   whileTap={{ scale: 0.94 }}
                   onClick={() => {
                     sfx.ding();
+                    if (activePlayer) {
+                      const value = session.dd_wager ?? tile.points;
+                      onSessionPatch({
+                        phase: "reveal",
+                        dd_wager: null,
+                        ...(activePlayer.team === "alpha"
+                          ? { score_alpha: session.score_alpha + value }
+                          : { score_bravo: session.score_bravo + value }),
+                      });
+                    }
                     void judgeAnswer({ data: { sessionId: session.id, correct: true } });
                   }}
                   className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
@@ -641,6 +656,21 @@ function QuestionOverlay({
                   whileTap={{ scale: 0.94 }}
                   onClick={() => {
                     sfx.wrong();
+                    if (activePlayer) {
+                      const value = session.dd_wager ?? Math.round(tile.points / 2);
+                      const nextQueued = queue.find(
+                        (q) => q.tile_id === tile.id && q.status === "queued" && q.player_id !== activePlayer.id,
+                      );
+                      onSessionPatch({
+                        phase: session.dd_wager != null ? "reveal" : nextQueued ? "answering" : "question_open",
+                        active_player_id: nextQueued?.player_id ?? null,
+                        timer_ends_at: nextQueued ? new Date(Date.now() + 15_000).toISOString() : null,
+                        dd_wager: null,
+                        ...(activePlayer.team === "alpha"
+                          ? { score_alpha: session.score_alpha - value }
+                          : { score_bravo: session.score_bravo - value }),
+                      });
+                    }
                     void judgeAnswer({ data: { sessionId: session.id, correct: false } });
                   }}
                   className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
@@ -652,7 +682,17 @@ function QuestionOverlay({
             {session.phase === "reveal" && (
               <motion.button
                 whileTap={{ scale: 0.94 }}
-                onClick={() => void closeTile({ data: { sessionId: session.id } })}
+                onClick={() => {
+                  onSessionPatch({
+                    phase: "idle",
+                    current_tile_id: null,
+                    active_player_id: null,
+                    timer_ends_at: null,
+                    dd_wager: null,
+                    used_tile_ids: [...new Set([...session.used_tile_ids, tile.id])],
+                  });
+                  void closeTile({ data: { sessionId: session.id } });
+                }}
                 className="rounded-full bg-coral px-9 py-3.5 font-display text-base font-black text-foreground elev-2"
               >
                 Close tile

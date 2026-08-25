@@ -233,24 +233,28 @@
   mask-repeat: no-repeat;
 }
 
-@layer utilities {
-  .font-display {
-    font-family: var(--font-display);
-  }
-  /* Squircle-ish squashed pill used for MD3 expressive buttons */
-  .squircle {
-    border-radius: 38% / 50%;
-  }
-  .elev-1 {
-    box-shadow: var(--elev-1);
-  }
-  .elev-2 {
-    box-shadow: var(--elev-2);
-  }
-  .elev-3 {
-    box-shadow: var(--elev-3);
-  }
-  .text-glow-gold {
-    text-shadow: 0 2px 14px color-mix(in oklab, var(--ink-gold) 30%, transparent);
-  }
+@utility font-display {
+  font-family: var(--font-display);
 }
+
+/* Squircle-ish squashed pill used for MD3 expressive buttons */
+@utility squircle {
+  border-radius: 38% / 50%;
+}
+
+@utility elev-1 {
+  box-shadow: var(--elev-1);
+}
+
+@utility elev-2 {
+  box-shadow: var(--elev-2);
+}
+
+@utility elev-3 {
+  box-shadow: var(--elev-3);
+}
+
+@utility text-glow-gold {
+  text-shadow: 0 2px 14px color-mix(in oklab, var(--ink-gold) 30%, transparent);
+}
+

@@ -100,6 +100,7 @@ function EditorPage() {
             }}
           />
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             <span className="hidden rounded-full bg-mint px-4 py-2 font-mono text-xs font-bold tracking-widest text-foreground sm:block">
               {board.game.join_code}
             </span>

@@ -204,12 +204,15 @@ function StudioPage() {
               <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
             onClick={() => void signOut()}
             className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Sign out
-          </button>
+            </button>
+          </div>
         </div>
 
         {/* Action row */}

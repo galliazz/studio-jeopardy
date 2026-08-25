@@ -43,6 +43,8 @@ function LandingPage() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
+      <ThemeToggle className="absolute right-5 top-5 z-20" />
+
       {/* Expressive blobs */}
       <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl" />

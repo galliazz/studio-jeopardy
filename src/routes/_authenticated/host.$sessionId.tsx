@@ -157,7 +157,8 @@ function HostPage() {
             <ScorePill team="alpha" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
             <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
           </div>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
+            <ThemeToggle />
             <button
               onClick={async () => {
                 await resetBoard({ data: { sessionId } });

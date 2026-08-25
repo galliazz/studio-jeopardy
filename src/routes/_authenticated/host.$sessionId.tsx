@@ -216,13 +216,15 @@ function HostPage() {
                         {...(used ? {} : { whileTap: { scale: 0.94 } })}
                         disabled={used || session.status === "final" || session.status === "finished"}
                         onClick={() => void openTile({ data: { sessionId, tileId: tile.id } })}
-                        className="flex min-h-14 items-center justify-center font-display text-base font-black transition-all sm:min-h-20 sm:text-2xl"
+                        className="flex min-h-14 items-center justify-center font-display text-lg font-black tracking-tight transition-all sm:min-h-20 sm:text-3xl"
                         style={{
                           backgroundColor: used ? "transparent" : theme.card,
                           borderRadius: theme.radius,
                           color: used ? "transparent" : theme.accent,
                           opacity: used ? 0.35 : 1,
-                          boxShadow: used ? "none" : `0 0 0 1px color-mix(in srgb, ${theme.accent} 18%, transparent)`,
+                          boxShadow: used
+                            ? "none"
+                            : `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 30%, transparent)`,
                         }}
                       >
                         {used ? "✓" : tile.points}

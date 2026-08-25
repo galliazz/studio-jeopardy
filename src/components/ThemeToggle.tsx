@@ -11,7 +11,12 @@ import {
 /** Reactive access to the current presentation mode. */
 export function useThemeMode(): ThemeMode {
   const [mode, setMode] = useState<ThemeMode>(() => getThemeMode());
-  useEffect(() => subscribeThemeMode(() => setMode(getThemeMode())), []);
+  useEffect(() => {
+    const unsub = subscribeThemeMode(() => setMode(getThemeMode()));
+    return () => {
+      unsub();
+    };
+  }, []);
   return mode;
 }
 

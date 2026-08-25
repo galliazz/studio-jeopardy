@@ -115,8 +115,8 @@ function HostPage() {
 
   if (!state) {
     return (
-      <div className="dark flex min-h-screen items-center justify-center bg-background">
-        <div className="h-16 w-16 animate-pulse rounded-[24px] bg-accent" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
       </div>
     );
   }
@@ -131,15 +131,15 @@ function HostPage() {
     : null;
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
         {/* Header */}
-        <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[32px] bg-card/80 p-4 elev-1">
           <div className="flex items-center gap-3">
             <Link
               to="/edit/$gameId"
               params={{ gameId: game.id }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card text-foreground elev-1 transition-transform hover:scale-105"
               aria-label="Back to editor"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -147,7 +147,7 @@ function HostPage() {
             <div className="min-w-0">
               <h1 className="truncate font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
               <p className="text-xs text-muted-foreground">
-                Code <span className="font-mono font-bold text-gold">{game.join_code}</span> ·{" "}
+                Code <span className="font-mono font-bold text-ink-gold">{game.join_code}</span> ·{" "}
                 {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
               </p>
             </div>
@@ -162,7 +162,7 @@ function HostPage() {
                 await resetBoard({ data: { sessionId } });
                 toast.success("Board reset — new Daily Doubles picked");
               }}
-              className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-xs font-bold text-secondary-foreground hover:bg-accent"
+              className="flex items-center gap-1.5 rounded-full bg-blush px-5 py-2.5 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
             >
               <RotateCcw className="h-3.5 w-3.5" /> Reset Board
             </button>
@@ -175,7 +175,7 @@ function HostPage() {
             <JoinCard joinCode={game.join_code} />
             <AnswerPreview tile={currentTile} phase={session.phase} />
             <Soundboard game={game} />
-            <div className="rounded-[24px] bg-card p-4">
+            <div className="rounded-[32px] bg-card p-5 elev-1">
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tools</h3>
               <div className="flex flex-col gap-2">
                 <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
@@ -284,19 +284,19 @@ function ScorePill({ team, name, score, players }: { team: Team; name: string; s
       initial={{ scale: 1.12 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
-      className={`flex items-center gap-2 rounded-full px-4 py-2 ${
+      className={`flex w-fit items-center gap-2.5 rounded-full px-5 py-2.5 elev-1 ${
         team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
       }`}
     >
       <div className="flex -space-x-1.5">
         {members.slice(0, 4).map((p) => (
-          <span key={p.id} className="flex h-6 w-6 items-center justify-center rounded-full bg-black/30 text-sm">
+          <span key={p.id} className="flex h-7 w-7 items-center justify-center bg-card text-sm scallop">
             {p.avatar}
           </span>
         ))}
       </div>
-      <div className="text-white">
-        <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">{name}</div>
+      <div className="text-foreground">
+        <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">{name}</div>
         <div className="font-display text-base font-black leading-none">{score}</div>
       </div>
     </motion.div>
@@ -308,12 +308,12 @@ function ScorePill({ team, name, score, players }: { team: Team; name: string; s
 function JoinCard({ joinCode }: { joinCode: string }) {
   const joinUrl = `${window.location.origin}/play/${joinCode}`;
   return (
-    <div className="rounded-[24px] bg-card p-4 text-center">
+    <div className="rounded-[32px] bg-mint p-5 text-center elev-1">
       <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Players join anytime</h3>
-      <div className="mx-auto mb-2 w-fit rounded-2xl bg-white p-2">
+      <div className="mx-auto mb-2 w-fit rounded-[22px] bg-card p-2.5">
         <QRCodeSVG value={joinUrl} size={112} />
       </div>
-      <p className="font-display text-2xl font-black tracking-[0.2em] text-gold">{joinCode}</p>
+      <p className="font-display text-2xl font-black tracking-[0.2em] text-ink-gold">{joinCode}</p>
     </div>
   );
 }
@@ -323,11 +323,11 @@ function JoinCard({ joinCode }: { joinCode: string }) {
 function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["phase"] }) {
   const revealed = phase === "reveal";
   return (
-    <div className="rounded-[24px] bg-card p-4">
+    <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Preview</h3>
       {tile ? (
         <div className={revealed ? "" : "select-none"}>
-          <p className={`text-sm font-semibold ${revealed ? "text-gold" : "text-foreground"}`}>
+          <p className={`text-sm font-semibold ${revealed ? "text-ink-gold" : "text-foreground"}`}>
             {revealed || phase === "answering" || phase === "question_open" ? tile.answer || "—" : "—"}
           </p>
           {tile.hint && <p className="mt-2 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
@@ -356,7 +356,7 @@ function Soundboard({ game }: { game: Game }) {
   const custom = theme.customSounds ?? [];
 
   return (
-    <div className="rounded-[24px] bg-card p-4">
+    <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
         <Volume2 className="h-3.5 w-3.5" /> Soundboard
       </h3>
@@ -365,7 +365,7 @@ function Soundboard({ game }: { game: Game }) {
           <button
             key={b.key}
             onClick={b.play}
-            className="rounded-full bg-secondary px-3.5 py-2 text-xs font-semibold text-secondary-foreground transition-transform hover:scale-105 active:scale-95"
+            className="rounded-full bg-lilac px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105 active:scale-95"
           >
             {b.label}
           </button>
@@ -375,7 +375,7 @@ function Soundboard({ game }: { game: Game }) {
         ))}
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1 rounded-full border border-dashed border-border px-3.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 rounded-full border-2 border-dashed border-border px-4 py-2 text-xs font-bold text-muted-foreground hover:text-foreground"
         >
           <Plus className="h-3 w-3" /> Add
         </button>
@@ -415,7 +415,7 @@ function CustomSound({ name, path }: { name: string; path: string }) {
       onClick={() => {
         if (url) void new Audio(url).play();
       }}
-      className="max-w-28 truncate rounded-full bg-accent px-3.5 py-2 text-xs font-semibold text-accent-foreground transition-transform hover:scale-105"
+      className="max-w-28 truncate rounded-full bg-peach px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
       title={name}
     >
       {name}
@@ -429,9 +429,9 @@ function ToolButton({ icon: Icon, label, onClick }: { icon: typeof Flag; label: 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 rounded-2xl bg-secondary px-4 py-2.5 text-xs font-bold text-secondary-foreground transition-colors hover:bg-accent"
+      className="flex items-center gap-2.5 rounded-full bg-butter px-5 py-3 text-xs font-bold text-foreground transition-transform hover:scale-[1.03]"
     >
-      <Icon className="h-4 w-4 text-gold" /> {label}
+      <Icon className="h-4 w-4 text-ink-gold" /> {label}
     </button>
   );
 }
@@ -690,7 +690,7 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
 
   return (
-    <div className="relative rounded-[24px] bg-card p-4">
+    <div className="relative rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 pr-10 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
       <button
         onClick={() => void clearQueue({ data: { sessionId: session.id } })}
@@ -919,7 +919,7 @@ function FinalPanel({
 }) {
   const teams: Team[] = ["alpha", "bravo"];
   return (
-    <div className="rounded-[24px] bg-card p-4">
+    <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Final Jeopardy</h3>
       {session.phase === "final_wager" && (
         <>

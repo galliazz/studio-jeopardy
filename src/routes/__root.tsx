@@ -155,6 +155,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthListener />
+      {/* Global dark-mode switch, pinned to the top-right of every screen */}
+      <ThemeToggle className="fixed right-3 top-3 z-[70] sm:right-5 sm:top-5" />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="top-center" richColors closeButton />

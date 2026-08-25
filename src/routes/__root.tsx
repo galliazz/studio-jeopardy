@@ -147,6 +147,10 @@ function AuthListener() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    initThemeMode();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthListener />

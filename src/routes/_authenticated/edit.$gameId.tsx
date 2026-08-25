@@ -87,7 +87,7 @@ function EditorPage() {
     <div className="min-h-screen pb-44">
       {/* Top bar */}
       <div className="sticky top-0 z-30 px-4 pt-4">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 rounded-full bg-card/90 px-4 py-3 elev-2 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 rounded-[32px] bg-card/90 px-3 py-3 pr-14 elev-2 backdrop-blur-md sm:gap-3 sm:rounded-full sm:px-4">
           <Link
             to="/studio"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-lilac text-foreground transition-transform hover:scale-105"
@@ -109,7 +109,7 @@ function EditorPage() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
-              className="flex items-center gap-2 rounded-full bg-coral px-6 py-3 font-display text-sm font-black text-foreground elev-2"
+              className="flex items-center gap-2 rounded-full bg-coral px-5 py-3 font-display text-sm font-black text-foreground elev-2 sm:px-6"
             >
               <Play className="h-4 w-4" /> Play Game
             </motion.button>
@@ -120,10 +120,10 @@ function EditorPage() {
       {/* Board canvas — themed preview */}
       <div className="mx-auto max-w-7xl px-4 pt-6">
         <div
-          className="p-5 elev-3 transition-[border-radius] duration-300 sm:p-7"
+          className="mx-auto w-full max-w-[1100px] p-2.5 elev-3 transition-[border-radius] duration-300 sm:p-7"
           style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
         >
-          <div className="grid grid-cols-5 gap-2 sm:gap-3">
+          <div className="grid grid-cols-5 gap-1 sm:gap-3">
             {board.categories.map((cat) => (
               <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
             ))}
@@ -190,7 +190,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
     return (
       <button
         onClick={() => setEditing(true)}
-        className="max-w-[40vw] truncate rounded-full px-3 py-1.5 text-left font-display text-xl font-black hover:bg-muted"
+        className="max-w-[45vw] truncate rounded-full px-3 py-1.5 text-left font-display text-base font-black hover:bg-muted sm:text-xl"
       >
         {value}
       </button>
@@ -207,7 +207,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
       }}
       onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       maxLength={80}
-      className="rounded-full bg-muted px-4 py-1.5 font-display text-xl font-black outline-none ring-2 ring-ink-accent"
+      className="w-[45vw] max-w-xs rounded-full bg-muted px-4 py-1.5 font-display text-base font-black outline-none ring-2 ring-ink-accent sm:text-xl"
     />
   );
 }
@@ -238,7 +238,7 @@ function CategoryHeader({
 
   return (
     <div
-      className="flex min-h-16 items-center justify-center p-2 text-center transition-[border-radius] duration-300"
+      className="flex min-h-12 items-center justify-center overflow-hidden p-1 text-center transition-[border-radius] duration-300 sm:min-h-16 sm:p-2"
       style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.75 }}
     >
       {editing ? (
@@ -249,16 +249,17 @@ function CategoryHeader({
           onBlur={() => void commit()}
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
           maxLength={60}
-          className="w-full bg-transparent text-center text-xs font-bold uppercase tracking-wide outline-none sm:text-sm"
+          className="w-full bg-transparent text-center text-[9px] font-bold uppercase tracking-wide outline-none sm:text-sm"
           style={{ color: theme.accent }}
         />
       ) : (
         <button
           onClick={() => setEditing(true)}
-          className="h-full w-full text-xs font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70 sm:text-sm"
+          className="h-full w-full text-[8px] font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70 sm:text-sm"
           style={{ color: theme.accent }}
+          title={category.title}
         >
-          {category.title}
+          <span className="line-clamp-2 w-full break-words">{category.title}</span>
         </button>
       )}
     </div>
@@ -283,7 +284,7 @@ function TileCell({
     <motion.button
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
-      className={`flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center transition-all sm:min-h-24 ${
+      className={`flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden p-1 text-center transition-all sm:aspect-[4/3] sm:gap-1 sm:p-2 ${
         selected ? "ring-4 ring-ink-accent" : "hover:-translate-y-0.5 hover:brightness-[1.03]"
       }`}
       style={{
@@ -292,18 +293,18 @@ function TileCell({
         boxShadow: `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 28%, transparent)`,
       }}
     >
-      <span className="font-display text-xl font-black sm:text-3xl" style={{ color: theme.accent }}>
+      <span className="font-display text-sm font-black sm:text-3xl" style={{ color: theme.accent }}>
         {tile.points}
       </span>
       {preview ? (
         <span
-          className="line-clamp-2 text-[10px] leading-tight opacity-60 sm:text-xs"
+          className="line-clamp-2 w-full break-words text-[8px] leading-tight opacity-60 sm:text-xs"
           style={{ color: theme.accent }}
         >
           {preview}
         </span>
       ) : (
-        <span className="text-[10px] italic opacity-40" style={{ color: theme.accent }}>
+        <span className="hidden text-[10px] italic opacity-40 sm:block" style={{ color: theme.accent }}>
           empty
         </span>
       )}
@@ -399,10 +400,10 @@ function TileEditor({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 80 }}
       transition={{ type: "spring", stiffness: 260, damping: 26 }}
-      className="fixed bottom-40 right-4 top-24 z-40 flex w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[36px] bg-card elev-3"
+      className="fixed inset-x-2 bottom-[11rem] top-auto z-40 flex max-h-[58svh] w-auto flex-col overflow-hidden rounded-[36px] bg-card elev-3 sm:inset-x-auto sm:bottom-40 sm:right-4 sm:top-24 sm:max-h-none sm:w-[min(420px,calc(100vw-2rem))]"
     >
-      <div className="flex items-center justify-between bg-lilac px-6 py-4">
-        <span className="font-display text-sm font-black uppercase tracking-wide">Edit tile</span>
+      <div className="flex items-center justify-between gap-2 bg-lilac px-5 py-3 sm:px-6 sm:py-4">
+        <span className="truncate font-display text-sm font-black uppercase tracking-wide">Edit tile</span>
         <button onClick={onClose} className="rounded-full bg-card p-2 text-muted-foreground hover:text-foreground" aria-label="Close editor">
           <X className="h-4 w-4" />
         </button>
@@ -608,9 +609,9 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 24, delay: 0.2 }}
-      className="fixed bottom-5 left-1/2 z-30 w-[min(960px,calc(100vw-2rem))] -translate-x-1/2 rounded-[36px] bg-card/95 px-6 py-4 elev-3 backdrop-blur-md"
+      className="fixed bottom-3 left-1/2 z-30 max-h-[10rem] w-[min(960px,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-[36px] bg-card/95 px-4 py-3 elev-3 backdrop-blur-md sm:bottom-5 sm:px-6 sm:py-4"
     >
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 sm:gap-x-6 sm:gap-y-3">
         <div className="flex items-center gap-2">
           {THEME_PRESETS.map((p) => (
             <button

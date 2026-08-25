@@ -422,7 +422,7 @@ function GameCard({
       }}
       className={`group relative flex cursor-pointer flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
     >
-      <div className="mb-4 flex items-start justify-between gap-2">
+      <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
         {renaming ? (
           <input
             autoFocus
@@ -435,7 +435,9 @@ function GameCard({
             className="w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
           />
         ) : (
-          <h3 className="font-display text-xl font-black leading-tight">{game.title}</h3>
+          <h3 className="min-w-0 flex-1 truncate font-display text-xl font-black leading-tight" title={game.title}>
+            {game.title}
+          </h3>
         )}
         <div className="relative">
           <button

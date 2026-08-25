@@ -96,6 +96,13 @@ function HostPage() {
   const [ddOpen, setDdOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [finalOpen, setFinalOpen] = useState(false);
+  const setHostSession = (patch: Partial<Session>) => {
+    queryClient.setQueryData(["host", sessionId], (old: unknown) => {
+      const prev = old as HostState | undefined;
+      if (!prev) return old;
+      return { ...prev, session: { ...prev.session, ...patch } };
+    });
+  };
 
   // ---- SFX triggers on state transitions --------------------------------
   const prevActive = useRef<string | null>(null);
@@ -164,6 +171,19 @@ function HostPage() {
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={async () => {
+                setHostSession({
+                  status: "live",
+                  phase: "idle",
+                  current_tile_id: null,
+                  active_player_id: null,
+                  timer_ends_at: null,
+                  score_alpha: 0,
+                  score_bravo: 0,
+                  used_tile_ids: [],
+                  dd_wager: null,
+                  final_question: null,
+                  final_answer: null,
+                });
                 await resetBoard({ data: { sessionId } });
                 toast.success("Board reset — new Daily Doubles picked");
               }}
@@ -224,22 +244,14 @@ function HostPage() {
                         {...(used ? {} : { whileTap: { scale: 0.94 } })}
                         disabled={used || session.status === "final" || session.status === "finished"}
                         onClick={() => {
-                          // Optimistic: show the question instantly, server confirms via realtime.
-                          queryClient.setQueryData(["host", sessionId], (old: unknown) => {
-                            const prev = old as HostState | undefined;
-                            if (!prev) return old;
-                            const isDD = prev.session.daily_double_tile_ids.includes(tile.id);
-                            return {
-                              ...prev,
-                              session: {
-                                ...prev.session,
-                                current_tile_id: tile.id,
-                                active_player_id: null,
-                                timer_ends_at: null,
-                                dd_wager: null,
-                                phase: isDD ? "daily_double_wager" : "question_open",
-                              },
-                            };
+                          const isDD = session.daily_double_tile_ids.includes(tile.id);
+                          setHostSession({
+                            status: "live",
+                            current_tile_id: tile.id,
+                            active_player_id: null,
+                            timer_ends_at: null,
+                            dd_wager: null,
+                            phase: isDD ? "daily_double_wager" : "question_open",
                           });
                           void openTile({ data: { sessionId, tileId: tile.id } });
                         }}
@@ -276,6 +288,7 @@ function HostPage() {
                     players={players}
                     queue={queue}
                     accent={theme.accent}
+                    onSessionPatch={setHostSession}
                   />
                 )}
             </AnimatePresence>

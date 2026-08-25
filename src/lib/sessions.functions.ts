@@ -1,23 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { shuffleIds, timerEnd } from "@/lib/sessions.server";
 
-const TIMER_SECONDS = 15;
-
-function timerEnd(): string {
-  return new Date(Date.now() + TIMER_SECONDS * 1000).toISOString();
-}
-
-function shuffleIds(ids: string[]): string[] {
-  const arr = [...ids];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
-  }
-  return arr;
-}
-
-/** Starts (or resumes) a live session for a game. Picks Daily Double tiles. */
+/** Starts a fresh live session for a game. Picks Daily Double tiles. */
 export const startSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
@@ -26,15 +12,12 @@ export const startSession = createServerFn({ method: "POST" })
     const { data: game, error: gErr } = await supabase.from("games").select("*").eq("id", data.gameId).single();
     if (gErr) throw new Error(gErr.message);
 
-    const { data: existing } = await supabase
+    const { error: finishErr } = await supabase
       .from("sessions")
-      .select("*")
+      .update({ status: "finished", phase: "idle", current_tile_id: null, active_player_id: null, timer_ends_at: null })
       .eq("game_id", data.gameId)
-      .in("status", ["lobby", "live", "final"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (existing) return { session: existing, game };
+      .in("status", ["lobby", "live", "final"]);
+    if (finishErr) throw new Error(finishErr.message);
 
     const { data: categories } = await supabase.from("categories").select("id").eq("game_id", data.gameId);
     const catIds = (categories ?? []).map((c) => c.id);
@@ -45,7 +28,22 @@ export const startSession = createServerFn({ method: "POST" })
 
     const { data: session, error } = await supabase
       .from("sessions")
-      .insert({ game_id: data.gameId, host_id: userId, status: "lobby", daily_double_tile_ids: dailyDoubles })
+      .insert({
+        game_id: data.gameId,
+        host_id: userId,
+        status: "lobby",
+        phase: "idle",
+        current_tile_id: null,
+        active_player_id: null,
+        timer_ends_at: null,
+        score_alpha: 0,
+        score_bravo: 0,
+        used_tile_ids: [],
+        daily_double_tile_ids: dailyDoubles,
+        dd_wager: null,
+        final_question: null,
+        final_answer: null,
+      })
       .select()
       .single();
     if (error) throw new Error(error.message);

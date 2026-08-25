@@ -495,15 +495,14 @@ function QuestionOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8"
+      className="absolute inset-0 z-40 flex items-center justify-center rounded-[36px] bg-foreground/25 p-2 backdrop-blur-sm sm:p-4"
     >
       <motion.div
         initial={{ scale: 0.9, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.94, y: 12 }}
         transition={{ type: "spring", stiffness: 200, damping: 22 }}
-        className="pointer-events-auto flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-[32px] p-6 shadow-2xl ring-1 ring-white/10 sm:p-10"
-        style={{ backgroundColor: "#0a0a1a" }}
+        className="flex h-full w-full flex-col overflow-hidden rounded-[32px] bg-card p-5 elev-3 sm:p-8"
       >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />
@@ -514,12 +513,12 @@ function QuestionOverlay({
               <motion.span
                 animate={flashRed ? { scale: [1, 1.35, 1] } : { scale: 1 }}
                 transition={flashRed ? { repeat: Infinity, duration: 0.5 } : { duration: 0.15 }}
-                className={`rounded-2xl px-4 py-2 font-display text-3xl font-black ${
+                className={`rounded-full px-5 py-2 font-display text-3xl font-black ${
                   flashRed
-                    ? "bg-red-500/20 text-red-400"
+                    ? "bg-danger text-danger-ink"
                     : countdown.seconds <= 5
-                      ? "bg-red-500/10 text-red-400"
-                      : "bg-white/5 text-gold"
+                      ? "bg-danger/60 text-danger-ink"
+                      : "bg-butter text-ink-gold"
                 }`}
               >
                 0:{String(countdown.seconds).padStart(2, "0")}
@@ -528,9 +527,9 @@ function QuestionOverlay({
           </div>
 
           {countdown.seconds != null && (
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full rounded-full transition-[width] duration-100 ${countdown.seconds <= 5 ? "bg-red-400" : "bg-gold"}`}
+                className={`h-full rounded-full transition-[width] duration-100 ${countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"}`}
                 style={{ width: `${countdown.fraction * 100}%` }}
               />
             </div>
@@ -548,17 +547,17 @@ function QuestionOverlay({
 
           <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto py-4 text-center">
             <div
-              className="max-w-3xl font-display text-xl font-bold leading-snug text-white sm:text-3xl [&_b]:text-gold [&_strong]:text-gold"
+              className="max-w-3xl font-display text-xl font-bold leading-snug text-foreground sm:text-3xl [&_b]:text-ink-gold [&_strong]:text-ink-gold"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(tile.question || "…") }}
             />
-            {imageUrl && <img src={imageUrl} alt="Question media" className="max-h-48 rounded-2xl object-contain" />}
+            {imageUrl && <img src={imageUrl} alt="Question media" className="max-h-48 rounded-[24px] object-contain" />}
             {audioUrl && <audio controls src={audioUrl} className="h-10" autoPlay />}
 
             {session.phase === "reveal" && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 rounded-2xl bg-gold/15 px-6 py-3 font-display text-lg font-black text-gold sm:text-2xl"
+                className="mt-2 rounded-full bg-butter px-7 py-3 font-display text-lg font-black text-ink-gold sm:text-2xl"
               >
                 {tile.answer}
               </motion.div>
@@ -567,9 +566,9 @@ function QuestionOverlay({
 
           {activePlayer && (
             <div className="mb-3 flex items-center justify-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg">{activePlayer.avatar}</span>
-              <span className="font-display text-lg font-bold text-white">{activePlayer.name}</span>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase text-white ${activePlayer.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`}>
+              <span className="flex h-10 w-10 items-center justify-center bg-lilac text-lg scallop">{activePlayer.avatar}</span>
+              <span className="font-display text-lg font-black text-foreground">{activePlayer.name}</span>
+              <span className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-foreground ${activePlayer.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`}>
                 {activePlayer.team}
               </span>
             </div>
@@ -579,7 +578,7 @@ function QuestionOverlay({
             {session.phase !== "reveal" && (
               <button
                 onClick={() => void revealAnswer({ data: { sessionId: session.id } })}
-                className="rounded-full bg-secondary px-6 py-3 text-sm font-bold text-secondary-foreground"
+                className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
                 Reveal answer
               </button>
@@ -592,7 +591,7 @@ function QuestionOverlay({
                     sfx.ding();
                     void judgeAnswer({ data: { sessionId: session.id, correct: true } });
                   }}
-                  className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3 font-display text-base font-black text-white shadow-lg shadow-emerald-500/40"
+                  className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
                 >
                   <Check className="h-5 w-5" /> Correct
                 </motion.button>
@@ -602,7 +601,7 @@ function QuestionOverlay({
                     sfx.wrong();
                     void judgeAnswer({ data: { sessionId: session.id, correct: false } });
                   }}
-                  className="flex items-center gap-2 rounded-full bg-red-500 px-8 py-3 font-display text-base font-black text-white shadow-lg shadow-red-500/40"
+                  className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
                 >
                   <X className="h-5 w-5" /> Wrong
                 </motion.button>
@@ -612,7 +611,7 @@ function QuestionOverlay({
               <motion.button
                 whileTap={{ scale: 0.94 }}
                 onClick={() => void closeTile({ data: { sessionId: session.id } })}
-                className="rounded-full bg-primary px-8 py-3 font-display text-base font-black text-primary-foreground"
+                className="rounded-full bg-coral px-9 py-3.5 font-display text-base font-black text-foreground elev-2"
               >
                 Close tile
               </motion.button>
@@ -637,7 +636,7 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
         initial={{ scale: 0.6, rotate: -4 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 180, damping: 12 }}
-        className="font-display text-4xl font-black tracking-wide text-gold text-glow-gold sm:text-6xl"
+        className="font-display text-4xl font-black tracking-wide text-ink-gold text-glow-gold sm:text-6xl"
       >
         DAILY DOUBLE
       </motion.h2>
@@ -645,7 +644,7 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
       <select
         value={playerId}
         onChange={(e) => setPlayerId(e.target.value)}
-        className="h-12 rounded-2xl border border-input bg-card px-4 text-sm font-semibold text-foreground outline-none"
+        className="h-12 rounded-full bg-lilac px-5 text-sm font-bold text-foreground outline-none"
       >
         {players.map((p) => (
           <option key={p.id} value={p.id}>
@@ -658,13 +657,13 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
         min={1}
         value={wager}
         onChange={(e) => setWager(Number(e.target.value))}
-        className="h-14 w-40 rounded-2xl border-2 border-gold bg-transparent text-center font-display text-2xl font-black text-gold outline-none"
+        className="h-14 w-40 rounded-full bg-butter text-center font-display text-2xl font-black text-ink-gold outline-none"
       />
       <motion.button
         whileTap={{ scale: 0.95 }}
         disabled={!playerId || wager < 1}
         onClick={() => void startDailyDouble({ data: { sessionId: session.id, playerId, wager } })}
-        className="rounded-full bg-primary px-10 py-4 font-display text-lg font-black text-primary-foreground disabled:opacity-40"
+        className="rounded-full bg-coral px-10 py-4 font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
       >
         Start 15s clock
       </motion.button>

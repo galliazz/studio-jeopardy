@@ -52,7 +52,7 @@ function PlayerPage() {
     return (
       <Shell>
         <div className="flex flex-col items-center gap-4">
-          <div className="h-16 w-16 animate-pulse rounded-[24px] bg-accent" />
+          <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
           <p className="text-sm text-muted-foreground">Finding your game…</p>
         </div>
       </Shell>
@@ -187,8 +187,8 @@ function JoinForm({
             <button
               key={a}
               onClick={() => setAvatar(a)}
-              className={`flex aspect-square items-center justify-center rounded-2xl text-xl transition-all ${
-                avatar === a ? "scale-110 bg-gold/25 ring-2 ring-gold" : "bg-secondary"
+              className={`flex aspect-square items-center justify-center text-xl transition-all scallop ${
+                avatar === a ? "scale-110 bg-butter" : "bg-muted"
               }`}
             >
               {a}
@@ -202,7 +202,7 @@ function JoinForm({
           onKeyDown={(e) => e.key === "Enter" && void join()}
           placeholder="Your name"
           maxLength={20}
-          className="mb-4 h-14 w-full rounded-2xl border-2 border-input bg-background px-5 text-center text-lg font-bold outline-none focus:border-gold"
+          className="mb-4 h-14 w-full rounded-full bg-muted px-5 text-center text-lg font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
         />
 
         <p className="mb-2 text-xs font-semibold text-muted-foreground">Choose your team</p>
@@ -211,9 +211,9 @@ function JoinForm({
             <button
               key={t}
               onClick={() => setTeam(t)}
-              className={`rounded-2xl py-3.5 font-display text-sm font-black uppercase tracking-wider text-white transition-all ${
+              className={`rounded-full py-4 font-display text-sm font-black uppercase tracking-wider text-foreground transition-all ${
                 t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
-              } ${team === t ? "ring-4 ring-gold" : "opacity-40"}`}
+              } ${team === t ? "elev-2 ring-4 ring-ink-accent" : "opacity-50"}`}
             >
               {teamName(theme, t)}
             </button>
@@ -224,7 +224,7 @@ function JoinForm({
           whileTap={{ scale: 0.96 }}
           disabled={!name.trim() || busy}
           onClick={() => void join()}
-          className="h-14 w-full rounded-full bg-primary font-display text-lg font-black text-primary-foreground shadow-lg disabled:opacity-40"
+          className="h-14 w-full rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
         >
           {busy ? "Joining…" : "Join Game"}
         </motion.button>
@@ -342,7 +342,7 @@ function LivePlayer({
 
         <AnimatePresence mode="wait">
           {status === "lobby" && (
-            <StatusCard key="lobby" icon={<Hourglass className="h-10 w-10 text-gold" />} title="You're in!">
+            <StatusCard key="lobby" icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="You're in!">
               Waiting for the host to open the board…
             </StatusCard>
           )}
@@ -354,7 +354,7 @@ function LivePlayer({
           )}
 
           {status === "live" && phase === "daily_double_wager" && (
-            <StatusCard key="dd" icon={<Zap className="h-10 w-10 text-gold" />} title="Daily Double!">
+            <StatusCard key="dd" icon={<Zap className="h-10 w-10 text-ink-gold" />} title="Daily Double!">
               The host is setting a wager…
             </StatusCard>
           )}
@@ -372,30 +372,30 @@ function LivePlayer({
                   <motion.div
                     animate={{ scale: [1, 1.04, 1] }}
                     transition={{ repeat: Infinity, duration: 1.2 }}
-                    className="flex h-56 w-56 flex-col items-center justify-center rounded-full bg-gold text-center shadow-2xl shadow-gold/40"
+                    className="flex h-56 w-56 flex-col items-center justify-center rounded-full bg-butter text-center elev-3"
                   >
-                    <span className="font-display text-2xl font-black text-black">YOU'RE UP!</span>
-                    <span className="mt-1 font-display text-4xl font-black text-black">
+                    <span className="font-display text-2xl font-black text-foreground">YOU'RE UP!</span>
+                    <span className="mt-1 font-display text-4xl font-black text-foreground">
                       {countdown.seconds ?? "–"}s
                     </span>
                   </motion.div>
-                  <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-6 h-2.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className={`h-full rounded-full ${countdown.seconds != null && countdown.seconds <= 5 ? "bg-red-400" : "bg-gold"}`}
+                      className={`h-full rounded-full ${countdown.seconds != null && countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"}`}
                       style={{ width: `${countdown.fraction * 100}%` }}
                     />
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">Answer out loud — the host is listening!</p>
                 </div>
               ) : locked ? (
-                <StatusCard icon={<Ban className="h-10 w-10 text-red-400" />} title="Locked out">
+                <StatusCard icon={<Ban className="h-10 w-10 text-danger-ink" />} title="Locked out">
                   Incorrect — wait for the next question.
                 </StatusCard>
               ) : myEntry ? (
                 <div className="flex flex-col items-center">
-                  <div className="flex h-56 w-56 flex-col items-center justify-center rounded-full bg-secondary">
+                  <div className="flex h-56 w-56 flex-col items-center justify-center bg-lilac elev-2 scallop">
                     <span className="font-display text-lg font-bold text-muted-foreground">IN LINE</span>
-                    <span className="font-display text-6xl font-black text-gold">#{myPosition}</span>
+                    <span className="font-display text-6xl font-black text-ink-gold">#{myPosition}</span>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">Your buzz is locked in!</p>
                 </div>
@@ -404,14 +404,12 @@ function LivePlayer({
                   whileTap={{ scale: 0.92 }}
                   onClick={() => void doBuzz()}
                   disabled={!buzzerLive}
-                  className={`flex h-64 w-64 flex-col items-center justify-center rounded-full font-display shadow-2xl transition-colors ${
-                    myTeam === "alpha"
-                      ? "bg-team-alpha shadow-team-alpha/40"
-                      : "bg-team-bravo shadow-team-bravo/40"
+                  className={`flex h-64 w-64 flex-col items-center justify-center rounded-full font-display elev-3 transition-colors disabled:opacity-60 ${
+                    myTeam === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
                   }`}
                 >
-                  <Zap className="mb-1 h-12 w-12 text-white" />
-                  <span className="text-4xl font-black tracking-wide text-white">BUZZ</span>
+                  <Zap className="mb-1 h-12 w-12 text-foreground" />
+                  <span className="text-4xl font-black tracking-wide text-foreground">BUZZ</span>
                 </motion.button>
               )}
             </motion.div>
@@ -434,12 +432,12 @@ function LivePlayer({
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center text-center"
             >
-              <Trophy className="mb-3 h-14 w-14 text-gold" />
+              <Trophy className="mb-3 h-14 w-14 text-ink-gold" />
               <h2 className="font-display text-2xl font-black">
                 {teamName(theme, (session?.score_alpha ?? 0) >= (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your team scored <span className="font-bold text-gold">{myScore ?? 0}</span>
+                Your team scored <span className="font-bold text-ink-gold">{myScore ?? 0}</span>
               </p>
             </motion.div>
           )}
@@ -450,7 +448,7 @@ function LivePlayer({
 }
 
 function Check2() {
-  return <Zap className="h-10 w-10 text-gold" />;
+  return <Zap className="h-10 w-10 text-ink-gold" />;
 }
 
 /* ------------------------------- Final form ------------------------------- */
@@ -473,7 +471,7 @@ function FinalForm({
 
   if (sent) {
     return (
-      <StatusCard icon={<Hourglass className="h-10 w-10 text-gold" />} title="Locked in">
+      <StatusCard icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="Locked in">
         Your team's final answer is in. Waiting for the host…
       </StatusCard>
     );
@@ -481,7 +479,7 @@ function FinalForm({
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-      <h2 className="mb-1 text-center font-display text-2xl font-black text-gold">Final Jeopardy</h2>
+      <h2 className="mb-1 text-center font-display text-2xl font-black text-ink-gold">Final Jeopardy</h2>
       <p className="mb-5 text-center text-xs text-muted-foreground">
         One submission per team — {teamName(theme, myTeam)} · max wager {maxWager}
       </p>
@@ -493,7 +491,7 @@ function FinalForm({
           max={maxWager}
           value={wager}
           onChange={(e) => setWager(Math.max(0, Math.min(maxWager, Number(e.target.value))))}
-          className="h-14 w-full rounded-2xl border-2 border-input bg-background px-5 text-center font-display text-xl font-black text-gold outline-none focus:border-gold"
+          className="h-14 w-full rounded-full bg-butter px-5 text-center font-display text-xl font-black text-ink-gold outline-none"
         />
       </label>
       {session.phase === "final_answer" && (
@@ -504,7 +502,7 @@ function FinalForm({
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="Your team's answer…"
             rows={3}
-            className="w-full rounded-2xl border-2 border-input bg-background p-4 text-sm outline-none focus:border-gold"
+            className="w-full rounded-[26px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
       )}
@@ -520,7 +518,7 @@ function FinalForm({
             toast.error("Submission rejected");
           }
         }}
-        className="h-14 w-full rounded-full bg-primary font-display text-lg font-black text-primary-foreground disabled:opacity-40"
+        className="h-14 w-full rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
       >
         {session.phase === "final_wager" ? "Lock in wager" : "Submit final answer"}
       </motion.button>
@@ -533,7 +531,7 @@ function FinalForm({
 function TeamScore({ team, name, score, mine }: { team: Team; name: string; score: number; mine: boolean }) {
   return (
     <div
-      className={`rounded-2xl px-3 py-2 text-center text-white ${team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"} ${
+      className={`rounded-[22px] px-4 py-2.5 text-center text-foreground elev-1 ${team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"} ${
         mine ? "ring-2 ring-gold" : "opacity-70"
       }`}
     >
@@ -549,7 +547,7 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
-      className="flex w-full flex-col items-center rounded-[28px] bg-card px-6 py-10 text-center"
+      className="flex w-full flex-col items-center rounded-[36px] bg-card px-6 py-10 text-center elev-2"
     >
       {icon}
       <h2 className="mt-3 font-display text-xl font-black">{title}</h2>
@@ -560,7 +558,7 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="dark flex min-h-screen items-center justify-center bg-background px-4 py-8 text-foreground">
+    <div className="flex min-h-screen items-center justify-center px-4 py-8 text-foreground">
       <div className="w-full max-w-md">{children}</div>
     </div>
   );

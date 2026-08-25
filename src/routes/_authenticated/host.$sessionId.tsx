@@ -96,11 +96,12 @@ function HostPage() {
   const [ddOpen, setDdOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [finalOpen, setFinalOpen] = useState(false);
-  const setHostState = (patch: Partial<HostState> & { session?: Partial<Session> }) => {
+  const setHostState = (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
     queryClient.setQueryData(["host", sessionId], (old: unknown) => {
       const prev = old as HostState | undefined;
       if (!prev) return old;
-      return { ...prev, ...patch, session: { ...prev.session, ...(patch.session ?? {}) } };
+      const { session: sessionPatch, ...rest } = patch;
+      return { ...prev, ...rest, session: { ...prev.session, ...(sessionPatch ?? {}) } };
     });
   };
   const setHostSession = (patch: Partial<Session>) => setHostState({ session: patch });
@@ -488,7 +489,7 @@ function QuestionOverlay({
   players,
   queue,
   accent,
-  onSessionPatch,
+  onHostStatePatch,
 }: {
   session: Session;
   tile: Tile;
@@ -496,7 +497,7 @@ function QuestionOverlay({
   players: Player[];
   queue: QueueEntry[];
   accent: string;
-  onSessionPatch: (patch: Partial<Session>) => void;
+  onHostStatePatch: (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => void;
 }) {
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
@@ -623,7 +624,7 @@ function QuestionOverlay({
             {session.phase !== "reveal" && (
               <button
                 onClick={() => {
-                  onSessionPatch({ phase: "reveal" });
+                  onHostStatePatch({ session: { phase: "reveal" } });
                   void revealAnswer({ data: { sessionId: session.id } });
                 }}
                 className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
@@ -639,12 +640,21 @@ function QuestionOverlay({
                     sfx.ding();
                     if (activePlayer) {
                       const value = session.dd_wager ?? tile.points;
-                      onSessionPatch({
-                        phase: "reveal",
-                        dd_wager: null,
-                        ...(activePlayer.team === "alpha"
-                          ? { score_alpha: session.score_alpha + value }
-                          : { score_bravo: session.score_bravo + value }),
+                      onHostStatePatch({
+                        session: {
+                          phase: "reveal",
+                          dd_wager: null,
+                          ...(activePlayer.team === "alpha"
+                            ? { score_alpha: session.score_alpha + value }
+                            : { score_bravo: session.score_bravo + value }),
+                        },
+                        queue: queue.map((q) =>
+                          q.tile_id === tile.id && q.player_id === activePlayer.id && q.status === "active"
+                            ? { ...q, status: "correct", judged_at: new Date().toISOString() }
+                            : q.tile_id === tile.id && q.status === "queued"
+                              ? { ...q, status: "cleared", judged_at: new Date().toISOString() }
+                              : q,
+                        ),
                       });
                     }
                     void judgeAnswer({ data: { sessionId: session.id, correct: true } });
@@ -662,14 +672,25 @@ function QuestionOverlay({
                       const nextQueued = queue.find(
                         (q) => q.tile_id === tile.id && q.status === "queued" && q.player_id !== activePlayer.id,
                       );
-                      onSessionPatch({
-                        phase: session.dd_wager != null ? "reveal" : nextQueued ? "answering" : "question_open",
-                        active_player_id: nextQueued?.player_id ?? null,
-                        timer_ends_at: nextQueued ? new Date(Date.now() + 15_000).toISOString() : null,
-                        dd_wager: null,
-                        ...(activePlayer.team === "alpha"
-                          ? { score_alpha: session.score_alpha - value }
-                          : { score_bravo: session.score_bravo - value }),
+                      const now = new Date().toISOString();
+                      onHostStatePatch({
+                        session: {
+                          phase: session.dd_wager != null ? "reveal" : nextQueued ? "answering" : "question_open",
+                          active_player_id: nextQueued?.player_id ?? null,
+                          timer_ends_at: nextQueued ? new Date(Date.now() + 15_000).toISOString() : null,
+                          dd_wager: null,
+                          ...(activePlayer.team === "alpha"
+                            ? { score_alpha: session.score_alpha - value }
+                            : { score_bravo: session.score_bravo - value }),
+                        },
+                        players: players.map((p) => (p.id === activePlayer.id ? { ...p, locked_out: true } : p)),
+                        queue: queue.map((q) =>
+                          q.tile_id === tile.id && q.player_id === activePlayer.id && q.status === "active"
+                            ? { ...q, status: "wrong", judged_at: now }
+                            : nextQueued && q.id === nextQueued.id
+                              ? { ...q, status: "active" }
+                              : q,
+                        ),
                       });
                     }
                     void judgeAnswer({ data: { sessionId: session.id, correct: false } });
@@ -684,13 +705,21 @@ function QuestionOverlay({
               <motion.button
                 whileTap={{ scale: 0.94 }}
                 onClick={() => {
-                  onSessionPatch({
-                    phase: "idle",
-                    current_tile_id: null,
-                    active_player_id: null,
-                    timer_ends_at: null,
-                    dd_wager: null,
-                    used_tile_ids: [...new Set([...session.used_tile_ids, tile.id])],
+                  onHostStatePatch({
+                    session: {
+                      phase: "idle",
+                      current_tile_id: null,
+                      active_player_id: null,
+                      timer_ends_at: null,
+                      dd_wager: null,
+                      used_tile_ids: [...new Set([...session.used_tile_ids, tile.id])],
+                    },
+                    players: players.map((p) => ({ ...p, locked_out: false })),
+                    queue: queue.map((q) =>
+                      q.tile_id === tile.id && (q.status === "queued" || q.status === "active")
+                        ? { ...q, status: "cleared", judged_at: new Date().toISOString() }
+                        : q,
+                    ),
                   });
                   void closeTile({ data: { sessionId: session.id } });
                 }}

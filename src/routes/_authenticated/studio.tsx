@@ -31,6 +31,8 @@ import {
 import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
@@ -203,12 +205,15 @@ function StudioPage() {
               <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
             onClick={() => void signOut()}
             className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Sign out
-          </button>
+            </button>
+          </div>
         </div>
 
         {/* Action row */}
@@ -388,7 +393,7 @@ function GameCard({
   onExportXlsx: () => void;
   onDelete: () => void;
 }) {
-  const theme = themeOf(game);
+  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(game.title);
   useEffect(() => setDraftTitle(game.title), [game.title]);

@@ -55,6 +55,8 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
   head: () => ({
@@ -113,6 +115,8 @@ function HostPage() {
     prevStatus.current = s.status;
   }, [state]);
 
+  const isDark = useThemeMode() === "dark";
+
   if (!state) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -122,7 +126,7 @@ function HostPage() {
   }
 
   const { session, game, categories, tiles, players, queue, finalAnswers } = state;
-  const theme = themeOf(game);
+  const theme = darkBoardColors(themeOf(game), isDark) as ReturnType<typeof themeOf>;
   const usedSet = new Set(session.used_tile_ids);
   const remaining = tiles.length - usedSet.size;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
@@ -156,7 +160,8 @@ function HostPage() {
             <ScorePill team="alpha" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
             <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
           </div>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
+            <ThemeToggle />
             <button
               onClick={async () => {
                 await resetBoard({ data: { sessionId } });
@@ -353,7 +358,7 @@ const SFX_BUTTONS = [
 ];
 
 function Soundboard({ game }: { game: Game }) {
-  const theme = themeOf(game);
+  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark") as ReturnType<typeof themeOf>;
   const fileRef = useRef<HTMLInputElement>(null);
   const custom = theme.customSounds ?? [];
 

@@ -13,6 +13,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "../integrations/supabase/client";
+import { initThemeMode } from "../lib/theme-mode";
 
 function NotFoundComponent() {
   return (
@@ -146,6 +147,10 @@ function AuthListener() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    initThemeMode();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

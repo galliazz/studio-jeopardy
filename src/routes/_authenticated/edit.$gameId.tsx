@@ -29,6 +29,8 @@ import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type BoardData, type Category, type Tile, type ThemeSettings } from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
@@ -63,7 +65,9 @@ function EditorPage() {
   const [playOpen, setPlayOpen] = useState(false);
 
   const board = data as unknown as BoardData | undefined;
-  const theme = board ? themeOf(board.game) : null;
+  const isDark = useThemeMode() === "dark";
+  const rawTheme = board ? themeOf(board.game) : null;
+  const theme = rawTheme ? (darkBoardColors(rawTheme, isDark) as typeof rawTheme) : null;
   const selectedTile = board?.tiles.find((t) => t.id === selectedTileId) ?? null;
 
   const refresh = useCallback(
@@ -99,6 +103,7 @@ function EditorPage() {
             }}
           />
           <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
             <span className="hidden rounded-full bg-mint px-4 py-2 font-mono text-xs font-bold tracking-widest text-foreground sm:block">
               {board.game.join_code}
             </span>

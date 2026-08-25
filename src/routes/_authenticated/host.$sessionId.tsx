@@ -55,7 +55,8 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
   head: () => ({
@@ -123,7 +124,7 @@ function HostPage() {
   }
 
   const { session, game, categories, tiles, players, queue, finalAnswers } = state;
-  const theme = themeOf(game);
+  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark") as ReturnType<typeof themeOf>;
   const usedSet = new Set(session.used_tile_ids);
   const remaining = tiles.length - usedSet.size;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
@@ -355,7 +356,7 @@ const SFX_BUTTONS = [
 ];
 
 function Soundboard({ game }: { game: Game }) {
-  const theme = themeOf(game);
+  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark") as ReturnType<typeof themeOf>;
   const fileRef = useRef<HTMLInputElement>(null);
   const custom = theme.customSounds ?? [];
 

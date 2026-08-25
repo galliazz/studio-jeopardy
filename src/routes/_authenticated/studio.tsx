@@ -31,7 +31,8 @@ import {
 import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
@@ -392,7 +393,7 @@ function GameCard({
   onExportXlsx: () => void;
   onDelete: () => void;
 }) {
-  const theme = themeOf(game);
+  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(game.title);
   useEffect(() => setDraftTitle(game.title), [game.title]);

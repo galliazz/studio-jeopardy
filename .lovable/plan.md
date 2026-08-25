@@ -1,57 +1,63 @@
-# JEOPARDESTINY — Material You Pastel Redesign
+# Pastel Material You Overhaul — Visual Only
 
-Good news on feasibility: the whole app you spec'd already exists and works end to end — studio hub, in-canvas WYSIWYG editor with floating theme bar, three-zone host console, real-time mobile buzzers with haptics, 15s timer with tick/urgency/alarm audio, custom audio upload, Daily Double, Final Jeopardy, confetti podium, JSON + .xlsx export, and server-authoritative buzz ordering.
+Styling only. No changes to game logic, scoring, realtime, audio functions, state, or flow. Every edit lands in the stylesheet and in presentation markup (classes, layout wrappers, small UI components).
 
-So this is not a rebuild. It is a **visual-system swap plus gap closure**, roughly 90% presentation work. No database changes, no game-logic changes.
+## 1. Token foundation (`src/styles.css`)
 
-## What changes
+Swap the current dark-board / electric-blue system for a multi-color pastel one:
 
-### 1. Design system (foundation)
-Replace the current dark-board / electric-blue direction with the multi-color pastel Material You palette in the global stylesheet:
-- Backgrounds: blush pink, soft lavender, butter cream, muted sky — layered tonal surfaces.
-- Component surfaces: pastel peach, sage mint, desaturated coral, muted lilac, warm sand as named tokens so cards can rotate tints instead of all being one color.
-- Accents: pastel orange, magenta, lavender-purple, cyan for pills, FABs, active states.
-- Text: deep plum `#2D1B36` as foreground everywhere; no white-on-dark.
-- Radii bumped to the 28–36px squircle range; new ultra-soft, wide-spread pastel shadow tokens.
-- New scalloped/wavy badge component (Android 14 flower shape, CSS mask) for queue ranks and the player's "#1 in line" badge.
+- Surface tints as named tokens: pastel peach, desaturated coral, muted lilac, blush pink, soft mint, butter yellow — so different cards can carry different tints instead of one flat color.
+- Page backgrounds: layered ultra-soft pastel washes (blush → lavender → butter), not flat white or dark.
+- Foreground: deep blackberry `#2D1B36` everywhere, including the game board, which becomes light pastel rather than dark.
+- Radius scale raised into the 28–36px squircle range for cards, modals, dialogs, overlays.
+- New elevation tokens: soft, wide-spread, slightly tinted shadows (three levels) replacing the current hard glow shadows.
+- Accent tokens for pills and active states: pastel orange, magenta, lavender-purple, cyan.
+- Team colors softened to pastel blue (Alpha) and pastel coral (Bravo).
 
-Every screen reads from these tokens, so nothing is hardcoded.
+All screens read these tokens, so no hardcoded colors anywhere.
 
-### 2. Studio hub
-Pastel dashboard restyle: greeting banner, enlarged peach/coral "+ Create a new game" pill with icon, floating pill search with a rounded icon chip, and game cards that rotate through the pastel surface tints with mini 5×5 thumbnails and a pill 3-dot menu.
+## 2. Shared shape components
 
-### 3. Editor
-Keep the direct-manipulation canvas, restyle to pastel. Two upgrades to match your spec: the text formatting toolbar becomes a true **floating pill island** (font selector, size +/−, bold/italic/underline, color swatch pills) that appears next to the selected element rather than inside a panel, and the theme bar's palette switcher offers the named pastel themes (Peach-Lilac, Mint-Sky, Butter-Coral) with instant preview. Radius slider range set to 16–40px.
+- **Scalloped badge**: an Android 14 flower/wavy shape (CSS mask) used for queue ranks (#1, #2), player avatars, and status indicators on both host and mobile views.
+- **Pill / chip / capsule-toggle** styling applied to every action button, so nothing keeps a rectangular button look.
+- Generous section padding and consistent gap rhythm between zones.
 
-### 4. Host console
-Structure stays (it already matches: host-only left panel, central board, always-visible queue). Restyled to pastel light instead of dark, with:
-- Auto-sizing hug-content team pills with team color dots, above the title.
-- Board tiles in pastel tints with bold clean numbers.
-- Question overlay: full-screen **within the central board container only** — dimming and the overlay are scoped to that container so header and both sidebars stay fully visible and undimmed. Springy entry, overshoot pop-down exit.
-- Correct/Wrong as pastel green / pastel red pills below the clue.
-- Queue rows get scalloped rank badges, avatar with team color badge, name + team, and latency delta from #2 onward.
-- "Reset Game" restored as a full labeled control alongside the icon Clear Queue, doing a hard reset: scores to zero, all tiles restored, queue and lockouts cleared, new Daily Doubles.
-- 15s timer becomes a pastel animated progress bar; existing tick / urgency / alarm audio stages kept.
+## 3. Home studio
 
-### 5. Mobile player view
-Pastel portrait layout; setup screen (avatar, name, team) restyled; buzz button tinted to the team's pastel color — greyish-pastel when locked, vibrant with lightning icon when active, scalloped badge for queue position, red 🚫 lockout state. Vibration + local click SFX already fire on buzz.
+Pastel dashboard: greeting banner on a tinted surface, enlarged peach/coral "+ Create a new game" pill, floating pill search with a rounded icon chip, and game cards that rotate through the pastel tints with soft elevation and a pill 3-dot menu.
 
-### 6. Celebration
-Podium upgraded to a dimensional three-tier pastel podium with confetti and end-match stats (accuracy, average buzz latency).
+## 4. Canvas editor
+
+Keep the existing in-canvas editing behavior; restyle the chrome:
+
+- Top action header becomes a floating pastel pill island (title, autosave indicator, "Play Game" CTA).
+- The tile edit surface and text formatting controls become floating pastel pill toolbars with inline color swatch pills, replacing the panel/form framing.
+- Theme bar restyled to pastel with squircle swatches; palette presets renamed to pastel sets (Peach-Lilac, Mint-Sky, Butter-Coral) and radius slider range set to 16–40px.
+- Board canvas and category headers get pastel tints and the new radius scale.
+
+## 5. Host game view
+
+Structure unchanged (left host panel, center board, right queue). Restyled:
+
+- Team score containers: hug-content pastel capsules with team color dots.
+- Board tiles: soft pastel tints, bold centered numbers, squircle corners.
+- Question overlay: absolutely positioned inside the central board container so the full-screen card and its dimming cover **only** the 5×5 grid — header and both sidebars stay fully visible and undimmed. Existing spring entry / pop-down exit motion kept, restyled as a pastel card.
+- Correct/Wrong as pastel green / pastel red pills.
+- Sidebar tool buttons, soundboard chips, dialogs and QR card converted to pastel pill/squircle surfaces.
+- Queue rows: scalloped rank badge, avatar with team-tinted scalloped frame, name + team, latency delta from #2 onward.
+- Timer bar restyled as a pastel animated progress bar (same timing logic and audio stages).
+
+## 6. Mobile player view
+
+Pastel portrait background; setup screen (avatar grid, name field, team picker) as pastel squircle cards; buzz button tinted to the team's pastel color — muted greyish-pastel when locked, vibrant when active — with the queue position in a scalloped badge and the lockout state in pastel red. Haptics and SFX untouched.
 
 ## Technical notes
 
-- All color/shadow/radius values land in `src/styles.css` as oklch tokens; components keep using semantic classes.
-- Board tiles read tint from the per-game `theme` JSON, so the pastel presets are just new preset values — no migration.
-- Scalloped badge is one small reusable component.
-- Motion springs standardized (one entry spring, one overshoot exit) for consistent feel.
-- Verification per screen with a headless browser at desktop and mobile viewports, including a two-context host+player buzz round trip, to confirm the overlay scoping and dimming behave as specified.
+- Tailwind v4: tokens go in `@theme inline` / `:root` in `src/styles.css`; the scalloped shape ships as a small component plus a `@utility`.
+- Per-game `theme` JSON defaults and presets get pastel values; no schema or migration change.
+- Files touched: `src/styles.css`, the four route files, and `src/lib/types.ts` only for the default-theme color constants.
+- Verified afterwards in a headless browser at desktop and mobile viewports, including a tile-open check to confirm the overlay dims only the grid.
 
-## Order of work
+## Order
 
-1. Pastel token foundation + scalloped badge + shadow/radius scale
-2. Studio hub
-3. Editor (floating format island, pastel presets)
-4. Host console (board, overlay scoping, queue badges, Reset Game)
-5. Mobile player view
-6. Podium/celebration polish, then full end-to-end verification
+Tokens + scalloped shape → studio → editor → host view → mobile view → screenshot pass.

@@ -194,7 +194,7 @@ function HostPage() {
 
           {/* CENTER: board + overlay */}
           <div className="relative order-1 lg:order-2">
-            <div className="p-3 sm:p-4" style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}>
+            <div className="p-4 elev-2 sm:p-5" style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}>
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
                 {categories.map((cat) => (
                   <div

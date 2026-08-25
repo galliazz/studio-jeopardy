@@ -357,7 +357,7 @@ function EditableUsername({ username, onSave }: { username: string; onSave: (v: 
         }}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         maxLength={24}
-        className="w-36 rounded-lg border-2 border-electric-blue bg-background px-1.5 py-0.5 font-semibold text-foreground outline-none"
+        className="w-36 rounded-full bg-card px-3 py-0.5 font-semibold text-foreground outline-none ring-2 ring-ink-accent"
       />
     </p>
   );

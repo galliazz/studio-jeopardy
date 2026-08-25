@@ -181,16 +181,16 @@ function StudioPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lavender opacity-60 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-pastel-blue opacity-60 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-8">
-        {/* Header */}
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-deep-purple">
-              <Zap className="h-6 w-6 text-gold" />
+        {/* Greeting banner */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[36px] bg-blush p-6 elev-1 sm:p-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center bg-butter scallop">
+              <Zap className="h-7 w-7 text-ink-gold" />
             </div>
             <div>
               <EditableUsername
@@ -200,12 +200,12 @@ function StudioPage() {
                   void refresh();
                 }}
               />
-              <h1 className="font-display text-3xl font-black tracking-tight">Your Jeopardy Studio</h1>
+              <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
             </div>
           </div>
           <button
             onClick={() => void signOut()}
-            className="flex items-center gap-2 rounded-full border border-input bg-card px-5 py-2.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Sign out
           </button>
@@ -213,25 +213,27 @@ function StudioPage() {
 
         {/* Action row */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <div className="flex min-w-64 flex-1 items-center gap-2 rounded-full border-2 border-input bg-card px-5">
-            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div className="flex min-w-64 flex-1 items-center gap-2 rounded-full bg-card px-3 elev-1">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint">
+              <Search className="h-4 w-4 text-foreground" />
+            </span>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search boards…"
-              className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+              className="h-14 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
             />
           </div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setCreating(true)}
-            className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-lg shadow-electric-blue/30"
+            className="flex items-center gap-2 rounded-full bg-coral px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
           >
-            <Plus className="h-5 w-5" /> Create New Board
+            <Plus className="h-5 w-5" /> Create a new game
           </motion.button>
           <button
             onClick={() => importRef.current?.click()}
-            className="flex items-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
+            className="flex items-center gap-2 rounded-full bg-lilac px-6 py-4 text-sm font-bold text-foreground elev-1 transition-transform hover:scale-105"
           >
             <Upload className="h-4 w-4" /> Import JSON
           </button>
@@ -248,15 +250,16 @@ function StudioPage() {
           />
         </div>
 
+
         {/* Create dialog (inline card) */}
         {creating && (
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="mb-8 rounded-[28px] bg-card p-6 shadow-xl shadow-deep-purple/10"
+            className="mb-8 rounded-[32px] bg-butter p-6 elev-2"
           >
-            <h2 className="mb-3 font-display text-lg font-bold">Name your board</h2>
-            <div className="flex gap-2">
+            <h2 className="mb-3 font-display text-lg font-black">Name your board</h2>
+            <div className="flex flex-wrap gap-2">
               <input
                 autoFocus
                 value={newTitle}
@@ -264,17 +267,17 @@ function StudioPage() {
                 onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
                 placeholder="e.g. Friday Night Trivia"
                 maxLength={80}
-                className="h-12 flex-1 rounded-2xl border-2 border-input bg-background px-4 text-sm outline-none focus:border-electric-blue"
+                className="h-12 min-w-48 flex-1 rounded-full bg-card px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
               />
               <button
                 onClick={() => void handleCreate()}
-                className="rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground"
+                className="rounded-full bg-coral px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
                 Create
               </button>
               <button
                 onClick={() => setCreating(false)}
-                className="rounded-full bg-muted px-5 text-sm font-semibold text-muted-foreground"
+                className="rounded-full bg-card px-6 py-3 text-sm font-semibold text-muted-foreground"
               >
                 Cancel
               </button>
@@ -284,17 +287,18 @@ function StudioPage() {
 
         {/* Game cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
           </div>
         ) : games.length === 0 ? (
-          <div className="rounded-[32px] bg-card p-12 text-center text-muted-foreground shadow">
+          <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
             No boards yet — create your first one!
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
             {games.map((game, i) => (
               <GameCard
                 key={game.id}
@@ -353,7 +357,7 @@ function EditableUsername({ username, onSave }: { username: string; onSave: (v: 
         }}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         maxLength={24}
-        className="w-36 rounded-lg border-2 border-electric-blue bg-background px-1.5 py-0.5 font-semibold text-foreground outline-none"
+        className="w-36 rounded-full bg-card px-3 py-0.5 font-semibold text-foreground outline-none ring-2 ring-ink-accent"
       />
     </p>
   );
@@ -396,12 +400,15 @@ function GameCard({
     else setDraftTitle(game.title);
   };
 
+  const tints = ["bg-lilac", "bg-mint", "bg-peach", "bg-sky", "bg-blush", "bg-butter"];
+  const tint = tints[index % tints.length];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, type: "spring", stiffness: 160, damping: 20 }}
-      className="group relative flex flex-col rounded-[32px] bg-card p-5 shadow-lg shadow-deep-purple/5 transition-shadow hover:shadow-xl"
+      className={`group relative flex flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
     >
       <div className="mb-4 flex items-start justify-between gap-2">
         {renaming ? (
@@ -412,16 +419,16 @@ function GameCard({
             onBlur={commitRename}
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             maxLength={80}
-            className="w-full rounded-xl border-2 border-electric-blue bg-background px-2 py-0.5 font-display text-lg font-bold outline-none"
+            className="w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
           />
         ) : (
-          <h3 className="font-display text-lg font-bold leading-tight">{game.title}</h3>
+          <h3 className="font-display text-xl font-black leading-tight">{game.title}</h3>
         )}
         <div className="relative">
           <button
             onClick={onToggleMenu}
             aria-label="Board options"
-            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-card/70 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
@@ -436,7 +443,7 @@ function GameCard({
               <motion.div
                 initial={{ opacity: 0, scale: 0.92 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 top-10 z-20 w-44 overflow-hidden rounded-2xl border border-border bg-popover p-1.5 shadow-xl"
+                className="absolute right-0 top-11 z-20 w-48 overflow-hidden rounded-[28px] bg-popover p-2 elev-3"
               >
                 {[
                   { icon: Pencil, label: "Rename", fn: () => { onCloseMenu(); setRenaming(true); } },
@@ -448,8 +455,8 @@ function GameCard({
                   <button
                     key={item.label}
                     onClick={item.fn}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors hover:bg-muted ${
-                      item.danger ? "text-destructive" : "text-foreground"
+                    className={`flex w-full items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted ${
+                      item.danger ? "text-danger-ink" : "text-foreground"
                     }`}
                   >
                     <item.icon className="h-4 w-4" /> {item.label}
@@ -462,37 +469,38 @@ function GameCard({
       </div>
 
       {/* Mini grid preview */}
-      <div className="mb-4 grid flex-1 grid-cols-5 gap-1 rounded-2xl p-2" style={{ backgroundColor: theme.bg }}>
+      <div className="mb-5 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3" style={{ backgroundColor: theme.bg }}>
         {Array.from({ length: 25 }).map((_, i) => (
           <div
             key={i}
-            className="aspect-square rounded"
-            style={{ backgroundColor: i < 5 ? theme.accent : theme.card, opacity: i < 5 ? 0.9 : 1 }}
+            className="aspect-square rounded-[7px]"
+            style={{ backgroundColor: i < 5 ? theme.accent : theme.card, opacity: i < 5 ? 0.85 : 1 }}
           />
         ))}
       </div>
 
       <div className="flex items-center justify-between gap-2">
-        <span className="rounded-full bg-secondary px-3 py-1 font-mono text-xs font-bold tracking-widest text-secondary-foreground">
+        <span className="rounded-full bg-card px-3.5 py-1.5 font-mono text-xs font-bold tracking-widest text-foreground">
           {game.join_code}
         </span>
         <div className="flex items-center gap-2">
           <Link
             to="/edit/$gameId"
             params={{ gameId: game.id }}
-            className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-xs font-bold text-secondary-foreground transition-transform hover:scale-105"
+            className="flex items-center gap-1.5 rounded-full bg-card px-5 py-2.5 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
           >
             <Pencil className="h-3.5 w-3.5" /> Edit
           </Link>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={onPlay}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-md shadow-electric-blue/30 transition-transform hover:scale-105"
+            className="flex items-center gap-1.5 rounded-full bg-coral px-5 py-2.5 text-xs font-black text-foreground elev-2 transition-transform hover:scale-105"
           >
             <Play className="h-3.5 w-3.5" /> Play
           </motion.button>
         </div>
       </div>
+
     </motion.div>
   );
 }

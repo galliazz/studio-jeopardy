@@ -115,8 +115,8 @@ function HostPage() {
 
   if (!state) {
     return (
-      <div className="dark flex min-h-screen items-center justify-center bg-background">
-        <div className="h-16 w-16 animate-pulse rounded-[24px] bg-accent" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
       </div>
     );
   }
@@ -131,15 +131,15 @@ function HostPage() {
     : null;
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
         {/* Header */}
-        <div className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-4 rounded-[32px] bg-card/80 p-4 elev-1">
           <div className="flex items-center gap-3">
             <Link
               to="/edit/$gameId"
               params={{ gameId: game.id }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-accent"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card text-foreground elev-1 transition-transform hover:scale-105"
               aria-label="Back to editor"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -147,7 +147,7 @@ function HostPage() {
             <div className="min-w-0">
               <h1 className="truncate font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
               <p className="text-xs text-muted-foreground">
-                Code <span className="font-mono font-bold text-gold">{game.join_code}</span> ·{" "}
+                Code <span className="font-mono font-bold text-ink-gold">{game.join_code}</span> ·{" "}
                 {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
               </p>
             </div>
@@ -162,7 +162,7 @@ function HostPage() {
                 await resetBoard({ data: { sessionId } });
                 toast.success("Board reset — new Daily Doubles picked");
               }}
-              className="flex items-center gap-1.5 rounded-full bg-secondary px-4 py-2 text-xs font-bold text-secondary-foreground hover:bg-accent"
+              className="flex items-center gap-1.5 rounded-full bg-blush px-5 py-2.5 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
             >
               <RotateCcw className="h-3.5 w-3.5" /> Reset Board
             </button>
@@ -175,7 +175,7 @@ function HostPage() {
             <JoinCard joinCode={game.join_code} />
             <AnswerPreview tile={currentTile} phase={session.phase} />
             <Soundboard game={game} />
-            <div className="rounded-[24px] bg-card p-4">
+            <div className="rounded-[32px] bg-card p-5 elev-1">
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tools</h3>
               <div className="flex flex-col gap-2">
                 <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
@@ -194,7 +194,7 @@ function HostPage() {
 
           {/* CENTER: board + overlay */}
           <div className="relative order-1 lg:order-2">
-            <div className="p-3 sm:p-4" style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}>
+            <div className="p-4 elev-2 sm:p-5" style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}>
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
                 {categories.map((cat) => (
                   <div
@@ -216,13 +216,15 @@ function HostPage() {
                         {...(used ? {} : { whileTap: { scale: 0.94 } })}
                         disabled={used || session.status === "final" || session.status === "finished"}
                         onClick={() => void openTile({ data: { sessionId, tileId: tile.id } })}
-                        className="flex min-h-14 items-center justify-center font-display text-base font-black transition-all sm:min-h-20 sm:text-2xl"
+                        className="flex min-h-14 items-center justify-center font-display text-lg font-black tracking-tight transition-all sm:min-h-20 sm:text-3xl"
                         style={{
                           backgroundColor: used ? "transparent" : theme.card,
                           borderRadius: theme.radius,
                           color: used ? "transparent" : theme.accent,
                           opacity: used ? 0.35 : 1,
-                          boxShadow: used ? "none" : `0 0 0 1px color-mix(in srgb, ${theme.accent} 18%, transparent)`,
+                          boxShadow: used
+                            ? "none"
+                            : `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 30%, transparent)`,
                         }}
                       >
                         {used ? "✓" : tile.points}
@@ -284,19 +286,19 @@ function ScorePill({ team, name, score, players }: { team: Team; name: string; s
       initial={{ scale: 1.12 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
-      className={`flex items-center gap-2 rounded-full px-4 py-2 ${
+      className={`flex w-fit items-center gap-2.5 rounded-full px-5 py-2.5 elev-1 ${
         team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
       }`}
     >
       <div className="flex -space-x-1.5">
         {members.slice(0, 4).map((p) => (
-          <span key={p.id} className="flex h-6 w-6 items-center justify-center rounded-full bg-black/30 text-sm">
+          <span key={p.id} className="flex h-7 w-7 items-center justify-center bg-card text-sm scallop">
             {p.avatar}
           </span>
         ))}
       </div>
-      <div className="text-white">
-        <div className="text-[9px] font-bold uppercase tracking-wider opacity-80">{name}</div>
+      <div className="text-foreground">
+        <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">{name}</div>
         <div className="font-display text-base font-black leading-none">{score}</div>
       </div>
     </motion.div>
@@ -308,12 +310,12 @@ function ScorePill({ team, name, score, players }: { team: Team; name: string; s
 function JoinCard({ joinCode }: { joinCode: string }) {
   const joinUrl = `${window.location.origin}/play/${joinCode}`;
   return (
-    <div className="rounded-[24px] bg-card p-4 text-center">
+    <div className="rounded-[32px] bg-mint p-5 text-center elev-1">
       <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Players join anytime</h3>
-      <div className="mx-auto mb-2 w-fit rounded-2xl bg-white p-2">
+      <div className="mx-auto mb-2 w-fit rounded-[22px] bg-card p-2.5">
         <QRCodeSVG value={joinUrl} size={112} />
       </div>
-      <p className="font-display text-2xl font-black tracking-[0.2em] text-gold">{joinCode}</p>
+      <p className="font-display text-2xl font-black tracking-[0.2em] text-ink-gold">{joinCode}</p>
     </div>
   );
 }
@@ -323,11 +325,11 @@ function JoinCard({ joinCode }: { joinCode: string }) {
 function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["phase"] }) {
   const revealed = phase === "reveal";
   return (
-    <div className="rounded-[24px] bg-card p-4">
+    <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Preview</h3>
       {tile ? (
         <div className={revealed ? "" : "select-none"}>
-          <p className={`text-sm font-semibold ${revealed ? "text-gold" : "text-foreground"}`}>
+          <p className={`text-sm font-semibold ${revealed ? "text-ink-gold" : "text-foreground"}`}>
             {revealed || phase === "answering" || phase === "question_open" ? tile.answer || "—" : "—"}
           </p>
           {tile.hint && <p className="mt-2 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
@@ -356,7 +358,7 @@ function Soundboard({ game }: { game: Game }) {
   const custom = theme.customSounds ?? [];
 
   return (
-    <div className="rounded-[24px] bg-card p-4">
+    <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
         <Volume2 className="h-3.5 w-3.5" /> Soundboard
       </h3>
@@ -365,7 +367,7 @@ function Soundboard({ game }: { game: Game }) {
           <button
             key={b.key}
             onClick={b.play}
-            className="rounded-full bg-secondary px-3.5 py-2 text-xs font-semibold text-secondary-foreground transition-transform hover:scale-105 active:scale-95"
+            className="rounded-full bg-lilac px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105 active:scale-95"
           >
             {b.label}
           </button>
@@ -375,7 +377,7 @@ function Soundboard({ game }: { game: Game }) {
         ))}
         <button
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1 rounded-full border border-dashed border-border px-3.5 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 rounded-full border-2 border-dashed border-border px-4 py-2 text-xs font-bold text-muted-foreground hover:text-foreground"
         >
           <Plus className="h-3 w-3" /> Add
         </button>
@@ -415,7 +417,7 @@ function CustomSound({ name, path }: { name: string; path: string }) {
       onClick={() => {
         if (url) void new Audio(url).play();
       }}
-      className="max-w-28 truncate rounded-full bg-accent px-3.5 py-2 text-xs font-semibold text-accent-foreground transition-transform hover:scale-105"
+      className="max-w-28 truncate rounded-full bg-peach px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
       title={name}
     >
       {name}
@@ -429,9 +431,9 @@ function ToolButton({ icon: Icon, label, onClick }: { icon: typeof Flag; label: 
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 rounded-2xl bg-secondary px-4 py-2.5 text-xs font-bold text-secondary-foreground transition-colors hover:bg-accent"
+      className="flex items-center gap-2.5 rounded-full bg-butter px-5 py-3 text-xs font-bold text-foreground transition-transform hover:scale-[1.03]"
     >
-      <Icon className="h-4 w-4 text-gold" /> {label}
+      <Icon className="h-4 w-4 text-ink-gold" /> {label}
     </button>
   );
 }
@@ -495,15 +497,14 @@ function QuestionOverlay({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-8"
+      className="absolute inset-0 z-40 flex items-center justify-center rounded-[36px] bg-foreground/25 p-2 backdrop-blur-sm sm:p-4"
     >
       <motion.div
         initial={{ scale: 0.9, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.94, y: 12 }}
         transition={{ type: "spring", stiffness: 200, damping: 22 }}
-        className="pointer-events-auto flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-[32px] p-6 shadow-2xl ring-1 ring-white/10 sm:p-10"
-        style={{ backgroundColor: "#0a0a1a" }}
+        className="flex h-full w-full flex-col overflow-hidden rounded-[32px] bg-card p-5 elev-3 sm:p-8"
       >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />
@@ -514,12 +515,12 @@ function QuestionOverlay({
               <motion.span
                 animate={flashRed ? { scale: [1, 1.35, 1] } : { scale: 1 }}
                 transition={flashRed ? { repeat: Infinity, duration: 0.5 } : { duration: 0.15 }}
-                className={`rounded-2xl px-4 py-2 font-display text-3xl font-black ${
+                className={`rounded-full px-5 py-2 font-display text-3xl font-black ${
                   flashRed
-                    ? "bg-red-500/20 text-red-400"
+                    ? "bg-danger text-danger-ink"
                     : countdown.seconds <= 5
-                      ? "bg-red-500/10 text-red-400"
-                      : "bg-white/5 text-gold"
+                      ? "bg-danger/60 text-danger-ink"
+                      : "bg-butter text-ink-gold"
                 }`}
               >
                 0:{String(countdown.seconds).padStart(2, "0")}
@@ -528,9 +529,9 @@ function QuestionOverlay({
           </div>
 
           {countdown.seconds != null && (
-            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full rounded-full transition-[width] duration-100 ${countdown.seconds <= 5 ? "bg-red-400" : "bg-gold"}`}
+                className={`h-full rounded-full transition-[width] duration-100 ${countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"}`}
                 style={{ width: `${countdown.fraction * 100}%` }}
               />
             </div>
@@ -548,17 +549,17 @@ function QuestionOverlay({
 
           <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto py-4 text-center">
             <div
-              className="max-w-3xl font-display text-xl font-bold leading-snug text-white sm:text-3xl [&_b]:text-gold [&_strong]:text-gold"
+              className="max-w-3xl font-display text-xl font-bold leading-snug text-foreground sm:text-3xl [&_b]:text-ink-gold [&_strong]:text-ink-gold"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(tile.question || "…") }}
             />
-            {imageUrl && <img src={imageUrl} alt="Question media" className="max-h-48 rounded-2xl object-contain" />}
+            {imageUrl && <img src={imageUrl} alt="Question media" className="max-h-48 rounded-[24px] object-contain" />}
             {audioUrl && <audio controls src={audioUrl} className="h-10" autoPlay />}
 
             {session.phase === "reveal" && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 rounded-2xl bg-gold/15 px-6 py-3 font-display text-lg font-black text-gold sm:text-2xl"
+                className="mt-2 rounded-full bg-butter px-7 py-3 font-display text-lg font-black text-ink-gold sm:text-2xl"
               >
                 {tile.answer}
               </motion.div>
@@ -567,9 +568,9 @@ function QuestionOverlay({
 
           {activePlayer && (
             <div className="mb-3 flex items-center justify-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-lg">{activePlayer.avatar}</span>
-              <span className="font-display text-lg font-bold text-white">{activePlayer.name}</span>
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase text-white ${activePlayer.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`}>
+              <span className="flex h-10 w-10 items-center justify-center bg-lilac text-lg scallop">{activePlayer.avatar}</span>
+              <span className="font-display text-lg font-black text-foreground">{activePlayer.name}</span>
+              <span className={`rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-foreground ${activePlayer.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`}>
                 {activePlayer.team}
               </span>
             </div>
@@ -579,7 +580,7 @@ function QuestionOverlay({
             {session.phase !== "reveal" && (
               <button
                 onClick={() => void revealAnswer({ data: { sessionId: session.id } })}
-                className="rounded-full bg-secondary px-6 py-3 text-sm font-bold text-secondary-foreground"
+                className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
                 Reveal answer
               </button>
@@ -592,7 +593,7 @@ function QuestionOverlay({
                     sfx.ding();
                     void judgeAnswer({ data: { sessionId: session.id, correct: true } });
                   }}
-                  className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3 font-display text-base font-black text-white shadow-lg shadow-emerald-500/40"
+                  className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
                 >
                   <Check className="h-5 w-5" /> Correct
                 </motion.button>
@@ -602,7 +603,7 @@ function QuestionOverlay({
                     sfx.wrong();
                     void judgeAnswer({ data: { sessionId: session.id, correct: false } });
                   }}
-                  className="flex items-center gap-2 rounded-full bg-red-500 px-8 py-3 font-display text-base font-black text-white shadow-lg shadow-red-500/40"
+                  className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
                 >
                   <X className="h-5 w-5" /> Wrong
                 </motion.button>
@@ -612,7 +613,7 @@ function QuestionOverlay({
               <motion.button
                 whileTap={{ scale: 0.94 }}
                 onClick={() => void closeTile({ data: { sessionId: session.id } })}
-                className="rounded-full bg-primary px-8 py-3 font-display text-base font-black text-primary-foreground"
+                className="rounded-full bg-coral px-9 py-3.5 font-display text-base font-black text-foreground elev-2"
               >
                 Close tile
               </motion.button>
@@ -637,7 +638,7 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
         initial={{ scale: 0.6, rotate: -4 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 180, damping: 12 }}
-        className="font-display text-4xl font-black tracking-wide text-gold text-glow-gold sm:text-6xl"
+        className="font-display text-4xl font-black tracking-wide text-ink-gold text-glow-gold sm:text-6xl"
       >
         DAILY DOUBLE
       </motion.h2>
@@ -645,7 +646,7 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
       <select
         value={playerId}
         onChange={(e) => setPlayerId(e.target.value)}
-        className="h-12 rounded-2xl border border-input bg-card px-4 text-sm font-semibold text-foreground outline-none"
+        className="h-12 rounded-full bg-lilac px-5 text-sm font-bold text-foreground outline-none"
       >
         {players.map((p) => (
           <option key={p.id} value={p.id}>
@@ -658,13 +659,13 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
         min={1}
         value={wager}
         onChange={(e) => setWager(Number(e.target.value))}
-        className="h-14 w-40 rounded-2xl border-2 border-gold bg-transparent text-center font-display text-2xl font-black text-gold outline-none"
+        className="h-14 w-40 rounded-full bg-butter text-center font-display text-2xl font-black text-ink-gold outline-none"
       />
       <motion.button
         whileTap={{ scale: 0.95 }}
         disabled={!playerId || wager < 1}
         onClick={() => void startDailyDouble({ data: { sessionId: session.id, playerId, wager } })}
-        className="rounded-full bg-primary px-10 py-4 font-display text-lg font-black text-primary-foreground disabled:opacity-40"
+        className="rounded-full bg-coral px-10 py-4 font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
       >
         Start 15s clock
       </motion.button>
@@ -690,14 +691,14 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
 
   return (
-    <div className="relative rounded-[24px] bg-card p-4">
+    <div className="relative rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 pr-10 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
       <button
         onClick={() => void clearQueue({ data: { sessionId: session.id } })}
         disabled={!session.current_tile_id}
         aria-label="Clear queue"
         title="Clear queue"
-        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-destructive/20 hover:text-destructive disabled:opacity-40"
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-danger hover:text-danger-ink disabled:opacity-40"
       >
         <Trash2 className="h-4 w-4" />
       </button>
@@ -719,14 +720,22 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
                 initial={{ opacity: 0, x: 24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ type: "spring", stiffness: 320, damping: 24 }}
-                className={`flex items-center gap-2.5 rounded-2xl px-3 py-2.5 ${
-                  isActive ? "bg-gold/20 ring-2 ring-gold" : "bg-secondary"
+                className={`flex items-center gap-3 rounded-[26px] px-3 py-3 ${
+                  isActive ? "bg-butter elev-1" : "bg-muted"
                 }`}
               >
-                <span className={`font-display text-sm font-black ${isActive ? "text-gold" : "text-muted-foreground"}`}>
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center font-display text-xs font-black text-foreground scallop ${
+                    isActive ? "bg-peach" : "bg-card"
+                  }`}
+                >
                   #{i + 1}
                 </span>
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/20 text-base">
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center text-base scallop ${
+                    player.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
+                  }`}
+                >
                   {player.avatar}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -735,7 +744,7 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
                     {i === 0 ? "first in" : formatDelta(delta)} · {player.team}
                   </p>
                 </div>
-                {isActive && <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-gold" />}
+                {isActive && <span className="h-3 w-3 animate-pulse rounded-full bg-ink-gold" />}
               </motion.li>
             );
           })}
@@ -772,8 +781,8 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
               <button
                 key={tile.id}
                 onClick={() => toggle(tile.id)}
-                className={`rounded-xl py-2.5 text-xs font-black transition-all ${
-                  on ? "bg-gold text-black" : "bg-secondary text-secondary-foreground hover:bg-accent"
+                className={`rounded-[18px] py-3 text-xs font-black transition-all ${
+                  on ? "bg-butter text-ink-gold elev-1" : "bg-muted text-foreground hover:bg-lilac"
                 }`}
               >
                 {tile.points}
@@ -788,7 +797,7 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
           toast.success("Daily Doubles updated");
           onClose();
         }}
-        className="mt-4 w-full rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground"
+        className="mt-4 w-full rounded-full bg-coral py-3.5 text-sm font-black text-foreground elev-1"
       >
         Save ({selected.length}/2)
       </button>
@@ -843,11 +852,11 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
               <XAxis dataKey="n" stroke="currentColor" fontSize={10} tickLine={false} />
               <YAxis stroke="currentColor" fontSize={10} tickLine={false} width={40} />
               <Tooltip
-                contentStyle={{ background: "oklch(0.18 0.05 295)", border: "none", borderRadius: 12, fontSize: 12 }}
+                contentStyle={{ background: "var(--card)", border: "none", borderRadius: 18, fontSize: 12, color: "var(--foreground)" }}
               />
               <Legend />
-              <Line type="monotone" dataKey="alpha" stroke="oklch(0.55 0.16 245)" strokeWidth={3} dot={false} />
-              <Line type="monotone" dataKey="bravo" stroke="oklch(0.58 0.22 27)" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="alpha" stroke="var(--team-alpha-ink)" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="bravo" stroke="var(--team-bravo-ink)" strokeWidth={3} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -855,12 +864,12 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
       {playerStats.length > 0 && (
         <div className="mt-4 space-y-1.5">
           {playerStats.map((s) => (
-            <div key={s.player.id} className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs">
+            <div key={s.player.id} className="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-xs">
               <span>{s.player.avatar}</span>
               <span className="flex-1 font-bold">{s.player.name}</span>
               <span className="text-muted-foreground">{s.buzzes} buzzes</span>
-              <span className="text-emerald-400">✓{s.correct}</span>
-              <span className="text-red-400">✗{s.wrong}</span>
+              <span className="font-bold text-success-ink">✓{s.correct}</span>
+              <span className="font-bold text-danger-ink">✗{s.wrong}</span>
             </div>
           ))}
         </div>
@@ -881,13 +890,13 @@ function FinalDialog({ sessionId, onClose }: { sessionId: string; onClose: () =>
         onChange={(e) => setQuestion(e.target.value)}
         placeholder="The final clue…"
         rows={3}
-        className="w-full rounded-2xl border-2 border-input bg-background p-3 text-sm outline-none focus:border-gold"
+        className="w-full rounded-[24px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
       />
       <input
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
         placeholder="Correct answer"
-        className="mt-2 h-11 w-full rounded-2xl border-2 border-input bg-background px-3 text-sm outline-none focus:border-gold"
+        className="mt-2 h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
       />
       <button
         disabled={!question.trim() || !answer.trim()}
@@ -896,7 +905,7 @@ function FinalDialog({ sessionId, onClose }: { sessionId: string; onClose: () =>
           toast.success("Final Jeopardy started — teams are wagering");
           onClose();
         }}
-        className="mt-4 w-full rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-40"
+        className="mt-4 w-full rounded-full bg-coral py-3.5 text-sm font-black text-foreground elev-1 disabled:opacity-40"
       >
         Start Final Jeopardy
       </button>
@@ -919,7 +928,7 @@ function FinalPanel({
 }) {
   const teams: Team[] = ["alpha", "bravo"];
   return (
-    <div className="rounded-[24px] bg-card p-4">
+    <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Final Jeopardy</h3>
       {session.phase === "final_wager" && (
         <>
@@ -928,7 +937,7 @@ function FinalPanel({
             {teams.map((t) => {
               const submitted = finalAnswers.some((f) => f.team === t);
               return (
-                <span key={t} className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase ${submitted ? "bg-emerald-500/20 text-emerald-400" : "bg-secondary text-muted-foreground"}`}>
+                <span key={t} className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase ${submitted ? "bg-success text-success-ink" : "bg-muted text-muted-foreground"}`}>
                   {teamName(theme, t)} {submitted ? "✓ wagered" : "…"}
                 </span>
               );
@@ -936,7 +945,7 @@ function FinalPanel({
           </div>
           <button
             onClick={() => void beginFinalAnswers({ data: { sessionId: session.id } })}
-            className="w-full rounded-full bg-primary py-2.5 text-xs font-bold text-primary-foreground"
+            className="w-full rounded-full bg-coral py-3 text-xs font-black text-foreground elev-1"
           >
             Reveal question
           </button>
@@ -944,15 +953,15 @@ function FinalPanel({
       )}
       {session.phase === "final_answer" && (
         <div className="space-y-3">
-          <p className="rounded-xl bg-secondary p-3 text-sm font-semibold">{session.final_question}</p>
+          <p className="rounded-[24px] bg-lilac p-4 text-sm font-semibold">{session.final_question}</p>
           <p className="text-xs italic text-muted-foreground">Answer: {session.final_answer}</p>
           {teams.map((t) => {
             const entry = finalAnswers.find((f) => f.team === t);
             const members = players.filter((p) => p.team === t).map((p) => p.avatar + " " + p.name).join(", ");
             return (
-              <div key={t} className="rounded-2xl bg-secondary p-3">
+              <div key={t} className="rounded-[26px] bg-muted p-4">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha" : "text-team-bravo"}`}>{teamName(theme, t)}</span>
+                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha-ink" : "text-team-bravo-ink"}`}>{teamName(theme, t)}</span>
                   <span className="text-[10px] text-muted-foreground">{members || "no players"}</span>
                 </div>
                 {entry ? (
@@ -966,7 +975,7 @@ function FinalPanel({
                             sfx.ding();
                             void judgeFinal({ data: { sessionId: session.id, team: t, correct: true } });
                           }}
-                          className="flex-1 rounded-full bg-emerald-500 py-1.5 text-xs font-bold text-white"
+                          className="flex-1 rounded-full bg-success py-2 text-xs font-black text-success-ink"
                         >
                           Correct
                         </button>
@@ -975,13 +984,13 @@ function FinalPanel({
                             sfx.wrong();
                             void judgeFinal({ data: { sessionId: session.id, team: t, correct: false } });
                           }}
-                          className="flex-1 rounded-full bg-red-500 py-1.5 text-xs font-bold text-white"
+                          className="flex-1 rounded-full bg-danger py-2 text-xs font-black text-danger-ink"
                         >
                           Wrong
                         </button>
                       </div>
                     ) : (
-                      <p className={`text-xs font-bold ${entry.judged ? "text-emerald-400" : "text-red-400"}`}>
+                      <p className={`text-xs font-bold ${entry.judged ? "text-success-ink" : "text-danger-ink"}`}>
                         Judged {entry.judged ? "correct" : "wrong"}
                       </p>
                     )}
@@ -994,7 +1003,7 @@ function FinalPanel({
           })}
           <button
             onClick={() => void finishSession({ data: { sessionId: session.id } })}
-            className="w-full rounded-full bg-secondary py-2.5 text-xs font-bold text-secondary-foreground"
+            className="w-full rounded-full bg-lilac py-3 text-xs font-bold text-foreground"
           >
             Finish game
           </button>
@@ -1018,33 +1027,33 @@ function Podium({ session, players, theme }: { session: Session; players: Player
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/35 p-4 backdrop-blur-md"
     >
       <motion.div
         initial={{ scale: 0.8, y: 40 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 160, damping: 16 }}
-        className="w-full max-w-md rounded-[32px] bg-card p-8 text-center shadow-2xl"
+        className="w-full max-w-md rounded-[36px] bg-card p-8 text-center elev-3"
       >
-        <Crown className="mx-auto mb-3 h-12 w-12 text-gold" />
-        <h2 className="font-display text-3xl font-black text-gold text-glow-gold">
+        <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop"><Crown className="h-10 w-10 text-ink-gold" /></span>
+        <h2 className="font-display text-3xl font-black text-ink-gold text-glow-gold">
           {teamName(theme, winner)} wins!
         </h2>
         <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">
           {winners.map((p) => (
-            <span key={p.id} className="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold">
+            <span key={p.id} className="rounded-full bg-butter px-3.5 py-1.5 text-xs font-bold text-ink-gold">
               {p.avatar} {p.name}
             </span>
           ))}
         </div>
-        <div className="mt-6 rounded-2xl bg-secondary p-4">
+        <div className="mt-6 rounded-[28px] bg-muted p-5">
           <p className="text-xs font-bold uppercase text-muted-foreground">
             {teamName(theme, loser)} — {loseScore}
           </p>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
             {losers.map((p) => (
-              <span key={p.id} className="rounded-full bg-background px-3 py-1 text-xs">
+              <span key={p.id} className="rounded-full bg-card px-3.5 py-1.5 text-xs">
                 {p.avatar} {p.name}
               </span>
             ))}
@@ -1076,7 +1085,7 @@ function Dialog({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
@@ -1085,14 +1094,14 @@ function Dialog({
         exit={{ scale: 0.92, y: 20 }}
         transition={{ type: "spring", stiffness: 240, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
-        className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} rounded-[28px] bg-card p-6 text-foreground shadow-2xl`}
+        className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} rounded-[36px] bg-card p-7 text-foreground elev-3`}
       >
         <div className="mb-4 flex items-start justify-between">
           <div>
             <h2 className="font-display text-xl font-black">{title}</h2>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="rounded-full p-2 text-muted-foreground hover:bg-muted" aria-label="Close">
+          <button onClick={onClose} className="rounded-full bg-muted p-2.5 text-muted-foreground hover:bg-lilac" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>

@@ -730,9 +730,12 @@ function TeamNameInput({
 function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: string; onClose: () => void }) {
   const navigate = useNavigate();
   const start = useServerFn(startSession);
+  const [nonce] = useState(() => Date.now());
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["session-start", gameId],
+    queryKey: ["session-start", gameId, nonce],
     queryFn: () => start({ data: { gameId } }),
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const joinUrl = `${window.location.origin}/play/${joinCode}`;

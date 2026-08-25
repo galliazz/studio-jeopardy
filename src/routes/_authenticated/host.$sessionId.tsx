@@ -96,6 +96,15 @@ function HostPage() {
   const [ddOpen, setDdOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [finalOpen, setFinalOpen] = useState(false);
+  const setHostState = (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
+    queryClient.setQueryData(["host", sessionId], (old: unknown) => {
+      const prev = old as HostState | undefined;
+      if (!prev) return old;
+      const { session: sessionPatch, ...rest } = patch;
+      return { ...prev, ...rest, session: { ...prev.session, ...(sessionPatch ?? {}) } };
+    });
+  };
+  const setHostSession = (patch: Partial<Session>) => setHostState({ session: patch });
 
   // ---- SFX triggers on state transitions --------------------------------
   const prevActive = useRef<string | null>(null);
@@ -164,6 +173,19 @@ function HostPage() {
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={async () => {
+                setHostSession({
+                  status: "live",
+                  phase: "idle",
+                  current_tile_id: null,
+                  active_player_id: null,
+                  timer_ends_at: null,
+                  score_alpha: 0,
+                  score_bravo: 0,
+                  used_tile_ids: [],
+                  dd_wager: null,
+                  final_question: null,
+                  final_answer: null,
+                });
                 await resetBoard({ data: { sessionId } });
                 toast.success("Board reset — new Daily Doubles picked");
               }}
@@ -224,22 +246,14 @@ function HostPage() {
                         {...(used ? {} : { whileTap: { scale: 0.94 } })}
                         disabled={used || session.status === "final" || session.status === "finished"}
                         onClick={() => {
-                          // Optimistic: show the question instantly, server confirms via realtime.
-                          queryClient.setQueryData(["host", sessionId], (old: unknown) => {
-                            const prev = old as HostState | undefined;
-                            if (!prev) return old;
-                            const isDD = prev.session.daily_double_tile_ids.includes(tile.id);
-                            return {
-                              ...prev,
-                              session: {
-                                ...prev.session,
-                                current_tile_id: tile.id,
-                                active_player_id: null,
-                                timer_ends_at: null,
-                                dd_wager: null,
-                                phase: isDD ? "daily_double_wager" : "question_open",
-                              },
-                            };
+                          const isDD = session.daily_double_tile_ids.includes(tile.id);
+                          setHostSession({
+                            status: "live",
+                            current_tile_id: tile.id,
+                            active_player_id: null,
+                            timer_ends_at: null,
+                            dd_wager: null,
+                            phase: isDD ? "daily_double_wager" : "question_open",
                           });
                           void openTile({ data: { sessionId, tileId: tile.id } });
                         }}
@@ -276,6 +290,7 @@ function HostPage() {
                     players={players}
                     queue={queue}
                     accent={theme.accent}
+                    onHostStatePatch={setHostState}
                   />
                 )}
             </AnimatePresence>
@@ -474,6 +489,7 @@ function QuestionOverlay({
   players,
   queue,
   accent,
+  onHostStatePatch,
 }: {
   session: Session;
   tile: Tile;
@@ -481,6 +497,7 @@ function QuestionOverlay({
   players: Player[];
   queue: QueueEntry[];
   accent: string;
+  onHostStatePatch: (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => void;
 }) {
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
@@ -606,7 +623,10 @@ function QuestionOverlay({
           <div className="flex flex-wrap items-center justify-center gap-3">
             {session.phase !== "reveal" && (
               <button
-                onClick={() => void revealAnswer({ data: { sessionId: session.id } })}
+                onClick={() => {
+                  onHostStatePatch({ session: { phase: "reveal" } });
+                  void revealAnswer({ data: { sessionId: session.id } });
+                }}
                 className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
                 Reveal answer
@@ -618,6 +638,25 @@ function QuestionOverlay({
                   whileTap={{ scale: 0.94 }}
                   onClick={() => {
                     sfx.ding();
+                    if (activePlayer) {
+                      const value = session.dd_wager ?? tile.points;
+                      onHostStatePatch({
+                        session: {
+                          phase: "reveal",
+                          dd_wager: null,
+                          ...(activePlayer.team === "alpha"
+                            ? { score_alpha: session.score_alpha + value }
+                            : { score_bravo: session.score_bravo + value }),
+                        },
+                        queue: queue.map((q) =>
+                          q.tile_id === tile.id && q.player_id === activePlayer.id && q.status === "active"
+                            ? { ...q, status: "correct", judged_at: new Date().toISOString() }
+                            : q.tile_id === tile.id && q.status === "queued"
+                              ? { ...q, status: "cleared", judged_at: new Date().toISOString() }
+                              : q,
+                        ),
+                      });
+                    }
                     void judgeAnswer({ data: { sessionId: session.id, correct: true } });
                   }}
                   className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
@@ -628,6 +667,32 @@ function QuestionOverlay({
                   whileTap={{ scale: 0.94 }}
                   onClick={() => {
                     sfx.wrong();
+                    if (activePlayer) {
+                      const value = session.dd_wager ?? Math.round(tile.points / 2);
+                      const nextQueued = queue.find(
+                        (q) => q.tile_id === tile.id && q.status === "queued" && q.player_id !== activePlayer.id,
+                      );
+                      const now = new Date().toISOString();
+                      onHostStatePatch({
+                        session: {
+                          phase: session.dd_wager != null ? "reveal" : nextQueued ? "answering" : "question_open",
+                          active_player_id: nextQueued?.player_id ?? null,
+                          timer_ends_at: nextQueued ? new Date(Date.now() + 15_000).toISOString() : null,
+                          dd_wager: null,
+                          ...(activePlayer.team === "alpha"
+                            ? { score_alpha: session.score_alpha - value }
+                            : { score_bravo: session.score_bravo - value }),
+                        },
+                        players: players.map((p) => (p.id === activePlayer.id ? { ...p, locked_out: true } : p)),
+                        queue: queue.map((q) =>
+                          q.tile_id === tile.id && q.player_id === activePlayer.id && q.status === "active"
+                            ? { ...q, status: "wrong", judged_at: now }
+                            : nextQueued && q.id === nextQueued.id
+                              ? { ...q, status: "active" }
+                              : q,
+                        ),
+                      });
+                    }
                     void judgeAnswer({ data: { sessionId: session.id, correct: false } });
                   }}
                   className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
@@ -639,7 +704,25 @@ function QuestionOverlay({
             {session.phase === "reveal" && (
               <motion.button
                 whileTap={{ scale: 0.94 }}
-                onClick={() => void closeTile({ data: { sessionId: session.id } })}
+                onClick={() => {
+                  onHostStatePatch({
+                    session: {
+                      phase: "idle",
+                      current_tile_id: null,
+                      active_player_id: null,
+                      timer_ends_at: null,
+                      dd_wager: null,
+                      used_tile_ids: [...new Set([...session.used_tile_ids, tile.id])],
+                    },
+                    players: players.map((p) => ({ ...p, locked_out: false })),
+                    queue: queue.map((q) =>
+                      q.tile_id === tile.id && (q.status === "queued" || q.status === "active")
+                        ? { ...q, status: "cleared", judged_at: new Date().toISOString() }
+                        : q,
+                    ),
+                  });
+                  void closeTile({ data: { sessionId: session.id } });
+                }}
                 className="rounded-full bg-coral px-9 py-3.5 font-display text-base font-black text-foreground elev-2"
               >
                 Close tile

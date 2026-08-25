@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -156,11 +157,38 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthListener />
-      {/* Global dark-mode switch, pinned to the top-right of every screen */}
-      <ThemeToggle className="fixed right-3 top-3 z-[70] sm:right-5 sm:top-5" />
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <TopContextBar />
       <Outlet />
       <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
+}
+
+function TopContextBar() {
+  const location = useLocation();
+  const path = location.pathname;
+  const label = screenLabel(path);
+
+  return (
+    <div className="pointer-events-none fixed right-3 top-3 z-[80] flex max-w-[calc(100vw-1.5rem)] justify-end sm:right-5 sm:top-5">
+      <div className="pointer-events-auto flex min-w-0 items-center gap-2 rounded-full bg-card/90 p-1 pl-4 pr-1.5 elev-2 backdrop-blur-md">
+        <div className="min-w-0 text-right">
+          <p className="truncate text-[10px] font-black uppercase tracking-wider text-muted-foreground sm:text-xs">
+            {label.kicker}
+          </p>
+          <p className="hidden truncate text-xs font-bold text-foreground sm:block">{label.title}</p>
+        </div>
+        <ThemeToggle className="h-9 w-9 bg-lilac text-foreground hover:bg-butter sm:h-10 sm:w-10" />
+      </div>
+    </div>
+  );
+}
+
+function screenLabel(path: string): { kicker: string; title: string } {
+  if (path.startsWith("/edit/")) return { kicker: "Edit Board", title: "Canvas editor" };
+  if (path.startsWith("/host/")) return { kicker: "Play", title: "Host console · scoreboard" };
+  if (path.startsWith("/play/")) return { kicker: "Player", title: "Buzzer · scoreboard" };
+  if (path === "/studio") return { kicker: "Studio", title: "Boards and live games" };
+  if (path === "/auth") return { kicker: "Account", title: "Host sign in" };
+  return { kicker: "Home", title: "Join or host" };
 }

@@ -31,7 +31,7 @@ import {
 import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
-import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/studio")({
@@ -206,7 +206,6 @@ function StudioPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <button
             onClick={() => void signOut()}
             className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"

@@ -18,7 +18,6 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/play/$code")({
   head: () => ({
@@ -560,7 +559,6 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-8 text-foreground">
-      <ThemeToggle className="absolute right-4 top-4 z-20" />
       <div className="w-full max-w-md">{children}</div>
     </div>
   );

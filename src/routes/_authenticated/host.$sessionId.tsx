@@ -55,7 +55,7 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
@@ -161,7 +161,6 @@ function HostPage() {
             <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
           </div>
           <div className="flex items-center justify-end gap-2">
-            <ThemeToggle />
             <button
               onClick={async () => {
                 await resetBoard({ data: { sessionId } });

@@ -96,13 +96,14 @@ function HostPage() {
   const [ddOpen, setDdOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [finalOpen, setFinalOpen] = useState(false);
-  const setHostSession = (patch: Partial<Session>) => {
+  const setHostState = (patch: Partial<HostState> & { session?: Partial<Session> }) => {
     queryClient.setQueryData(["host", sessionId], (old: unknown) => {
       const prev = old as HostState | undefined;
       if (!prev) return old;
-      return { ...prev, session: { ...prev.session, ...patch } };
+      return { ...prev, ...patch, session: { ...prev.session, ...(patch.session ?? {}) } };
     });
   };
+  const setHostSession = (patch: Partial<Session>) => setHostState({ session: patch });
 
   // ---- SFX triggers on state transitions --------------------------------
   const prevActive = useRef<string | null>(null);
@@ -288,7 +289,7 @@ function HostPage() {
                     players={players}
                     queue={queue}
                     accent={theme.accent}
-                    onSessionPatch={setHostSession}
+                    onHostStatePatch={setHostState}
                   />
                 )}
             </AnimatePresence>

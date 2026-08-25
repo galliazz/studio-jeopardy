@@ -79,6 +79,9 @@
   --color-board: var(--board);
   --color-board-card: var(--board-card);
   --color-board-edge: var(--board-edge);
+  --color-ink-accent: var(--ink-accent);
+  --color-ink-gold: var(--ink-gold);
+  --color-ink-soft: var(--ink-soft);
   --color-success: var(--success);
   --color-success-ink: var(--success-ink);
   --color-danger: var(--danger);

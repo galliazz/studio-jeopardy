@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Zap, Gamepad2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({

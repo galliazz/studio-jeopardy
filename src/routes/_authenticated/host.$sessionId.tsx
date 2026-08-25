@@ -55,6 +55,7 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
   head: () => ({

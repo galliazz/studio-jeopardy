@@ -29,6 +29,7 @@ import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type BoardData, type Category, type Tile, type ThemeSettings } from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({

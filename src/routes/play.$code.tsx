@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -252,6 +252,7 @@ function LivePlayer({
   gameTitle: string;
   theme: ThemeSettings;
 }) {
+  const queryClient = useQueryClient();
   const fetchState = useServerFn(getPlayerState);
   const { data } = useQuery({
     queryKey: ["play", sessionId],
@@ -307,15 +308,42 @@ function LivePlayer({
   }, [iAmActive]);
 
   const doBuzz = async () => {
+    if (!session?.current_tile_id || !buzzerLive) return;
     vibrate(50);
     sfx.click();
+    const now = new Date().toISOString();
+    const tileId = session.current_tile_id;
+    queryClient.setQueryData(["play", sessionId], (old: unknown) => {
+      const prev = old as PlayerState | undefined;
+      if (!prev || "error" in prev) return old;
+      if (prev.queue.some((q) => q.tile_id === tileId && q.player_id === identity.playerId && (q.status === "queued" || q.status === "active"))) {
+        return old;
+      }
+      const hasActive = prev.queue.some((q) => q.tile_id === tileId && q.status === "active");
+      const optimistic: QueueEntry = {
+        id: `optimistic-${identity.playerId}-${now}`,
+        session_id: sessionId,
+        tile_id: tileId,
+        player_id: identity.playerId,
+        status: hasActive ? "queued" : "active",
+        created_at: now,
+        judged_at: null,
+      };
+      return {
+        ...prev,
+        session: hasActive ? prev.session : { ...prev.session, active_player_id: identity.playerId, phase: "answering" },
+        queue: [...prev.queue, optimistic],
+      };
+    });
     try {
       const res = await buzz({ data: { playerId: identity.playerId } });
       if (!res.ok) {
+        void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
         if (res.reason === "closed") toast.error("Buzzers are closed");
         else toast.error(res.message ?? "Buzz rejected");
       }
     } catch {
+      void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
       toast.error("Buzz failed — try again");
     }
   };

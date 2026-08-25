@@ -44,10 +44,10 @@ export const Route = createFileRoute("/_authenticated/edit/$gameId")({
 });
 
 const THEME_PRESETS: { name: string; theme: Pick<ThemeSettings, "bg" | "card" | "accent"> }[] = [
-  { name: "Midnight Gold", theme: { bg: "#070714", card: "#141433", accent: "#f7b731" } },
-  { name: "Lavender Dream", theme: { bg: "#4a4458", card: "#e8def8", accent: "#6750a4" } },
-  { name: "Electric Night", theme: { bg: "#04121f", card: "#0a2a44", accent: "#4fc3f7" } },
-  { name: "Paper Light", theme: { bg: "#f7f2fa", card: "#ffffff", accent: "#0061a4" } },
+  { name: "Lilac Bloom", theme: { bg: "#F4EAF8", card: "#E3D3F5", accent: "#5B3E77" } },
+  { name: "Peach Fizz", theme: { bg: "#FEF1E6", card: "#FBD9C2", accent: "#7A4326" } },
+  { name: "Mint Sorbet", theme: { bg: "#E9F8EF", card: "#C8ECD7", accent: "#226047" } },
+  { name: "Blush Butter", theme: { bg: "#FDEDF1", card: "#FBE0B8", accent: "#7A3350" } },
 ];
 
 function EditorPage() {
@@ -73,20 +73,20 @@ function EditorPage() {
 
   if (!board || !theme) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-16 w-16 animate-pulse rounded-[24px] bg-lavender" />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-40">
+    <div className="min-h-screen pb-44">
       {/* Top bar */}
-      <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+      <div className="sticky top-0 z-30 px-4 pt-4">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 rounded-full bg-card/90 px-4 py-3 elev-2 backdrop-blur-md">
           <Link
             to="/studio"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-lilac text-foreground transition-transform hover:scale-105"
             aria-label="Back to studio"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -99,13 +99,13 @@ function EditorPage() {
             }}
           />
           <div className="ml-auto flex items-center gap-2">
-            <span className="hidden rounded-full bg-secondary px-3 py-1.5 font-mono text-xs font-bold tracking-widest text-secondary-foreground sm:block">
+            <span className="hidden rounded-full bg-mint px-4 py-2 font-mono text-xs font-bold tracking-widest text-foreground sm:block">
               {board.game.join_code}
             </span>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
-              className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-lg shadow-electric-blue/30"
+              className="flex items-center gap-2 rounded-full bg-coral px-6 py-3 font-display text-sm font-black text-foreground elev-2"
             >
               <Play className="h-4 w-4" /> Play Game
             </motion.button>
@@ -116,7 +116,7 @@ function EditorPage() {
       {/* Board canvas — themed preview */}
       <div className="mx-auto max-w-7xl px-4 pt-6">
         <div
-          className="p-4 transition-[border-radius] duration-300 sm:p-6"
+          className="p-5 elev-3 transition-[border-radius] duration-300 sm:p-7"
           style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
         >
           <div className="grid grid-cols-5 gap-2 sm:gap-3">
@@ -186,7 +186,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
     return (
       <button
         onClick={() => setEditing(true)}
-        className="max-w-[40vw] truncate rounded-xl px-2 py-1 text-left font-display text-xl font-bold hover:bg-muted"
+        className="max-w-[40vw] truncate rounded-full px-3 py-1.5 text-left font-display text-xl font-black hover:bg-muted"
       >
         {value}
       </button>
@@ -203,7 +203,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
       }}
       onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       maxLength={80}
-      className="rounded-xl border-2 border-electric-blue bg-background px-2 py-1 font-display text-xl font-bold outline-none"
+      className="rounded-full bg-muted px-4 py-1.5 font-display text-xl font-black outline-none ring-2 ring-ink-accent"
     />
   );
 }
@@ -280,22 +280,26 @@ function TileCell({
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
       className={`flex min-h-20 flex-col items-center justify-center gap-1 p-2 text-center transition-all sm:min-h-24 ${
-        selected ? "ring-4 ring-electric-blue" : "hover:brightness-125"
+        selected ? "ring-4 ring-ink-accent" : "hover:-translate-y-0.5 hover:brightness-[1.03]"
       }`}
-      style={{ backgroundColor: theme.card, borderRadius: theme.radius }}
+      style={{
+        backgroundColor: theme.card,
+        borderRadius: theme.radius,
+        boxShadow: `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 28%, transparent)`,
+      }}
     >
-      <span className="font-display text-lg font-black sm:text-2xl" style={{ color: theme.accent }}>
+      <span className="font-display text-xl font-black sm:text-3xl" style={{ color: theme.accent }}>
         {tile.points}
       </span>
       {preview ? (
         <span
           className="line-clamp-2 text-[10px] leading-tight opacity-60 sm:text-xs"
-          style={{ color: theme.card === "#ffffff" || theme.card === "#e8def8" ? "#333" : "#eee" }}
+          style={{ color: theme.accent }}
         >
           {preview}
         </span>
       ) : (
-        <span className="text-[10px] italic opacity-40" style={{ color: "#bbb" }}>
+        <span className="text-[10px] italic opacity-40" style={{ color: theme.accent }}>
           empty
         </span>
       )}
@@ -391,11 +395,11 @@ function TileEditor({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 80 }}
       transition={{ type: "spring", stiffness: 260, damping: 26 }}
-      className="fixed bottom-36 right-4 top-20 z-40 flex w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[28px] border border-border bg-card shadow-2xl"
+      className="fixed bottom-40 right-4 top-24 z-40 flex w-[min(420px,calc(100vw-2rem))] flex-col overflow-hidden rounded-[36px] bg-card elev-3"
     >
-      <div className="flex items-center justify-between bg-muted px-5 py-3">
-        <span className="font-display text-sm font-bold">Edit tile</span>
-        <button onClick={onClose} className="rounded-full p-1.5 text-muted-foreground hover:bg-background" aria-label="Close editor">
+      <div className="flex items-center justify-between bg-lilac px-6 py-4">
+        <span className="font-display text-sm font-black uppercase tracking-wide">Edit tile</span>
+        <button onClick={onClose} className="rounded-full bg-card p-2 text-muted-foreground hover:text-foreground" aria-label="Close editor">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -408,7 +412,7 @@ function TileEditor({
             value={points}
             onChange={(e) => setPoints(Number(e.target.value))}
             onBlur={() => points !== tile.points && void save({ points })}
-            className="h-10 w-28 rounded-xl border-2 border-input bg-background px-3 text-sm font-bold outline-none focus:border-electric-blue"
+            className="h-11 w-28 rounded-full bg-muted px-4 text-sm font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
 
@@ -420,7 +424,7 @@ function TileEditor({
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
-                className="mb-2 flex flex-wrap items-center gap-1 rounded-2xl bg-deep-purple p-1.5"
+                className="mb-2 flex flex-wrap items-center gap-1 rounded-full bg-lilac p-2 elev-1"
               >
                 <FmtBtn onClick={() => exec("bold")} label="Bold"><Bold className="h-4 w-4" /></FmtBtn>
                 <FmtBtn onClick={() => exec("italic")} label="Italic"><Italic className="h-4 w-4" /></FmtBtn>
@@ -428,7 +432,7 @@ function TileEditor({
                 <select
                   onChange={(e) => exec("fontSize", e.target.value)}
                   defaultValue="3"
-                  className="h-8 rounded-lg bg-transparent px-1 text-xs text-lavender outline-none"
+                  className="h-9 rounded-full bg-card px-2 text-xs font-semibold text-foreground outline-none"
                   aria-label="Font size"
                 >
                   <option value="2">Small</option>
@@ -436,7 +440,7 @@ function TileEditor({
                   <option value="5">Large</option>
                   <option value="7">Huge</option>
                 </select>
-                <label className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-lavender hover:bg-white/10" aria-label="Text color">
+                <label className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-card" aria-label="Text color">
                   <Palette className="h-4 w-4" />
                   <input type="color" className="sr-only" onChange={(e) => exec("foreColor", e.target.value)} />
                 </label>
@@ -455,7 +459,7 @@ function TileEditor({
               setFocused(false);
               saveQuestion();
             }}
-            className="min-h-24 rounded-2xl border-2 border-input bg-background p-3 text-sm outline-none focus:border-electric-blue"
+            className="min-h-24 rounded-[26px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </div>
 
@@ -466,7 +470,7 @@ function TileEditor({
             onChange={(e) => setAnswer(e.target.value)}
             onBlur={() => answer !== tile.answer && void save({ answer })}
             placeholder="What is…?"
-            className="h-10 w-full rounded-xl border-2 border-input bg-background px-3 text-sm outline-none focus:border-electric-blue"
+            className="h-11 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
 
@@ -476,7 +480,7 @@ function TileEditor({
             value={hint}
             onChange={(e) => setHint(e.target.value)}
             onBlur={() => hint !== (tile.hint ?? "") && void save({ hint: hint || null })}
-            className="h-10 w-full rounded-xl border-2 border-input bg-background px-3 text-sm outline-none focus:border-electric-blue"
+            className="h-11 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
 
@@ -485,13 +489,13 @@ function TileEditor({
           <div className="flex gap-2">
             <button
               onClick={() => imageRef.current?.click()}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-secondary py-3 text-xs font-semibold text-secondary-foreground"
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-sky py-3.5 text-xs font-bold text-foreground elev-1"
             >
               <ImagePlus className="h-4 w-4" /> Image
             </button>
             <button
               onClick={() => audioRef.current?.click()}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-secondary py-3 text-xs font-semibold text-secondary-foreground"
+              className="flex flex-1 items-center justify-center gap-2 rounded-full bg-peach py-3.5 text-xs font-bold text-foreground elev-1"
             >
               <Music className="h-4 w-4" /> Audio
             </button>
@@ -500,10 +504,10 @@ function TileEditor({
           </div>
           {imageUrl && (
             <div className="relative mt-2">
-              <img src={imageUrl} alt="Tile media" className="max-h-32 w-full rounded-2xl object-cover" />
+              <img src={imageUrl} alt="Tile media" className="max-h-32 w-full rounded-[26px] object-cover" />
               <button
                 onClick={() => void save({ image_url: null })}
-                className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white"
+                className="absolute right-2 top-2 rounded-full bg-card p-1.5 text-foreground elev-1"
                 aria-label="Remove image"
               >
                 <X className="h-3 w-3" />
@@ -532,7 +536,7 @@ function FmtBtn({ children, onClick, label }: { children: React.ReactNode; onCli
         e.preventDefault();
         onClick();
       }}
-      className="flex h-8 w-8 items-center justify-center rounded-lg text-lavender transition-colors hover:bg-white/10"
+      className="flex h-9 w-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-card"
       aria-label={label}
     >
       {children}
@@ -600,7 +604,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 24, delay: 0.2 }}
-      className="fixed bottom-5 left-1/2 z-30 w-[min(960px,calc(100vw-2rem))] -translate-x-1/2 rounded-[32px] border border-border bg-card/95 p-4 shadow-2xl backdrop-blur-md"
+      className="fixed bottom-5 left-1/2 z-30 w-[min(960px,calc(100vw-2rem))] -translate-x-1/2 rounded-[36px] bg-card/95 px-6 py-4 elev-3 backdrop-blur-md"
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex items-center gap-2">
@@ -610,7 +614,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               onClick={() => void applyPreset(p)}
               title={p.name}
               aria-label={`Apply theme ${p.name}`}
-              className="h-9 w-9 rounded-full border-2 border-border transition-transform hover:scale-110"
+              className="h-10 w-10 transition-transform hover:scale-110 scallop"
               style={{ background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})` }}
             />
           ))}
@@ -624,7 +628,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
             max={40}
             value={theme.radius}
             onChange={(e) => applyRadius(Number(e.target.value))}
-            className="w-24 accent-[oklch(0.48_0.12_252)]"
+            className="w-24 accent-[var(--ink-accent)]"
           />
           {radiusEditing ? (
             <input
@@ -636,13 +640,13 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               onChange={(e) => applyRadius(Math.max(0, Math.min(40, Number(e.target.value))))}
               onBlur={() => setRadiusEditing(false)}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="h-7 w-14 rounded-lg border-2 border-electric-blue bg-background px-1 text-center text-xs font-bold text-foreground outline-none"
+              className="h-8 w-14 rounded-full bg-muted px-1 text-center text-xs font-bold text-foreground outline-none ring-2 ring-ink-accent"
             />
           ) : (
             <button
               onDoubleClick={() => setRadiusEditing(true)}
               title="Double-click to type a value"
-              className="w-8 rounded-lg px-1 py-0.5 text-center text-foreground hover:bg-muted"
+              className="w-9 rounded-full px-1 py-0.5 text-center font-bold text-foreground hover:bg-muted"
             >
               {theme.radius}
             </button>
@@ -678,7 +682,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
                 setRowPointsState(next);
               }}
               onBlur={() => void applyRowPoints()}
-              className="h-9 w-16 rounded-xl border-2 border-input bg-background px-2 text-center text-xs font-bold outline-none focus:border-electric-blue"
+              className="h-10 w-16 rounded-full bg-muted px-2 text-center text-xs font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
             />
           ))}
         </div>
@@ -702,7 +706,7 @@ function TeamNameInput({
   useEffect(() => setValue(defaultValue), [defaultValue]);
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`h-3 w-3 rounded-full ${swatch}`} />
+      <span className={`h-4 w-4 ${swatch} scallop`} />
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -710,7 +714,7 @@ function TeamNameInput({
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         placeholder={placeholder}
         maxLength={24}
-        className="h-9 w-24 rounded-xl border-2 border-input bg-background px-2 text-xs font-bold outline-none focus:border-electric-blue"
+        className="h-10 w-24 rounded-full bg-muted px-3 text-xs font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
       />
     </div>
   );
@@ -733,7 +737,7 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
@@ -742,14 +746,14 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
         exit={{ scale: 0.9, y: 20 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-[32px] bg-card p-8 text-center shadow-2xl"
+        className="w-full max-w-sm rounded-[36px] bg-card p-8 text-center elev-3"
       >
         <h2 className="font-display text-2xl font-black">Players join with this code</h2>
         <p className="mt-1 text-sm text-muted-foreground">Open on any phone — no app needed</p>
 
-        <div className="my-5 font-display text-5xl font-black tracking-[0.25em] text-electric-blue">{joinCode}</div>
+        <div className="my-5 font-display text-5xl font-black tracking-[0.25em] text-ink-accent">{joinCode}</div>
 
-        <div className="mx-auto mb-5 w-fit rounded-3xl bg-white p-3">
+        <div className="mx-auto mb-5 w-fit rounded-[28px] bg-muted p-4">
           <QRCodeSVG value={joinUrl} size={160} />
         </div>
 
@@ -759,7 +763,7 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
               void navigator.clipboard?.writeText(joinUrl);
               toast.success("Join link copied");
             }}
-            className="flex items-center justify-center gap-2 rounded-full bg-secondary py-3 text-sm font-semibold text-secondary-foreground"
+            className="flex items-center justify-center gap-2 rounded-full bg-lilac py-3.5 text-sm font-bold text-foreground elev-1"
           >
             <Copy className="h-4 w-4" /> Copy join link
           </button>
@@ -768,7 +772,7 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
             onClick={() => {
               if (data) void navigate({ to: "/host/$sessionId", params: { sessionId: data.session.id } });
             }}
-            className="flex items-center justify-center gap-2 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-electric-blue/30 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-full bg-coral py-3.5 font-display text-sm font-black text-foreground elev-2 disabled:opacity-50"
           >
             <ExternalLink className="h-4 w-4" />
             {isLoading ? "Preparing session…" : "Open Host Console"}

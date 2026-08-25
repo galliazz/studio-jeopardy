@@ -55,19 +55,19 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
-      <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[480px] w-[480px] rounded-full bg-lavender opacity-70 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -left-32 h-[520px] w-[520px] rounded-full bg-pastel-blue opacity-70 blur-3xl" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div aria-hidden className="pointer-events-none absolute -right-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-48 -left-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ type: "spring", stiffness: 140, damping: 18 }}
-        className="relative z-10 w-full max-w-md rounded-[32px] bg-card p-8 shadow-xl shadow-deep-purple/10"
+        className="relative z-10 w-full max-w-md rounded-[36px] bg-card p-8 elev-2"
       >
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-deep-purple">
-            <Zap className="h-6 w-6 text-gold" />
+          <div className="flex h-14 w-14 items-center justify-center bg-butter scallop">
+            <Zap className="h-7 w-7 text-ink-gold" />
           </div>
           <div>
             <h1 className="font-display text-xl font-black tracking-tight">JEOPARDESTINY</h1>
@@ -77,7 +77,7 @@ function AuthPage() {
 
         {checkEmail ? (
           <div className="flex flex-col items-center py-6 text-center">
-            <MailCheck className="mb-3 h-12 w-12 text-electric-blue" />
+            <MailCheck className="mb-3 h-12 w-12 text-ink-accent" />
             <h2 className="font-display text-lg font-bold">Check your inbox</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               We sent a confirmation link to <span className="font-semibold text-foreground">{email}</span>. Click it to
@@ -88,7 +88,7 @@ function AuthPage() {
                 setCheckEmail(false);
                 setMode("signin");
               }}
-              className="mt-6 rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold text-secondary-foreground"
+              className="mt-6 rounded-full bg-lilac px-6 py-3 text-sm font-bold text-foreground elev-1"
             >
               Back to sign in
             </button>
@@ -101,7 +101,7 @@ function AuthPage() {
                   key={m}
                   onClick={() => setMode(m)}
                   className={`rounded-full py-2.5 text-sm font-semibold transition-all ${
-                    mode === m ? "bg-card text-foreground shadow" : "text-muted-foreground"
+                    mode === m ? "bg-coral text-foreground elev-1" : "text-muted-foreground"
                   }`}
                 >
                   {m === "signin" ? "Sign in" : "Create account"}
@@ -116,7 +116,7 @@ function AuthPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Host name"
                   maxLength={24}
-                  className="h-12 w-full rounded-2xl border-2 border-input bg-background px-4 text-sm outline-none transition-colors focus:border-electric-blue"
+                  className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
                 />
               )}
               <input
@@ -124,7 +124,7 @@ function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
-                className="h-12 w-full rounded-2xl border-2 border-input bg-background px-4 text-sm outline-none transition-colors focus:border-electric-blue"
+                className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
               />
               <input
                 type="password"
@@ -132,13 +132,13 @@ function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && void submit()}
                 placeholder="Password (6+ characters)"
-                className="h-12 w-full rounded-2xl border-2 border-input bg-background px-4 text-sm outline-none transition-colors focus:border-electric-blue"
+                className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
               />
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 disabled={busy || !email || password.length < 6}
                 onClick={() => void submit()}
-                className="h-12 w-full rounded-full bg-primary font-semibold text-primary-foreground shadow-lg shadow-electric-blue/30 transition-opacity disabled:opacity-50"
+                className="h-12 w-full rounded-full bg-coral font-display font-black text-foreground elev-2 transition-transform hover:scale-[1.02] disabled:opacity-50"
               >
                 {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create host account"}
               </motion.button>

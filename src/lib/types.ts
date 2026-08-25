@@ -129,9 +129,33 @@ export const PLAYER_AVATARS = [
   "🐙", "🦉", "🍕", "⚡", "🌵", "🐸", "💎", "🔥",
 ];
 
-export function themeOf(game: Game): ThemeSettings {
-  return { ...DEFAULT_THEME, ...(game.theme ?? {}) };
+/** Relative luminance of a #rrggbb / #rgb string (0 = black, 1 = white). */
+function hexLuma(hex?: string): number {
+  if (!hex) return 1;
+  let h = hex.replace("#", "").trim();
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length !== 6) return 1;
+  const r = parseInt(h.slice(0, 2), 16) / 255;
+  const g = parseInt(h.slice(2, 4), 16) / 255;
+  const b = parseInt(h.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
+
+/**
+ * Resolve a board theme. Boards saved with the previous dark palette are
+ * mapped onto the pastel defaults so the whole app reads as Material You.
+ */
+export function themeOf(game: Game): ThemeSettings {
+  const merged = { ...DEFAULT_THEME, ...(game.theme ?? {}) };
+  if (hexLuma(merged.bg) < 0.62 || hexLuma(merged.card) < 0.62) {
+    merged.bg = DEFAULT_THEME.bg;
+    merged.card = DEFAULT_THEME.card;
+    merged.accent = DEFAULT_THEME.accent;
+  }
+  if (merged.radius < 16) merged.radius = 16;
+  return merged;
+}
+
 
 export function teamName(theme: ThemeSettings, team: Team): string {
   const name = team === "alpha" ? theme.teamAlpha : theme.teamBravo;

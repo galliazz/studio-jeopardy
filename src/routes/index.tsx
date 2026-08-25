@@ -41,11 +41,11 @@ function LandingPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4">
       {/* Expressive blobs */}
-      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-lavender opacity-70 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[520px] w-[520px] rounded-full bg-pastel-blue opacity-70 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute left-1/2 top-16 h-64 w-64 -translate-x-1/2 rotate-12 rounded-[64px] bg-magenta/10 blur-2xl" />
+      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute left-1/2 top-16 h-64 w-64 -translate-x-1/2 rotate-12 rounded-[64px] bg-magenta/30 blur-2xl" />
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -57,21 +57,21 @@ function LandingPage() {
           initial={{ rotate: -8, scale: 0.8 }}
           animate={{ rotate: 0, scale: 1 }}
           transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
-          className="mb-6 flex h-20 w-20 items-center justify-center rounded-[28px] bg-deep-purple shadow-xl"
+          className="mb-6 flex h-24 w-24 items-center justify-center bg-butter elev-2 scallop"
         >
-          <Zap className="h-10 w-10 text-gold" />
+          <Zap className="h-11 w-11 text-ink-gold" />
         </motion.div>
 
         <h1 className="font-display text-5xl font-black tracking-tight text-foreground sm:text-6xl">
-          JEOPARD<span className="text-electric-blue">E</span>STINY
+          JEOPARD<span className="text-ink-accent">E</span>STINY
         </h1>
         <p className="mt-4 max-w-md text-lg text-muted-foreground">
           Build a board. Share a code. Phones become buzzers. You become the host.
         </p>
 
-        <div className="mt-10 w-full rounded-[32px] bg-card p-6 shadow-xl shadow-deep-purple/10 sm:p-8">
+        <div className="mt-10 w-full rounded-[36px] bg-card p-6 elev-2 sm:p-8">
           <label className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Gamepad2 className="h-4 w-4 text-electric-blue" />
+            <Gamepad2 className="h-4 w-4 text-ink-accent" />
             Join a live game
           </label>
           <div className="flex gap-2">
@@ -81,12 +81,12 @@ function LandingPage() {
               onKeyDown={(e) => e.key === "Enter" && join()}
               placeholder="GAME CODE"
               maxLength={8}
-              className="h-14 flex-1 rounded-full border-2 border-input bg-background px-6 text-center font-display text-xl font-bold tracking-[0.3em] text-foreground outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-electric-blue"
+              className="h-14 flex-1 rounded-full bg-muted px-6 text-center font-display text-xl font-bold tracking-[0.3em] text-foreground outline-none ring-2 ring-transparent transition-all placeholder:text-muted-foreground/50 focus:ring-ink-accent"
             />
             <motion.button
               whileTap={{ scale: 0.94 }}
               onClick={join}
-              className="h-14 rounded-full bg-primary px-7 font-semibold text-primary-foreground shadow-lg shadow-electric-blue/30 transition-colors hover:bg-primary/90"
+              className="h-14 rounded-full bg-coral px-8 font-display font-black text-foreground elev-2 transition-transform hover:scale-105"
             >
               Join
             </motion.button>
@@ -96,9 +96,9 @@ function LandingPage() {
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={() => void navigate({ to: signedIn ? "/studio" : "/auth" })}
-          className="mt-6 flex items-center gap-2 rounded-full bg-deep-purple px-8 py-4 font-display text-base font-bold text-lavender shadow-lg shadow-deep-purple/30 transition-transform hover:scale-[1.03]"
+          className="mt-6 flex items-center gap-2 rounded-full bg-lilac px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
         >
-          <Radio className="h-5 w-5 text-gold" />
+          <Radio className="h-5 w-5 text-ink-gold" />
           {signedIn ? "Open your Studio" : "Host your own board"}
         </motion.button>
       </motion.div>

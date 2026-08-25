@@ -115,6 +115,8 @@ function HostPage() {
     prevStatus.current = s.status;
   }, [state]);
 
+  const isDark = useThemeMode() === "dark";
+
   if (!state) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -124,7 +126,7 @@ function HostPage() {
   }
 
   const { session, game, categories, tiles, players, queue, finalAnswers } = state;
-  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark") as ReturnType<typeof themeOf>;
+  const theme = darkBoardColors(themeOf(game), isDark) as ReturnType<typeof themeOf>;
   const usedSet = new Set(session.used_tile_ids);
   const remaining = tiles.length - usedSet.size;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;

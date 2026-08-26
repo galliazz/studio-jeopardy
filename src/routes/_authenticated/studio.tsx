@@ -432,10 +432,14 @@ function GameCard({
             onBlur={commitRename}
             onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
             maxLength={80}
-            className="w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
+            className="h-12 w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
           />
         ) : (
-          <h3 className="min-w-0 flex-1 truncate font-display text-xl font-black leading-tight" title={game.title}>
+          /* Fixed two-line box keeps every card's title on the same baseline */
+          <h3
+            className="line-clamp-2 min-h-12 min-w-0 flex-1 font-display text-xl font-black leading-6"
+            title={game.title}
+          >
             {game.title}
           </h3>
         )}
@@ -464,8 +468,41 @@ function GameCard({
               <motion.div
                 initial={{ opacity: 0, scale: 0.92 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 top-11 z-20 w-48 overflow-hidden rounded-[28px] bg-popover p-2 elev-3"
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 top-11 z-20 w-60 overflow-hidden rounded-[28px] bg-popover p-2 elev-3"
               >
+                {/* Share block: join code, link, QR */}
+                <div className="mb-1 rounded-[22px] bg-muted/60 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Join code</p>
+                  <p className="font-mono text-lg font-black tracking-widest text-foreground">{game.join_code}</p>
+                  <div className="mt-2 flex gap-1.5">
+                    <button
+                      onClick={() => {
+                        void navigator.clipboard.writeText(joinUrl);
+                        toast.success("Join link copied");
+                      }}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-card px-3 py-2 text-xs font-bold elev-1"
+                    >
+                      <LinkIcon className="h-3.5 w-3.5" /> Copy link
+                    </button>
+                    <button
+                      onClick={() => setShowQr((v) => !v)}
+                      aria-label="Show QR code"
+                      className="flex items-center justify-center gap-1.5 rounded-full bg-card px-3 py-2 text-xs font-bold elev-1"
+                    >
+                      <QrCode className="h-3.5 w-3.5" /> QR
+                    </button>
+                  </div>
+                  {showQr && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-2 flex justify-center rounded-[18px] bg-white p-2"
+                    >
+                      <QRCodeSVG value={joinUrl} size={124} />
+                    </motion.div>
+                  )}
+                </div>
                 {[
                   { icon: Pencil, label: "Rename", fn: () => { onCloseMenu(); setRenaming(true); } },
                   { icon: Copy, label: "Duplicate", fn: onDuplicate },
@@ -503,21 +540,16 @@ function GameCard({
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <span className="rounded-full bg-card px-3.5 py-1.5 font-mono text-xs font-bold tracking-widest text-foreground">
-          {game.join_code}
-        </span>
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPlay();
-          }}
-          className="flex items-center gap-2 rounded-full bg-coral px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-105"
-        >
-          <Play className="h-5 w-5" /> Play
-        </motion.button>
-      </div>
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPlay();
+        }}
+        className="mx-auto flex w-full items-center justify-center gap-2.5 rounded-full bg-coral py-5 font-display text-xl font-black text-foreground elev-2 transition-transform hover:scale-[1.02]"
+      >
+        <Play className="h-6 w-6" /> Play
+      </motion.button>
 
     </motion.div>
   );

@@ -171,14 +171,16 @@ function TopContextBar() {
 
   return (
     <div className="pointer-events-none fixed right-3 top-3 z-[80] flex max-w-[calc(100vw-1.5rem)] justify-end sm:right-5 sm:top-5">
-      <div className="pointer-events-auto flex min-w-0 items-center gap-2 rounded-full bg-card/90 p-1 pl-4 pr-1.5 elev-2 backdrop-blur-md">
+      <div className="pointer-events-auto flex min-w-0 items-center gap-3 rounded-full bg-card/90 p-1.5 pl-4 elev-2 backdrop-blur-md">
         <div className="min-w-0 text-right">
           <p className="truncate text-[10px] font-black uppercase tracking-wider text-muted-foreground sm:text-xs">
             {label.kicker}
           </p>
           <p className="hidden truncate text-xs font-bold text-foreground sm:block">{label.title}</p>
         </div>
-        <ThemeToggle className="h-9 w-9 bg-lilac text-foreground hover:bg-butter sm:h-10 sm:w-10" />
+        {/* Divider keeps the mode switch visually separate from the page label */}
+        <span aria-hidden className="h-7 w-px shrink-0 rounded-full bg-foreground/10" />
+        <ThemeToggle />
       </div>
     </div>
   );

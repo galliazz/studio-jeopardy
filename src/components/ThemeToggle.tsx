@@ -20,6 +20,10 @@ export function useThemeMode(): ThemeMode {
   return mode;
 }
 
+/**
+ * Labelled Day/Night switch — the label reads the current mode and the
+ * spring-animated thumb slides between the two ends of the pill.
+ */
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const mode = useThemeMode();
   const dark = mode === "dark";
@@ -27,21 +31,31 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   return (
     <motion.button
       type="button"
-      whileTap={{ scale: 0.92 }}
+      role="switch"
+      aria-checked={dark}
+      whileTap={{ scale: 0.95 }}
       onClick={toggleThemeMode}
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      title={dark ? "Light mode" : "Dark mode"}
-      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card text-ink-accent elev-1 transition-colors hover:bg-lilac ${className}`}
+      aria-label={dark ? "Switch to day mode" : "Switch to night mode"}
+      title={dark ? "Switch to Day" : "Switch to Night"}
+      className={`relative flex h-10 shrink-0 items-center gap-2 rounded-full bg-lilac pl-1.5 pr-3.5 text-foreground elev-1 transition-colors hover:brightness-[1.04] ${className}`}
     >
-      <motion.span
-        key={mode}
-        initial={{ rotate: -90, opacity: 0, scale: 0.6 }}
-        animate={{ rotate: 0, opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 18 }}
-        className="flex items-center justify-center"
-      >
-        {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-      </motion.span>
+      <span className="relative flex h-7 w-7 items-center justify-center">
+        <motion.span
+          layout
+          className="absolute inset-0 rounded-full bg-card elev-1"
+          transition={{ type: "spring", stiffness: 420, damping: 26 }}
+        />
+        <motion.span
+          key={mode}
+          initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+          animate={{ rotate: 0, opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 320, damping: 16 }}
+          className="relative flex items-center justify-center text-ink-accent"
+        >
+          {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+        </motion.span>
+      </span>
+      <span className="text-xs font-black uppercase tracking-wider">{dark ? "Night" : "Day"}</span>
     </motion.button>
   );
 }

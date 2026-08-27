@@ -16,7 +16,11 @@ import {
   Zap,
   Play,
   Pencil,
+  QrCode,
+  Link as LinkIcon,
+  Settings,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import {
   bootstrapStudio,
@@ -57,6 +61,8 @@ function StudioPage() {
   });
 
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -195,39 +201,60 @@ function StudioPage() {
               <Zap className="h-7 w-7 text-ink-gold" />
             </div>
             <div>
-              <EditableUsername
-                username={data?.profile?.username ?? ""}
-                onSave={async (username) => {
-                  await updateProfile({ data: { username } });
-                  void refresh();
-                }}
-              />
+              <p className="text-sm text-muted-foreground">
+                Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
+              </p>
               <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
-            onClick={() => void signOut()}
-            className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4" /> Sign out
+              onClick={() => setSettingsOpen(true)}
+              className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-foreground elev-1 transition-transform hover:scale-105"
+            >
+              <Settings className="h-4 w-4" /> Settings
             </button>
           </div>
         </div>
 
+        {settingsOpen && (
+          <ProfileSettingsDialog
+            username={data?.profile?.username ?? ""}
+            onClose={() => setSettingsOpen(false)}
+            onSave={async (username) => {
+              await updateProfile({ data: { username } });
+              toast.success("Name updated");
+              void refresh();
+            }}
+            onSignOut={() => void signOut()}
+          />
+        )}
+
         {/* Action row */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <div className="flex min-w-64 flex-1 items-center gap-2 rounded-full bg-card px-3 elev-1">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint">
+          {/* Search expands with an overshooting spring when focused */}
+          <motion.div
+            layout
+            animate={{ flexGrow: searchOpen || search ? 1 : 0, width: searchOpen || search ? "auto" : 56 }}
+            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            className="flex min-w-14 items-center gap-2 overflow-hidden rounded-full bg-card px-2 elev-1"
+          >
+            <button
+              aria-label="Search boards"
+              onClick={() => setSearchOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint"
+            >
               <Search className="h-4 w-4 text-foreground" />
-            </span>
+            </button>
             <input
               value={search}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => setSearchOpen(false)}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search boards…"
-              className="h-14 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+              className="h-14 w-full min-w-0 bg-transparent pr-3 text-sm outline-none placeholder:text-muted-foreground/60"
             />
-          </div>
+          </motion.div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setCreating(true)}
@@ -326,44 +353,77 @@ function StudioPage() {
   );
 }
 
-function EditableUsername({ username, onSave }: { username: string; onSave: (v: string) => Promise<void> }) {
-  const [editing, setEditing] = useState(false);
+/** Account settings: rename the host profile and sign out. */
+function ProfileSettingsDialog({
+  username,
+  onClose,
+  onSave,
+  onSignOut,
+}: {
+  username: string;
+  onClose: () => void;
+  onSave: (v: string) => Promise<void>;
+  onSignOut: () => void;
+}) {
   const [draft, setDraft] = useState(username);
   useEffect(() => setDraft(username), [username]);
 
-  if (!editing) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Welcome,{" "}
-        <button
-          onClick={() => setEditing(true)}
-          title="Click to edit your name"
-          className="group inline-flex items-center gap-1 rounded-lg px-1 font-semibold text-foreground transition-colors hover:bg-muted"
-        >
-          {username || "…"}
-          <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />
-        </button>
-      </p>
-    );
-  }
+  const save = async () => {
+    const v = draft.trim();
+    if (v.length >= 2 && v !== username) await onSave(v);
+    onClose();
+  };
+
   return (
-    <p className="flex items-center gap-1 text-sm text-muted-foreground">
-      Welcome,
-      <input
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          setEditing(false);
-          const v = draft.trim();
-          if (v.length >= 2 && v !== username) void onSave(v).then(() => toast.success("Name updated"));
-          else setDraft(username);
-        }}
-        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        maxLength={24}
-        className="w-36 rounded-full bg-card px-3 py-0.5 font-semibold text-foreground outline-none ring-2 ring-ink-accent"
-      />
-    </p>
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+      <button aria-label="Close settings" onClick={onClose} className="absolute inset-0 cursor-default" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="relative w-full max-w-md rounded-[32px] bg-card p-6 elev-3"
+      >
+        <h2 className="mb-1 font-display text-2xl font-black">Settings</h2>
+        <p className="mb-5 text-sm text-muted-foreground">Your host profile</p>
+
+        <label className="mb-2 block text-xs font-black uppercase tracking-widest text-muted-foreground">
+          Display name
+        </label>
+        <div className="mb-6 flex items-center gap-2">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-butter scallop">
+            <Pencil className="h-4 w-4 text-ink-gold" />
+          </span>
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void save()}
+            maxLength={24}
+            className="h-12 w-full rounded-full bg-muted px-4 font-semibold outline-none ring-2 ring-transparent focus:ring-ink-accent"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-2 rounded-full bg-blush px-5 py-3 text-sm font-semibold text-foreground elev-1"
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-full px-5 py-3 text-sm font-semibold text-muted-foreground">
+              Cancel
+            </button>
+            <button
+              onClick={() => void save()}
+              className="rounded-full bg-coral px-6 py-3 text-sm font-black text-foreground elev-1"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -396,7 +456,11 @@ function GameCard({
   const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(game.title);
+  const [showQr, setShowQr] = useState(false);
   useEffect(() => setDraftTitle(game.title), [game.title]);
+  const joinUrl =
+    typeof window === "undefined" ? `/play/${game.join_code}` : `${window.location.origin}/play/${game.join_code}`;
+
 
   const commitRename = () => {
     setRenaming(false);

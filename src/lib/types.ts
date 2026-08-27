@@ -1,4 +1,19 @@
+import type { CSSProperties } from "react";
+
 export type Team = "alpha" | "bravo";
+
+/** Board typography target scopes the editor can restyle. */
+export type TextScope = "numbers" | "questions" | "categories";
+
+export interface TextStyle {
+  /** CSS font-family stack. */
+  font?: string;
+  /** Multiplier applied to the scope's default size (0.6 – 1.8). */
+  size?: number;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+}
 
 export interface ThemeSettings {
   bg: string;
@@ -9,6 +24,7 @@ export interface ThemeSettings {
   teamAlpha?: string;
   teamBravo?: string;
   customSounds?: { name: string; path: string }[];
+  textStyles?: Partial<Record<TextScope, TextStyle>>;
 }
 
 export const DEFAULT_THEME: ThemeSettings = {
@@ -18,6 +34,34 @@ export const DEFAULT_THEME: ThemeSettings = {
   radius: 30,
   rowPoints: [200, 400, 600, 800, 1000],
 };
+
+export const BOARD_FONTS: { label: string; value: string }[] = [
+  { label: "Display", value: "" },
+  { label: "Sans", value: "ui-sans-serif, system-ui, sans-serif" },
+  { label: "Serif", value: "Georgia, 'Times New Roman', serif" },
+  { label: "Mono", value: "ui-monospace, SFMono-Regular, monospace" },
+  { label: "Rounded", value: "'Trebuchet MS', 'Segoe UI', sans-serif" },
+];
+
+/**
+ * CSS for a board text scope. `baseRem` is the scope's default size so the
+ * stored multiplier scales it without breaking responsive defaults.
+ */
+export function textScopeCss(
+  theme: ThemeSettings,
+  scope: TextScope,
+  baseRem?: number,
+): CSSProperties {
+  const s = theme.textStyles?.[scope];
+  if (!s) return {};
+  const css: CSSProperties = {};
+  if (s.font) css.fontFamily = s.font;
+  if (s.size && baseRem) css.fontSize = `${(baseRem * s.size).toFixed(3)}rem`;
+  if (s.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;
+  if (s.italic) css.fontStyle = "italic";
+  if (s.underline) css.textDecoration = "underline";
+  return css;
+}
 
 
 export interface Profile {

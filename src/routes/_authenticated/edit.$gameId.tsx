@@ -26,7 +26,17 @@ import {
   setRowPoints,
 } from "@/lib/games.functions";
 import { startSession } from "@/lib/sessions.functions";
-import { themeOf, type BoardData, type Category, type Tile, type ThemeSettings } from "@/lib/types";
+import {
+  themeOf,
+  textScopeCss,
+  BOARD_FONTS,
+  type BoardData,
+  type Category,
+  type Tile,
+  type ThemeSettings,
+  type TextScope,
+  type TextStyle,
+} from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
@@ -256,7 +266,7 @@ function CategoryHeader({
         <button
           onClick={() => setEditing(true)}
           className="h-full w-full text-[8px] font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70 sm:text-sm"
-          style={{ color: theme.accent }}
+          style={{ color: theme.accent, ...textScopeCss(theme, "categories", 0.875) }}
           title={category.title}
         >
           <span className="line-clamp-2 w-full break-words">{category.title}</span>
@@ -293,13 +303,16 @@ function TileCell({
         boxShadow: `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 28%, transparent)`,
       }}
     >
-      <span className="font-display text-sm font-black sm:text-3xl" style={{ color: theme.accent }}>
+      <span
+        className="font-display text-sm font-black sm:text-3xl"
+        style={{ color: theme.accent, ...textScopeCss(theme, "numbers", 1.875) }}
+      >
         {tile.points}
       </span>
       {preview ? (
         <span
           className="line-clamp-2 w-full break-words text-[8px] leading-tight opacity-60 sm:text-xs"
-          style={{ color: theme.accent }}
+          style={{ color: theme.accent, ...textScopeCss(theme, "questions", 0.75) }}
         >
           {preview}
         </span>
@@ -591,6 +604,18 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
     saveTimer.current = setTimeout(() => void saveTheme({ radius }), 400);
   };
 
+  const [scope, setScope] = useState<TextScope | "all">("numbers");
+  const current: TextStyle = (scope === "all" ? theme.textStyles?.numbers : theme.textStyles?.[scope]) ?? {};
+
+  /** Write a typography patch into the theme JSON for the selected scope(s). */
+  const applyTextStyle = async (patch: TextStyle) => {
+    const scopes: TextScope[] = scope === "all" ? ["numbers", "questions", "categories"] : [scope];
+    const next = { ...(theme.textStyles ?? {}) };
+    for (const sc of scopes) next[sc] = { ...(next[sc] ?? {}), ...patch };
+    patchThemeCache({ textStyles: next });
+    await saveTheme({ textStyles: next });
+  };
+
   const applyTeamName = async (key: "teamAlpha" | "teamBravo", value: string) => {
     const patch = { [key]: value.trim() };
     patchThemeCache(patch);
@@ -657,6 +682,60 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
             </button>
           )}
         </label>
+
+        {/* Typography: pick what to restyle, then font / size / weight */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <select
+            value={scope}
+            onChange={(e) => setScope(e.target.value as TextScope | "all")}
+            aria-label="Text target"
+            className="h-9 rounded-full bg-muted px-3 text-xs font-bold text-foreground outline-none"
+          >
+            <option value="numbers">Numbers</option>
+            <option value="questions">Questions</option>
+            <option value="categories">Categories</option>
+            <option value="all">All text</option>
+          </select>
+          <select
+            value={current.font ?? ""}
+            onChange={(e) => void applyTextStyle({ font: e.target.value })}
+            aria-label="Font"
+            className="h-9 rounded-full bg-muted px-3 text-xs font-semibold text-foreground outline-none"
+          >
+            {BOARD_FONTS.map((f) => (
+              <option key={f.label} value={f.value}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="range"
+            min={0.6}
+            max={1.8}
+            step={0.1}
+            value={current.size ?? 1}
+            onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
+            aria-label="Text size"
+            className="w-20 accent-[var(--ink-accent)]"
+          />
+          {([
+            ["bold", "B", "font-black"],
+            ["italic", "I", "italic"],
+            ["underline", "U", "underline"],
+          ] as const).map(([key, label, cls]) => (
+            <button
+              key={key}
+              onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
+              aria-pressed={Boolean(current[key])}
+              aria-label={key}
+              className={`h-9 w-9 rounded-full text-xs ${cls} ${
+                current[key] ? "bg-ink-accent text-card" : "bg-muted text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-muted-foreground">Teams</span>

@@ -353,44 +353,77 @@ function StudioPage() {
   );
 }
 
-function EditableUsername({ username, onSave }: { username: string; onSave: (v: string) => Promise<void> }) {
-  const [editing, setEditing] = useState(false);
+/** Account settings: rename the host profile and sign out. */
+function ProfileSettingsDialog({
+  username,
+  onClose,
+  onSave,
+  onSignOut,
+}: {
+  username: string;
+  onClose: () => void;
+  onSave: (v: string) => Promise<void>;
+  onSignOut: () => void;
+}) {
   const [draft, setDraft] = useState(username);
   useEffect(() => setDraft(username), [username]);
 
-  if (!editing) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Welcome,{" "}
-        <button
-          onClick={() => setEditing(true)}
-          title="Click to edit your name"
-          className="group inline-flex items-center gap-1 rounded-lg px-1 font-semibold text-foreground transition-colors hover:bg-muted"
-        >
-          {username || "…"}
-          <Pencil className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-60" />
-        </button>
-      </p>
-    );
-  }
+  const save = async () => {
+    const v = draft.trim();
+    if (v.length >= 2 && v !== username) await onSave(v);
+    onClose();
+  };
+
   return (
-    <p className="flex items-center gap-1 text-sm text-muted-foreground">
-      Welcome,
-      <input
-        autoFocus
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          setEditing(false);
-          const v = draft.trim();
-          if (v.length >= 2 && v !== username) void onSave(v).then(() => toast.success("Name updated"));
-          else setDraft(username);
-        }}
-        onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-        maxLength={24}
-        className="w-36 rounded-full bg-card px-3 py-0.5 font-semibold text-foreground outline-none ring-2 ring-ink-accent"
-      />
-    </p>
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+      <button aria-label="Close settings" onClick={onClose} className="absolute inset-0 cursor-default" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className="relative w-full max-w-md rounded-[32px] bg-card p-6 elev-3"
+      >
+        <h2 className="mb-1 font-display text-2xl font-black">Settings</h2>
+        <p className="mb-5 text-sm text-muted-foreground">Your host profile</p>
+
+        <label className="mb-2 block text-xs font-black uppercase tracking-widest text-muted-foreground">
+          Display name
+        </label>
+        <div className="mb-6 flex items-center gap-2">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-butter scallop">
+            <Pencil className="h-4 w-4 text-ink-gold" />
+          </span>
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void save()}
+            maxLength={24}
+            className="h-12 w-full rounded-full bg-muted px-4 font-semibold outline-none ring-2 ring-transparent focus:ring-ink-accent"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-2 rounded-full bg-blush px-5 py-3 text-sm font-semibold text-foreground elev-1"
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-full px-5 py-3 text-sm font-semibold text-muted-foreground">
+              Cancel
+            </button>
+            <button
+              onClick={() => void save()}
+              className="rounded-full bg-coral px-6 py-3 text-sm font-black text-foreground elev-1"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
   );
 }
 

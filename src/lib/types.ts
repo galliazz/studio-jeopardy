@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 export type Team = "alpha" | "bravo";
 
 /** Board typography target scopes the editor can restyle. */
@@ -49,10 +51,10 @@ export function textScopeCss(
   theme: ThemeSettings,
   scope: TextScope,
   baseRem?: number,
-): React.CSSProperties {
+): CSSProperties {
   const s = theme.textStyles?.[scope];
   if (!s) return {};
-  const css: React.CSSProperties = {};
+  const css: CSSProperties = {};
   if (s.font) css.fontFamily = s.font;
   if (s.size && baseRem) css.fontSize = `${(baseRem * s.size).toFixed(3)}rem`;
   if (s.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;

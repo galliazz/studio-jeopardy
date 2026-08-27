@@ -400,7 +400,11 @@ function GameCard({
   const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(game.title);
+  const [showQr, setShowQr] = useState(false);
   useEffect(() => setDraftTitle(game.title), [game.title]);
+  const joinUrl =
+    typeof window === "undefined" ? `/play/${game.join_code}` : `${window.location.origin}/play/${game.join_code}`;
+
 
   const commitRename = () => {
     setRenaming(false);

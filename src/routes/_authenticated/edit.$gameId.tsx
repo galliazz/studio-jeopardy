@@ -26,7 +26,17 @@ import {
   setRowPoints,
 } from "@/lib/games.functions";
 import { startSession } from "@/lib/sessions.functions";
-import { themeOf, type BoardData, type Category, type Tile, type ThemeSettings } from "@/lib/types";
+import {
+  themeOf,
+  textScopeCss,
+  BOARD_FONTS,
+  type BoardData,
+  type Category,
+  type Tile,
+  type ThemeSettings,
+  type TextScope,
+  type TextStyle,
+} from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
@@ -256,7 +266,7 @@ function CategoryHeader({
         <button
           onClick={() => setEditing(true)}
           className="h-full w-full text-[8px] font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70 sm:text-sm"
-          style={{ color: theme.accent }}
+          style={{ color: theme.accent, ...textScopeCss(theme, "categories", 0.875) }}
           title={category.title}
         >
           <span className="line-clamp-2 w-full break-words">{category.title}</span>

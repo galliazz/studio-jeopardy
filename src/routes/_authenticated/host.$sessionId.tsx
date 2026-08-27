@@ -150,13 +150,22 @@ function HostPage() {
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 rounded-[32px] bg-card/80 p-4 pr-14 elev-1 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-4">
           <div className="flex items-center gap-3">
+            {/* Visible exit pill — confirms first while a game is live */}
             <Link
               to="/edit/$gameId"
               params={{ gameId: game.id }}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card text-foreground elev-1 transition-transform hover:scale-105"
-              aria-label="Back to editor"
+              onClick={(e) => {
+                if (
+                  session.status === "live" &&
+                  !window.confirm("Leave the live game? Players stay connected and you can rejoin from Studio.")
+                ) {
+                  e.preventDefault();
+                }
+              }}
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-card px-4 text-sm font-bold text-foreground elev-1 transition-transform hover:scale-105"
+              aria-label="Close game and back to editor"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
             </Link>
             <div className="min-w-0">
               <h1 className="truncate font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>

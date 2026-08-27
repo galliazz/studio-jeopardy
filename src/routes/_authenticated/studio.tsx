@@ -61,6 +61,8 @@ function StudioPage() {
   });
 
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [openMenu, setOpenMenu] = useState<string | null>(null);

@@ -199,39 +199,60 @@ function StudioPage() {
               <Zap className="h-7 w-7 text-ink-gold" />
             </div>
             <div>
-              <EditableUsername
-                username={data?.profile?.username ?? ""}
-                onSave={async (username) => {
-                  await updateProfile({ data: { username } });
-                  void refresh();
-                }}
-              />
+              <p className="text-sm text-muted-foreground">
+                Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
+              </p>
               <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button
-            onClick={() => void signOut()}
-            className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-muted-foreground elev-1 transition-transform hover:scale-105 hover:text-foreground"
-          >
-            <LogOut className="h-4 w-4" /> Sign out
+              onClick={() => setSettingsOpen(true)}
+              className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-foreground elev-1 transition-transform hover:scale-105"
+            >
+              <Settings className="h-4 w-4" /> Settings
             </button>
           </div>
         </div>
 
+        {settingsOpen && (
+          <ProfileSettingsDialog
+            username={data?.profile?.username ?? ""}
+            onClose={() => setSettingsOpen(false)}
+            onSave={async (username) => {
+              await updateProfile({ data: { username } });
+              toast.success("Name updated");
+              void refresh();
+            }}
+            onSignOut={() => void signOut()}
+          />
+        )}
+
         {/* Action row */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <div className="flex min-w-64 flex-1 items-center gap-2 rounded-full bg-card px-3 elev-1">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-mint">
+          {/* Search expands with an overshooting spring when focused */}
+          <motion.div
+            layout
+            animate={{ flexGrow: searchOpen || search ? 1 : 0, width: searchOpen || search ? "auto" : 56 }}
+            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            className="flex min-w-14 items-center gap-2 overflow-hidden rounded-full bg-card px-2 elev-1"
+          >
+            <button
+              aria-label="Search boards"
+              onClick={() => setSearchOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint"
+            >
               <Search className="h-4 w-4 text-foreground" />
-            </span>
+            </button>
             <input
               value={search}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => setSearchOpen(false)}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search boards…"
-              className="h-14 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+              className="h-14 w-full min-w-0 bg-transparent pr-3 text-sm outline-none placeholder:text-muted-foreground/60"
             />
-          </div>
+          </motion.div>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setCreating(true)}

@@ -293,13 +293,16 @@ function TileCell({
         boxShadow: `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 28%, transparent)`,
       }}
     >
-      <span className="font-display text-sm font-black sm:text-3xl" style={{ color: theme.accent }}>
+      <span
+        className="font-display text-sm font-black sm:text-3xl"
+        style={{ color: theme.accent, ...textScopeCss(theme, "numbers", 1.875) }}
+      >
         {tile.points}
       </span>
       {preview ? (
         <span
           className="line-clamp-2 w-full break-words text-[8px] leading-tight opacity-60 sm:text-xs"
-          style={{ color: theme.accent }}
+          style={{ color: theme.accent, ...textScopeCss(theme, "questions", 0.75) }}
         >
           {preview}
         </span>

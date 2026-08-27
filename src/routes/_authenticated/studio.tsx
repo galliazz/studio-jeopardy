@@ -16,7 +16,11 @@ import {
   Zap,
   Play,
   Pencil,
+  QrCode,
+  Link as LinkIcon,
+  Settings,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import {
   bootstrapStudio,

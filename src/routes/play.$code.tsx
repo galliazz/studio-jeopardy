@@ -177,9 +177,12 @@ function JoinForm({
         className="w-full"
       >
         <p className="mb-1 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          You're joining
+          Guest Player Setup
         </p>
-        <h1 className="mb-6 text-center font-display text-2xl font-black">{gameTitle}</h1>
+        <h1 className="mb-1 text-center font-display text-2xl font-black">{gameTitle}</h1>
+        <p className="mb-6 text-center text-xs text-muted-foreground">
+          No account needed — just pick a name, avatar and team.
+        </p>
 
         <p className="mb-2 text-xs font-semibold text-muted-foreground">Pick your avatar</p>
         <div className="mb-4 grid grid-cols-8 gap-1.5">

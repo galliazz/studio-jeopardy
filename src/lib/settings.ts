@@ -79,7 +79,9 @@ export function useSettings(): StudioSettings {
     setState(getSettings());
     const l = (s: StudioSettings) => setState({ ...s });
     listeners.add(l);
-    return () => listeners.delete(l);
+    return () => {
+      listeners.delete(l);
+    };
   }, []);
   return state;
 }

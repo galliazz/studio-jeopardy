@@ -1,10 +1,14 @@
 /*
  * Synthesized sound effects via the Web Audio API — no audio assets required.
- * Fun, game-show-style percussion set: drums, claps, rimshots, trombone.
+ * Fun, game-show-style set: drums, claps, brass stabs, trombone, suspense.
  * All functions are safe to call during SSR (they no-op without window).
+ * Every voice routes through a master gain driven by studio preferences.
  */
 
+import { sfxGain } from "@/lib/settings";
+
 let ctx: AudioContext | null = null;
+let master: GainNode | null = null;
 
 function ac(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -17,17 +21,29 @@ function ac(): AudioContext | null {
   return ctx;
 }
 
+/** Master bus — its gain follows the user's volume / mute preference. */
+function bus(audio: AudioContext): GainNode {
+  if (!master || master.context !== audio) {
+    master = audio.createGain();
+    master.connect(audio.destination);
+  }
+  master.gain.value = sfxGain();
+  return master;
+}
+
 interface ToneOpts {
   type?: OscillatorType;
   gain?: number;
   delay?: number;
   slideTo?: number;
+  /** Slow attack for pads / suspense beds. */
+  attack?: number;
 }
 
 function tone(freq: number, duration: number, opts: ToneOpts = {}) {
   const audio = ac();
   if (!audio) return;
-  const { type = "sine", gain = 0.12, delay = 0, slideTo } = opts;
+  const { type = "sine", gain = 0.12, delay = 0, slideTo, attack = 0.008 } = opts;
   const t0 = audio.currentTime + delay;
   const osc = audio.createOscillator();
   const amp = audio.createGain();
@@ -35,9 +51,9 @@ function tone(freq: number, duration: number, opts: ToneOpts = {}) {
   osc.frequency.setValueAtTime(freq, t0);
   if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + duration);
   amp.gain.setValueAtTime(0, t0);
-  amp.gain.linearRampToValueAtTime(gain, t0 + 0.008);
+  amp.gain.linearRampToValueAtTime(gain, t0 + attack);
   amp.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-  osc.connect(amp).connect(audio.destination);
+  osc.connect(amp).connect(bus(audio));
   osc.start(t0);
   osc.stop(t0 + duration + 0.05);
 }

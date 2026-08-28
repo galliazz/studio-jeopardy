@@ -1,0 +1,93 @@
+/*
+ * Local studio preferences (presentation + client-side defaults only).
+ * Persisted in localStorage; no database involvement, no game logic.
+ */
+
+import { useEffect, useState } from "react";
+
+export interface StudioSettings {
+  /** 0 – 1 master multiplier for synthesized SFX. */
+  volume: number;
+  muted: boolean;
+  /** Default countdown length offered to new games (seconds). */
+  timerSeconds: number;
+  /** Mobile buzzer vibration. */
+  haptics: boolean;
+  teamAlpha: string;
+  teamBravo: string;
+}
+
+export const DEFAULT_SETTINGS: StudioSettings = {
+  volume: 0.8,
+  muted: false,
+  timerSeconds: 15,
+  haptics: true,
+  teamAlpha: "Alpha",
+  teamBravo: "Bravo",
+};
+
+const KEY = "jd-studio-settings";
+
+let current: StudioSettings = { ...DEFAULT_SETTINGS };
+let loaded = false;
+const listeners = new Set<(s: StudioSettings) => void>();
+
+function load(): StudioSettings {
+  if (loaded || typeof window === "undefined") return current;
+  loaded = true;
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (raw) current = { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<StudioSettings>) };
+  } catch {
+    /* ignore malformed storage */
+  }
+  return current;
+}
+
+export function getSettings(): StudioSettings {
+  return load();
+}
+
+export function setSettings(patch: Partial<StudioSettings>) {
+  current = { ...load(), ...patch };
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(KEY, JSON.stringify(current));
+    } catch {
+      /* storage full / blocked */
+    }
+  }
+  for (const l of listeners) l(current);
+}
+
+export function resetSettings() {
+  current = { ...DEFAULT_SETTINGS };
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.removeItem(KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+  for (const l of listeners) l(current);
+}
+
+/** Reactive hook: re-renders when any preference changes. */
+export function useSettings(): StudioSettings {
+  const [state, setState] = useState<StudioSettings>(() => getSettings());
+  useEffect(() => {
+    setState(getSettings());
+    const l = (s: StudioSettings) => setState({ ...s });
+    listeners.add(l);
+    return () => {
+      listeners.delete(l);
+    };
+  }, []);
+  return state;
+}
+
+/** Effective gain multiplier used by the synthesized SFX engine. */
+export function sfxGain(): number {
+  const s = load();
+  return s.muted ? 0 : Math.max(0, Math.min(1, s.volume));
+}

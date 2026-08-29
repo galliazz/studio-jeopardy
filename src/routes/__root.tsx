@@ -181,6 +181,7 @@ function TopContextBar() {
         {/* Divider keeps the mode switch visually separate from the page label */}
         <span aria-hidden className="h-7 w-px shrink-0 rounded-full bg-foreground/10" />
         <ThemeToggle />
+        <SettingsButton />
       </div>
     </div>
   );

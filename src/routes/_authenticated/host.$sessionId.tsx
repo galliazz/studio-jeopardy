@@ -16,6 +16,9 @@ import {
   X,
   Check,
   Flag,
+  ChevronDown,
+  Copy,
+  Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";

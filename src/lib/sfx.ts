@@ -136,10 +136,22 @@ function drumRoll(delay = 0) {
   kick(t, 0.3);
 }
 
+/** Bright brass-ish stab used across the celebratory cues. */
+function stab(freq: number, delay: number, dur = 0.28, gain = 0.12) {
+  tone(freq, dur, { type: "triangle", gain, delay });
+  tone(freq * 2, dur * 0.7, { type: "square", gain: gain * 0.35, delay });
+  tone(freq / 2, dur, { type: "sawtooth", gain: gain * 0.4, delay });
+}
+
 export const sfx = {
   /** short local click when a buzz registers */
   click() {
     tone(1400, 0.06, { type: "square", gain: 0.06 });
+  },
+  /** UI pop — panels and popovers springing open */
+  pop() {
+    tone(520, 0.09, { type: "sine", gain: 0.08, slideTo: 980 });
+    noise(0.05, { gain: 0.05, freq: 3200, q: 3, delay: 0.02 });
   },
   /** player buzzer — punchy two-tone horn */
   buzz() {
@@ -154,16 +166,18 @@ export const sfx = {
     tone(1318.5, 0.45, { type: "triangle", gain: 0.12, delay: 0.2 });
     applause(0.1);
   },
-  /** wrong answer — sad trombone (womp womp womppp) */
+  /** wrong answer — rimshot then a fat sad trombone slide */
   wrong() {
+    noise(0.06, { gain: 0.16, freq: 2200, q: 1.4 });
+    kick(0.02, 0.22);
     const wah = (freq: number, delay: number, dur: number, slideTo?: number) => {
-      tone(freq, dur, { type: "sawtooth", gain: 0.09, delay, ...(slideTo ? { slideTo } : {}) });
-      tone(freq / 2, dur, { type: "triangle", gain: 0.07, delay, ...(slideTo ? { slideTo: slideTo / 2 } : {}) });
+      tone(freq, dur, { type: "sawtooth", gain: 0.1, delay, ...(slideTo ? { slideTo } : {}) });
+      tone(freq / 2, dur, { type: "triangle", gain: 0.08, delay, ...(slideTo ? { slideTo: slideTo / 2 } : {}) });
     };
-    wah(233.08, 0, 0.22);
-    wah(220, 0.26, 0.22);
-    wah(207.65, 0.52, 0.22);
-    wah(196, 0.78, 0.65, 185);
+    wah(233.08, 0.12, 0.24);
+    wah(220, 0.4, 0.24);
+    wah(207.65, 0.68, 0.24);
+    wah(196, 0.96, 0.8, 150);
   },
   /** steady tick 15s..6s — soft woodblock */
   tick() {
@@ -189,14 +203,57 @@ export const sfx = {
   dailyDouble() {
     drumRoll(0);
   },
+  /** standalone accelerating drum roll ending on a crash */
+  drumroll() {
+    drumRoll(0);
+  },
+  /** victory — triumphant brass fanfare, cymbal and a crowd */
+  victory() {
+    crash(0, 0.14);
+    const riff: [number, number][] = [
+      [523.25, 0], [523.25, 0.18], [659.25, 0.34], [783.99, 0.52], [1046.5, 0.74],
+    ];
+    riff.forEach(([f, d]) => stab(f, d, 0.3, 0.13));
+    kick(0, 0.24);
+    kick(0.34, 0.22);
+    clap(0.52, 0.2);
+    stab(1046.5, 0.98, 1.0, 0.14);
+    crash(0.98, 0.16);
+    applause(1.05);
+  },
+  /** sad — descending minor piano-ish fall */
+  sad() {
+    const notes = [440, 392, 349.23, 293.66];
+    notes.forEach((n, i) => {
+      tone(n, 0.5, { type: "triangle", gain: 0.11, delay: i * 0.22 });
+      tone(n / 2, 0.6, { type: "sine", gain: 0.07, delay: i * 0.22 });
+    });
+    tone(220, 1.4, { type: "sine", gain: 0.09, delay: 0.9, slideTo: 165 });
+  },
+  /** funny — cartoon boing + slide whistle + rimshot */
+  funny() {
+    tone(180, 0.35, { type: "square", gain: 0.09, slideTo: 720 });
+    tone(720, 0.3, { type: "square", gain: 0.07, delay: 0.34, slideTo: 220 });
+    tone(400, 0.55, { type: "sine", gain: 0.08, delay: 0.66, slideTo: 1600 });
+    noise(0.07, { gain: 0.14, freq: 2400, q: 1.2, delay: 1.2 });
+    kick(1.22, 0.24);
+    crash(1.26, 0.1);
+  },
+  /** suspense — ticking heartbeat under a rising dissonant pad */
+  suspense() {
+    for (let i = 0; i < 8; i++) {
+      kick(i * 0.42, 0.16);
+      kick(i * 0.42 + 0.16, 0.1);
+    }
+    tone(110, 3.4, { type: "sawtooth", gain: 0.05, attack: 1.2, slideTo: 175 });
+    tone(164.81, 3.4, { type: "triangle", gain: 0.04, attack: 1.4, slideTo: 233.08 });
+    noise(3.2, { gain: 0.02, freq: 900, q: 0.6 });
+  },
   /** victory fanfare — brass riff + drum roll + applause */
   fanfare() {
     drumRoll(0);
     const notes = [523.25, 659.25, 783.99, 1046.5];
-    notes.forEach((n, i) => {
-      tone(n, 0.3, { type: "triangle", gain: 0.14, delay: 1.0 + i * 0.15 });
-      tone(n / 2, 0.3, { type: "sawtooth", gain: 0.05, delay: 1.0 + i * 0.15 });
-    });
+    notes.forEach((n, i) => stab(n, 1.0 + i * 0.15, 0.3, 0.13));
     tone(1046.5, 0.9, { type: "triangle", gain: 0.13, delay: 1.65 });
     applause(1.7);
   },

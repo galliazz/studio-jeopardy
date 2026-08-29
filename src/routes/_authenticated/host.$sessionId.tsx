@@ -928,7 +928,7 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
         disabled={!session.current_tile_id}
         aria-label="Clear queue"
         title="Clear queue"
-        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-danger hover:text-danger-ink disabled:opacity-40"
+        className="absolute right-4 top-[10px] flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-danger hover:text-danger-ink disabled:opacity-40"
       >
         <Trash2 className="h-4 w-4" />
       </button>

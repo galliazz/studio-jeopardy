@@ -95,7 +95,7 @@ function noise(duration: number, opts: NoiseOpts = {}) {
   amp.gain.setValueAtTime(0, t0);
   amp.gain.linearRampToValueAtTime(gain, t0 + 0.004);
   amp.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-  src.connect(filter).connect(amp).connect(audio.destination);
+  src.connect(filter).connect(amp).connect(bus(audio));
   src.start(t0);
   src.stop(t0 + duration + 0.05);
 }

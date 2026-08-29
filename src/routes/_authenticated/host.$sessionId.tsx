@@ -214,8 +214,11 @@ function HostPage() {
             <JoinCard joinCode={game.join_code} />
             <AnswerPreview tile={currentTile} phase={session.phase} />
             <Soundboard game={game} />
+            <ObsLinksPanel joinCode={game.join_code} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tools</h3>
+              <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Tools
+              </h3>
               <div className="flex flex-col gap-2">
                 <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
                 <ToolButton icon={BarChart3} label="Analytics" onClick={() => setAnalyticsOpen(true)} />

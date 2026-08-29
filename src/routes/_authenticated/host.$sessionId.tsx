@@ -488,7 +488,7 @@ function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["pha
   const revealed = phase === "reveal";
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Preview</h3>
+      <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Preview</h3>
       {tile ? (
         <div className={revealed ? "" : "select-none"}>
           <p className={`text-sm font-semibold ${revealed ? "text-ink-gold" : "text-foreground"}`}>
@@ -521,7 +521,7 @@ function Soundboard({ game }: { game: Game }) {
 
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <h3 className="mb-3 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
         <Volume2 className="h-3.5 w-3.5" /> Soundboard
       </h3>
       <div className="flex flex-wrap gap-2">
@@ -922,7 +922,7 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
 
   return (
     <div className="relative rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 pr-10 text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
+      <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
       <button
         onClick={() => void clearQueue({ data: { sessionId: session.id } })}
         disabled={!session.current_tile_id}
@@ -1159,7 +1159,7 @@ function FinalPanel({
   const teams: Team[] = ["alpha", "bravo"];
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Final Jeopardy</h3>
+      <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Final Jeopardy</h3>
       {session.phase === "final_wager" && (
         <>
           <p className="mb-3 text-sm text-muted-foreground">Teams are placing wagers…</p>

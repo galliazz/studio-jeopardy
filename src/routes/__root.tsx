@@ -16,6 +16,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "../integrations/supabase/client";
 import { initThemeMode } from "../lib/theme-mode";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { SettingsButton } from "../components/SettingsDialog";
 
 function NotFoundComponent() {
   return (

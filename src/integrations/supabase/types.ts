@@ -370,15 +370,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_public_tile_points: {
-        Args: { p_join_code: string }
-        Returns: {
-          id: string
-          category_id: string
-          row_index: number
-          points: number
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

@@ -168,7 +168,11 @@ function RootComponent() {
 function TopContextBar() {
   const location = useLocation();
   const path = location.pathname;
+  // OBS browser-source overlays render with no chrome at all.
+  if (path.startsWith("/obs/")) return null;
   const label = screenLabel(path);
+  // Host console and the editor relocate the Day/Night switch into their own top bars.
+  const showThemeToggleHere = !path.startsWith("/host/") && !path.startsWith("/edit/");
 
   return (
     <div className="pointer-events-none fixed right-3 top-3 z-[80] flex max-w-[calc(100vw-1.5rem)] justify-end sm:right-5 sm:top-5">
@@ -181,7 +185,7 @@ function TopContextBar() {
         </div>
         {/* Divider keeps the mode switch visually separate from the page label */}
         <span aria-hidden className="h-7 w-px shrink-0 rounded-full bg-foreground/10" />
-        <ThemeToggle />
+        {showThemeToggleHere && <ThemeToggle />}
         <SettingsButton />
       </div>
     </div>

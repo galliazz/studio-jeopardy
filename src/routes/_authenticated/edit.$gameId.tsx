@@ -15,6 +15,7 @@ import {
   X,
   Copy,
   ExternalLink,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -39,8 +40,10 @@ import {
 } from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
-import { useThemeMode } from "@/components/ThemeToggle";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
+import { useOrigin } from "@/hooks/use-origin";
+import { sfx } from "@/lib/sfx";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
@@ -97,14 +100,18 @@ function EditorPage() {
     <div className="min-h-screen pb-44">
       {/* Top bar */}
       <div className="sticky top-0 z-30 px-4 pt-4">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 rounded-[32px] bg-card/90 px-3 py-3 pr-14 elev-2 backdrop-blur-md sm:gap-3 sm:rounded-full sm:px-4">
-          <Link
-            to="/studio"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-lilac text-foreground transition-transform hover:scale-105"
-            aria-label="Back to studio"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 rounded-[32px] bg-card/90 px-3 py-4 pr-14 elev-2 backdrop-blur-md sm:gap-3 sm:rounded-full sm:px-4">
+          {/* Neutral lavender chips: navigation + presentation mode, grouped together */}
+          <div className="flex items-center gap-1.5">
+            <Link
+              to="/studio"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-lilac text-foreground transition-transform hover:scale-105"
+              aria-label="Back to studio"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <ThemeToggle />
+          </div>
           <InlineTitle
             value={board.game.title}
             onSave={async (title) => {
@@ -113,9 +120,7 @@ function EditorPage() {
             }}
           />
           <div className="ml-auto flex items-center gap-2">
-            <span className="hidden rounded-full bg-mint px-4 py-2 font-mono text-xs font-bold tracking-widest text-foreground sm:block">
-              {board.game.join_code}
-            </span>
+            <JoinCodeBadge joinCode={board.game.join_code} />
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
@@ -130,7 +135,7 @@ function EditorPage() {
       {/* Board canvas — themed preview */}
       <div className="mx-auto max-w-7xl px-4 pt-6">
         <div
-          className="mx-auto w-full max-w-[1100px] p-2.5 elev-3 transition-[border-radius] duration-300 sm:p-7"
+          className="mx-auto w-full p-2.5 elev-3 transition-[border-radius] duration-300 sm:p-7"
           style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
         >
           <div className="grid grid-cols-5 gap-1 sm:gap-3">
@@ -200,7 +205,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
     return (
       <button
         onClick={() => setEditing(true)}
-        className="max-w-[45vw] truncate rounded-full px-3 py-1.5 text-left font-display text-base font-black hover:bg-muted sm:text-xl"
+        className="max-w-[45vw] truncate rounded-full bg-mint px-4 py-1.5 text-left font-display text-base font-black text-foreground transition-transform hover:scale-[1.02] sm:text-xl"
       >
         {value}
       </button>
@@ -219,6 +224,68 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
       maxLength={80}
       className="w-[45vw] max-w-xs rounded-full bg-muted px-4 py-1.5 font-display text-base font-black outline-none ring-2 ring-ink-accent sm:text-xl"
     />
+  );
+}
+
+/* ---------------------------- Join code badge ----------------------------- */
+
+/** Invite-code chip that pops open a small QR/copy panel — not the full "Play Game" flow. */
+function JoinCodeBadge({ joinCode }: { joinCode: string }) {
+  const origin = useOrigin();
+  const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <motion.button
+        whileTap={{ scale: 0.94 }}
+        onClick={() => {
+          sfx.pop();
+          setOpen((v) => !v);
+        }}
+        aria-expanded={open}
+        className="hidden items-center gap-1.5 rounded-full bg-mint px-4 py-2 font-mono text-xs font-bold tracking-widest text-foreground transition-transform hover:scale-105 sm:flex"
+      >
+        {joinCode}
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </motion.button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <button aria-label="Close" onClick={() => setOpen(false)} className="fixed inset-0 z-10 cursor-default" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: -6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: -6 }}
+              transition={{ type: "spring", stiffness: 320, damping: 24 }}
+              className="absolute right-0 top-12 z-20 w-56 rounded-[26px] bg-popover p-4 text-center elev-3"
+            >
+              <div className="mx-auto mb-3 w-fit rounded-[20px] bg-card p-2">
+                {joinUrl ? <QRCodeSVG value={joinUrl} size={112} /> : <div className="h-28 w-28" />}
+              </div>
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(joinCode);
+                  toast.success("Join code copied");
+                }}
+                className="mx-auto flex items-center gap-1.5 font-display text-lg font-black tracking-[0.15em] text-ink-accent"
+              >
+                {joinCode} <Copy className="h-3.5 w-3.5 opacity-60" />
+              </button>
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(joinUrl);
+                  toast.success("Join link copied");
+                }}
+                className="mx-auto mt-3 flex items-center gap-2 rounded-full bg-card px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy link
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -634,62 +701,67 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 24, delay: 0.2 }}
-      className="fixed bottom-3 left-1/2 z-30 max-h-[10rem] w-[min(960px,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-[36px] bg-card/95 px-4 py-3 elev-3 backdrop-blur-md sm:bottom-5 sm:px-6 sm:py-4"
+      className="fixed bottom-3 left-1/2 z-30 max-h-[12rem] w-[min(1040px,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-[36px] bg-card/95 px-5 py-4 text-foreground elev-3 backdrop-blur-md sm:bottom-5 sm:px-8 sm:py-5"
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 sm:gap-x-6 sm:gap-y-3">
-        <div className="flex items-center gap-2">
-          {THEME_PRESETS.map((p) => (
-            <button
-              key={p.name}
-              onClick={() => void applyPreset(p)}
-              title={p.name}
-              aria-label={`Apply theme ${p.name}`}
-              className="h-10 w-10 transition-transform hover:scale-110 scallop"
-              style={{ background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})` }}
+      <div className="flex flex-wrap items-stretch gap-x-6 gap-y-4">
+        {/* Section 1 — Theme & Shape */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            {THEME_PRESETS.map((p) => (
+              <button
+                key={p.name}
+                onClick={() => void applyPreset(p)}
+                title={p.name}
+                aria-label={`Apply theme ${p.name}`}
+                className="h-10 w-10 transition-transform hover:scale-110 scallop"
+                style={{ background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})` }}
+              />
+            ))}
+          </div>
+
+          <label className="flex h-10 items-center gap-2 text-xs font-semibold text-muted-foreground">
+            Roundness
+            <input
+              type="range"
+              min={0}
+              max={50}
+              value={theme.radius}
+              onChange={(e) => applyRadius(Number(e.target.value))}
+              className="w-24 accent-[var(--ink-accent)]"
             />
-          ))}
+            {radiusEditing ? (
+              <input
+                autoFocus
+                type="number"
+                min={0}
+                max={50}
+                value={theme.radius}
+                onChange={(e) => applyRadius(Math.max(0, Math.min(50, Number(e.target.value))))}
+                onBlur={() => setRadiusEditing(false)}
+                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+                className="h-10 w-14 rounded-full bg-muted px-1 text-center text-xs font-bold text-foreground outline-none ring-2 ring-ink-accent"
+              />
+            ) : (
+              <button
+                onDoubleClick={() => setRadiusEditing(true)}
+                title="Double-click to type a value"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-center font-bold text-foreground hover:bg-muted"
+              >
+                {theme.radius}
+              </button>
+            )}
+          </label>
         </div>
 
-        <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-          Roundness
-          <input
-            type="range"
-            min={0}
-            max={40}
-            value={theme.radius}
-            onChange={(e) => applyRadius(Number(e.target.value))}
-            className="w-24 accent-[var(--ink-accent)]"
-          />
-          {radiusEditing ? (
-            <input
-              autoFocus
-              type="number"
-              min={0}
-              max={40}
-              value={theme.radius}
-              onChange={(e) => applyRadius(Math.max(0, Math.min(40, Number(e.target.value))))}
-              onBlur={() => setRadiusEditing(false)}
-              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="h-8 w-14 rounded-full bg-muted px-1 text-center text-xs font-bold text-foreground outline-none ring-2 ring-ink-accent"
-            />
-          ) : (
-            <button
-              onDoubleClick={() => setRadiusEditing(true)}
-              title="Double-click to type a value"
-              className="w-9 rounded-full px-1 py-0.5 text-center font-bold text-foreground hover:bg-muted"
-            >
-              {theme.radius}
-            </button>
-          )}
-        </label>
+        <span aria-hidden className="hidden h-auto w-px shrink-0 self-stretch rounded-full bg-foreground/10 sm:block" />
 
-        {/* Typography: pick what to restyle, then font / size / weight */}
+        {/* Section 2 — Text formatting */}
         <div className="flex flex-wrap items-center gap-1.5">
           <select
             value={scope}
             onChange={(e) => setScope(e.target.value as TextScope | "all")}
             aria-label="Text target"
-            className="h-9 rounded-full bg-muted px-3 text-xs font-bold text-foreground outline-none"
+            className="h-10 rounded-full bg-muted px-3 text-xs font-bold text-foreground outline-none"
           >
             <option value="numbers">Numbers</option>
             <option value="questions">Questions</option>
@@ -700,7 +772,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
             value={current.font ?? ""}
             onChange={(e) => void applyTextStyle({ font: e.target.value })}
             aria-label="Font"
-            className="h-9 rounded-full bg-muted px-3 text-xs font-semibold text-foreground outline-none"
+            className="h-10 rounded-full bg-muted px-3 text-xs font-semibold text-foreground outline-none"
           >
             {BOARD_FONTS.map((f) => (
               <option key={f.label} value={f.value}>
@@ -708,16 +780,18 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               </option>
             ))}
           </select>
-          <input
-            type="range"
-            min={0.6}
-            max={1.8}
-            step={0.1}
-            value={current.size ?? 1}
-            onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
-            aria-label="Text size"
-            className="w-20 accent-[var(--ink-accent)]"
-          />
+          <div className="flex h-10 items-center">
+            <input
+              type="range"
+              min={0.6}
+              max={1.8}
+              step={0.1}
+              value={current.size ?? 1}
+              onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
+              aria-label="Text size"
+              className="w-20 accent-[var(--ink-accent)]"
+            />
+          </div>
           {([
             ["bold", "B", "font-black"],
             ["italic", "I", "italic"],
@@ -728,7 +802,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
               aria-pressed={Boolean(current[key])}
               aria-label={key}
-              className={`h-9 w-9 rounded-full text-xs ${cls} ${
+              className={`h-10 w-10 rounded-full text-xs ${cls} ${
                 current[key] ? "bg-ink-accent text-card" : "bg-muted text-foreground"
               }`}
             >
@@ -737,38 +811,43 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-muted-foreground">Teams</span>
-          <TeamNameInput
-            defaultValue={theme.teamAlpha ?? ""}
-            placeholder="Alpha"
-            swatch="bg-team-alpha"
-            onSave={(v) => void applyTeamName("teamAlpha", v)}
-          />
-          <TeamNameInput
-            defaultValue={theme.teamBravo ?? ""}
-            placeholder="Bravo"
-            swatch="bg-team-bravo"
-            onSave={(v) => void applyTeamName("teamBravo", v)}
-          />
-        </div>
+        <span aria-hidden className="hidden h-auto w-px shrink-0 self-stretch rounded-full bg-foreground/10 sm:block" />
 
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">Points</span>
-          {rowPoints.map((p, i) => (
-            <input
-              key={i}
-              type="number"
-              value={p}
-              onChange={(e) => {
-                const next = [...rowPoints];
-                next[i] = Number(e.target.value);
-                setRowPointsState(next);
-              }}
-              onBlur={() => void applyRowPoints()}
-              className="h-10 w-16 rounded-full bg-muted px-2 text-center text-xs font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
+        {/* Section 3 — Teams & Points */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex h-10 items-center gap-2">
+            <span className="text-xs font-semibold text-muted-foreground">Teams</span>
+            <TeamNameInput
+              defaultValue={theme.teamAlpha ?? ""}
+              placeholder="Alpha"
+              swatch="bg-team-alpha"
+              onSave={(v) => void applyTeamName("teamAlpha", v)}
             />
-          ))}
+            <TeamNameInput
+              defaultValue={theme.teamBravo ?? ""}
+              placeholder="Bravo"
+              swatch="bg-team-bravo"
+              onSave={(v) => void applyTeamName("teamBravo", v)}
+            />
+          </div>
+
+          <div className="flex h-10 items-center gap-1.5">
+            <span className="text-xs font-semibold text-muted-foreground">Points</span>
+            {rowPoints.map((p, i) => (
+              <input
+                key={i}
+                type="number"
+                value={p}
+                onChange={(e) => {
+                  const next = [...rowPoints];
+                  next[i] = Number(e.target.value);
+                  setRowPointsState(next);
+                }}
+                onBlur={() => void applyRowPoints()}
+                className="h-10 w-16 rounded-full bg-muted px-2 text-center text-xs font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
+              />
+            ))}
+          </div>
         </div>
       </div>
     </motion.div>

@@ -12,13 +12,11 @@ import {
   FileSpreadsheet,
   Trash2,
   Upload,
-  LogOut,
   Zap,
   Play,
   Pencil,
   QrCode,
   Link as LinkIcon,
-  Settings,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
@@ -30,13 +28,14 @@ import {
   exportGame,
   importGame,
   updateGame,
-  updateProfile,
 } from "@/lib/games.functions";
 import { startSession } from "@/lib/sessions.functions";
 import { themeOf, type Game } from "@/lib/types";
-import { supabase } from "@/integrations/supabase/client";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { sfx } from "@/lib/sfx";
+import { getSettings } from "@/lib/settings";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
@@ -80,6 +79,13 @@ function StudioPage() {
     const title = newTitle.trim() || "Untitled Board";
     try {
       const game = await createGame({ data: { title } });
+      // Seed the new board with the default team names from local studio preferences.
+      const prefs = getSettings();
+      if (prefs.teamAlpha.trim() || prefs.teamBravo.trim()) {
+        await updateGame({
+          data: { gameId: game.id, theme: { teamAlpha: prefs.teamAlpha, teamBravo: prefs.teamBravo } },
+        });
+      }
       toast.success("Board created");
       void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
     } catch (err) {
@@ -181,54 +187,32 @@ function StudioPage() {
     }
   };
 
-  const signOut = async () => {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    void navigate({ to: "/auth", replace: true });
-  };
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-8">
-        {/* Greeting banner */}
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[36px] bg-blush p-6 elev-1 sm:p-8">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center bg-butter scallop">
-              <Zap className="h-7 w-7 text-ink-gold" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
-              </p>
-              <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
-            </div>
+        {/* Greeting banner — click opens the shared Settings panel (Account, Preferences, General) */}
+        <button
+          onClick={() => {
+            sfx.pop();
+            setSettingsOpen(true);
+          }}
+          className="mb-8 flex w-full flex-wrap items-center gap-4 rounded-[36px] bg-blush p-6 text-left elev-1 transition-transform hover:scale-[1.005] sm:p-8"
+        >
+          <div className="flex h-14 w-14 items-center justify-center bg-butter scallop">
+            <Zap className="h-7 w-7 text-ink-gold" />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="flex items-center gap-2 rounded-full bg-card px-5 py-3 text-sm font-semibold text-foreground elev-1 transition-transform hover:scale-105"
-            >
-              <Settings className="h-4 w-4" /> Settings
-            </button>
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
+            </p>
+            <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
           </div>
-        </div>
+        </button>
 
-        {settingsOpen && (
-          <ProfileSettingsDialog
-            username={data?.profile?.username ?? ""}
-            onClose={() => setSettingsOpen(false)}
-            onSave={async (username) => {
-              await updateProfile({ data: { username } });
-              toast.success("Name updated");
-              void refresh();
-            }}
-            onSignOut={() => void signOut()}
-          />
-        )}
+        {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
 
         {/* Action row */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
@@ -237,12 +221,12 @@ function StudioPage() {
             layout
             animate={{ flexGrow: searchOpen || search ? 1 : 0, width: searchOpen || search ? "auto" : 56 }}
             transition={{ type: "spring", stiffness: 380, damping: 18 }}
-            className="flex min-w-14 items-center gap-2 overflow-hidden rounded-full bg-card px-2 elev-1"
+            className="flex min-w-9 items-center gap-2 overflow-hidden rounded-full bg-lilac/50 px-2 elev-1"
           >
             <button
               aria-label="Search boards"
               onClick={() => setSearchOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-mint"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lilac"
             >
               <Search className="h-4 w-4 text-foreground" />
             </button>
@@ -353,80 +337,6 @@ function StudioPage() {
   );
 }
 
-/** Account settings: rename the host profile and sign out. */
-function ProfileSettingsDialog({
-  username,
-  onClose,
-  onSave,
-  onSignOut,
-}: {
-  username: string;
-  onClose: () => void;
-  onSave: (v: string) => Promise<void>;
-  onSignOut: () => void;
-}) {
-  const [draft, setDraft] = useState(username);
-  useEffect(() => setDraft(username), [username]);
-
-  const save = async () => {
-    const v = draft.trim();
-    if (v.length >= 2 && v !== username) await onSave(v);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
-      <button aria-label="Close settings" onClick={onClose} className="absolute inset-0 cursor-default" />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.94, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="relative w-full max-w-md rounded-[32px] bg-card p-6 elev-3"
-      >
-        <h2 className="mb-1 font-display text-2xl font-black">Settings</h2>
-        <p className="mb-5 text-sm text-muted-foreground">Your host profile</p>
-
-        <label className="mb-2 block text-xs font-black uppercase tracking-widest text-muted-foreground">
-          Display name
-        </label>
-        <div className="mb-6 flex items-center gap-2">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-butter scallop">
-            <Pencil className="h-4 w-4 text-ink-gold" />
-          </span>
-          <input
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && void save()}
-            maxLength={24}
-            className="h-12 w-full rounded-full bg-muted px-4 font-semibold outline-none ring-2 ring-transparent focus:ring-ink-accent"
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <button
-            onClick={onSignOut}
-            className="flex items-center gap-2 rounded-full bg-blush px-5 py-3 text-sm font-semibold text-foreground elev-1"
-          >
-            <LogOut className="h-4 w-4" /> Sign out
-          </button>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="rounded-full px-5 py-3 text-sm font-semibold text-muted-foreground">
-              Cancel
-            </button>
-            <button
-              onClick={() => void save()}
-              className="rounded-full bg-coral px-6 py-3 text-sm font-black text-foreground elev-1"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 function GameCard({
   game,
   index,
@@ -458,6 +368,14 @@ function GameCard({
   const [draftTitle, setDraftTitle] = useState(game.title);
   const [showQr, setShowQr] = useState(false);
   useEffect(() => setDraftTitle(game.title), [game.title]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCloseMenu();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen, onCloseMenu]);
   const joinUrl =
     typeof window === "undefined" ? `/play/${game.join_code}` : `${window.location.origin}/play/${game.join_code}`;
 
@@ -514,7 +432,7 @@ function GameCard({
               onToggleMenu();
             }}
             aria-label="Board options"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-card/70 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-lilac text-foreground transition-colors hover:brightness-95"
           >
             <MoreVertical className="h-4 w-4" />
           </button>
@@ -604,17 +522,30 @@ function GameCard({
         ))}
       </div>
 
-      <motion.button
-        whileTap={{ scale: 0.96 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onPlay();
-        }}
-        className="mx-auto flex w-full items-center justify-center gap-2.5 rounded-full bg-coral py-5 font-display text-xl font-black text-foreground elev-2 transition-transform hover:scale-[1.02]"
-      >
-        <Play className="h-6 w-6" /> Play
-      </motion.button>
-
+      <div className="flex items-center gap-2">
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPlay();
+          }}
+          className="flex flex-1 items-center justify-center gap-2.5 rounded-full bg-coral py-5 font-display text-xl font-black text-foreground elev-2 transition-transform hover:scale-[1.02]"
+        >
+          <Play className="h-6 w-6" /> Play
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={(e) => {
+            e.stopPropagation();
+            void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+          }}
+          aria-label="Edit board"
+          title="Edit board"
+          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-card text-foreground elev-1 transition-transform hover:scale-[1.05]"
+        >
+          <Pencil className="h-5 w-5" />
+        </motion.button>
+      </div>
     </motion.div>
   );
 }

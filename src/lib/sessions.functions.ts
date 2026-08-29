@@ -206,6 +206,7 @@ export const judgeAnswer = createServerFn({ method: "POST" })
         .update({
           phase: "reveal",
           dd_wager: null,
+          timer_ends_at: null,
           ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
         })
         .eq("id", data.sessionId);
@@ -267,7 +268,7 @@ export const revealAnswer = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("sessions")
-      .update({ phase: "reveal" })
+      .update({ phase: "reveal", timer_ends_at: null })
       .eq("id", data.sessionId);
     if (error) throw new Error(error.message);
     return { ok: true };

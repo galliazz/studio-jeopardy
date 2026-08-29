@@ -41,6 +41,7 @@ import {
 import { updateGame } from "@/lib/games.functions";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl } from "@/lib/media";
@@ -58,7 +59,7 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { useThemeMode } from "@/components/ThemeToggle";
+import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
@@ -183,6 +184,7 @@ function HostPage() {
             <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
           </div>
           <div className="flex items-center justify-end gap-2">
+            <ThemeToggle />
             <button
               onClick={async () => {
                 setHostSession({
@@ -364,13 +366,6 @@ function ScorePill({ team, name, score, players }: { team: Team; name: string; s
 
 /* -------------------------------- Join card ------------------------------- */
 
-/** Browser origin, resolved after hydration so SSR never touches `window`. */
-function useOrigin(): string {
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
-  return origin;
-}
-
 function JoinCard({ joinCode }: { joinCode: string }) {
   const origin = useOrigin();
   const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
@@ -401,7 +396,16 @@ function JoinCard({ joinCode }: { joinCode: string }) {
               <div className="mx-auto mb-3 w-fit rounded-[22px] bg-card p-2.5">
                 {joinUrl ? <QRCodeSVG value={joinUrl} size={128} /> : <div className="h-32 w-32" />}
               </div>
-              <p className="font-display text-2xl font-black tracking-[0.2em] text-ink-gold">{joinCode}</p>
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(joinCode);
+                  toast.success("Join code copied");
+                }}
+                className="mx-auto flex items-center gap-2 rounded-full px-2 py-1 font-display text-2xl font-black tracking-[0.2em] text-ink-gold transition-transform hover:scale-105"
+                title="Copy join code"
+              >
+                {joinCode} <Copy className="h-4 w-4 opacity-60" />
+              </button>
               <button
                 onClick={() => {
                   void navigator.clipboard.writeText(joinUrl);
@@ -680,7 +684,7 @@ function QuestionOverlay({
       ) : (
         <>
           <div className="flex items-center justify-end gap-2">
-            {countdown.seconds != null && (
+            {countdown.seconds != null && session.phase !== "reveal" && (
               <motion.span
                 animate={flashRed ? { scale: [1, 1.35, 1] } : { scale: 1 }}
                 transition={flashRed ? { repeat: Infinity, duration: 0.5 } : { duration: 0.15 }}
@@ -697,7 +701,7 @@ function QuestionOverlay({
             )}
           </div>
 
-          {countdown.seconds != null && (
+          {countdown.seconds != null && session.phase !== "reveal" && (
             <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
                 className={`h-full rounded-full transition-[width] duration-100 ${countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"}`}
@@ -749,7 +753,7 @@ function QuestionOverlay({
             {session.phase !== "reveal" && (
               <button
                 onClick={() => {
-                  onHostStatePatch({ session: { phase: "reveal" } });
+                  onHostStatePatch({ session: { phase: "reveal", timer_ends_at: null } });
                   void revealAnswer({ data: { sessionId: session.id } });
                 }}
                 className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
@@ -769,6 +773,7 @@ function QuestionOverlay({
                         session: {
                           phase: "reveal",
                           dd_wager: null,
+                          timer_ends_at: null,
                           ...(activePlayer.team === "alpha"
                             ? { score_alpha: session.score_alpha + value }
                             : { score_bravo: session.score_bravo + value }),

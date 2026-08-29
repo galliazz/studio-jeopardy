@@ -508,7 +508,12 @@ function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["pha
 const SFX_BUTTONS = [
   { key: "buzz", label: "Buzzer", play: () => sfx.buzz() },
   { key: "ding", label: "Correct", play: () => sfx.ding() },
-  { key: "wrong", label: "Wrong", play: () => sfx.wrong() },
+  { key: "wrong", label: "Wrong answer", play: () => sfx.wrong() },
+  { key: "victory", label: "Victory", play: () => sfx.victory() },
+  { key: "sad", label: "Sad", play: () => sfx.sad() },
+  { key: "drumroll", label: "Drum roll", play: () => sfx.drumroll() },
+  { key: "funny", label: "Funny", play: () => sfx.funny() },
+  { key: "suspense", label: "Suspense", play: () => sfx.suspense() },
   { key: "dd", label: "Daily Double", play: () => sfx.dailyDouble() },
   { key: "alarm", label: "Time's Up", play: () => sfx.alarm() },
   { key: "fanfare", label: "Fanfare", play: () => sfx.fanfare() },

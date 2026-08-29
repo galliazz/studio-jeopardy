@@ -358,15 +358,120 @@ function ScorePill({ team, name, score, players }: { team: Team; name: string; s
 
 /* -------------------------------- Join card ------------------------------- */
 
+/** Browser origin, resolved after hydration so SSR never touches `window`. */
+function useOrigin(): string {
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  return origin;
+}
+
 function JoinCard({ joinCode }: { joinCode: string }) {
-  const joinUrl = `${window.location.origin}/play/${joinCode}`;
+  const origin = useOrigin();
+  const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
+  const [open, setOpen] = useState(true);
+
   return (
-    <div className="rounded-[32px] bg-mint p-5 text-center elev-1">
-      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">Players join anytime</h3>
-      <div className="mx-auto mb-2 w-fit rounded-[22px] bg-card p-2.5">
-        <QRCodeSVG value={joinUrl} size={112} />
-      </div>
-      <p className="font-display text-2xl font-black tracking-[0.2em] text-ink-gold">{joinCode}</p>
+    <div className="overflow-hidden rounded-[32px] bg-mint text-center elev-1">
+      <button
+        onClick={() => {
+          sfx.pop();
+          setOpen((v) => !v);
+        }}
+        className="flex w-full items-center justify-center gap-2 px-5 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+        aria-expanded={open}
+      >
+        Players join anytime
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 280, damping: 28 }}
+          >
+            <div className="px-5 pb-5">
+              <div className="mx-auto mb-3 w-fit rounded-[22px] bg-card p-2.5">
+                {joinUrl ? <QRCodeSVG value={joinUrl} size={128} /> : <div className="h-32 w-32" />}
+              </div>
+              <p className="font-display text-2xl font-black tracking-[0.2em] text-ink-gold">{joinCode}</p>
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(joinUrl);
+                  toast.success("Join link copied");
+                }}
+                className="mx-auto mt-3 flex items-center gap-2 rounded-full bg-card px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy link
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ------------------------------ OBS overlays ------------------------------ */
+
+const OBS_VIEWS: { path: string; label: string; hint: string }[] = [
+  { path: "board", label: "Board only", hint: "5×5 grid with live used tiles" },
+  { path: "queue", label: "Buzzer queue + scores", hint: "Queue order and team scores" },
+  { path: "combined", label: "Combined overlay", hint: "Board, scores and queue together" },
+];
+
+function ObsLinksPanel({ joinCode }: { joinCode: string }) {
+  const origin = useOrigin();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-[32px] bg-card p-5 elev-1">
+      <button
+        onClick={() => {
+          sfx.pop();
+          setOpen((v) => !v);
+        }}
+        className="flex w-full items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+        aria-expanded={open}
+      >
+        <Radio className="h-3.5 w-3.5" /> OBS overlay links
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 280, damping: 28 }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-2 pt-3">
+              {OBS_VIEWS.map((v) => {
+                const url = origin ? `${origin}/obs/${v.path}?code=${joinCode}` : "";
+                return (
+                  <button
+                    key={v.path}
+                    onClick={() => {
+                      void navigator.clipboard.writeText(url);
+                      toast.success(`${v.label} URL copied — paste into an OBS browser source`);
+                    }}
+                    className="w-full rounded-[22px] bg-muted px-4 py-3 text-left transition-transform hover:scale-[1.02]"
+                  >
+                    <p className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                      <Copy className="h-3.5 w-3.5" /> {v.label}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">{v.hint}</p>
+                  </button>
+                );
+              })}
+              <p className="text-[11px] text-muted-foreground">
+                Transparent background — add as a Browser Source in OBS and it stays in sync live.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

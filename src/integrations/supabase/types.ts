@@ -17,6 +17,7 @@ export type Database = {
       buzzer_queue: {
         Row: {
           created_at: string
+          delta: number | null
           id: string
           judged_at: string | null
           player_id: string
@@ -26,6 +27,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          delta?: number | null
           id?: string
           judged_at?: string | null
           player_id: string
@@ -35,6 +37,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          delta?: number | null
           id?: string
           judged_at?: string | null
           player_id?: string
@@ -253,6 +256,7 @@ export type Database = {
           score_bravo: number
           status: string
           timer_ends_at: string | null
+          timer_seconds: number
           updated_at: string
           used_tile_ids: string[]
         }
@@ -272,6 +276,7 @@ export type Database = {
           score_bravo?: number
           status?: string
           timer_ends_at?: string | null
+          timer_seconds?: number
           updated_at?: string
           used_tile_ids?: string[]
         }
@@ -291,6 +296,7 @@ export type Database = {
           score_bravo?: number
           status?: string
           timer_ends_at?: string | null
+          timer_seconds?: number
           updated_at?: string
           used_tile_ids?: string[]
         }
@@ -378,6 +384,32 @@ export type Database = {
           row_index: number
           points: number
         }[]
+      }
+      join_session: {
+        Args: {
+          p_code: string
+          p_name: string
+          p_avatar: string
+          p_team: string
+        }
+        Returns: Json
+      }
+      buzz_in: {
+        Args: { p_player_id: string; p_secret: string }
+        Returns: Json
+      }
+      submit_final: {
+        Args: {
+          p_player_id: string
+          p_secret: string
+          p_wager: number
+          p_answer: string
+        }
+        Returns: Json
+      }
+      get_final_question: {
+        Args: { p_session_id: string }
+        Returns: string | null
       }
     }
     Enums: {

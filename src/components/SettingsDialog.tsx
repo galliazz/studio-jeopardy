@@ -16,7 +16,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { bootstrapStudio, exportGame, updateProfile } from "@/lib/games.functions";
-import { getSettings, resetSettings, setSettings, useSettings } from "@/lib/settings";
+import { resetSettings, setSettings, useSettings } from "@/lib/settings";
 import { PLAYER_AVATARS, type Game } from "@/lib/types";
 import { sfx } from "@/lib/sfx";
 
@@ -326,7 +326,3 @@ function Toggle({
   );
 }
 
-/** Read the local preference at call time — used by the mobile buzzer. */
-export function hapticsEnabled(): boolean {
-  return getSettings().haptics;
-}

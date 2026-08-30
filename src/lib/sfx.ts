@@ -5,7 +5,7 @@
  * Every voice routes through a master gain driven by studio preferences.
  */
 
-import { sfxGain } from "@/lib/settings";
+import { getSettings, sfxGain } from "@/lib/settings";
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -260,6 +260,9 @@ export const sfx = {
 };
 
 export function vibrate(pattern: number | number[] = 40) {
+  // Il pulsante "Mobile haptic feedback" nelle Impostazioni non aveva alcun
+  // effetto: la preferenza esisteva ma nessuno la leggeva prima di vibrare.
+  if (!getSettings().haptics) return;
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
     navigator.vibrate(pattern);
   }

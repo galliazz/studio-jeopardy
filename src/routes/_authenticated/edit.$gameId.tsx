@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,12 +38,13 @@ import {
   type TextScope,
   type TextStyle,
 } from "@/lib/types";
-import { stripHtml } from "@/lib/sanitize";
+import { sanitizeHtml, stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
+import { getSettings } from "@/lib/settings";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
@@ -57,6 +58,11 @@ export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   }),
   component: EditorPage,
 });
+
+/* `themeOf` impone un raggio minimo di 16: i controlli devono rispettarlo,
+   altrimenti lo slider rimbalza indietro e sembra rotto. */
+const MIN_RADIUS = 16;
+const MAX_RADIUS = 50;
 
 const THEME_PRESETS: { name: string; theme: Pick<ThemeSettings, "bg" | "card" | "accent"> }[] = [
   { name: "Lilac Bloom", theme: { bg: "#F4EAF8", card: "#E3D3F5", accent: "#5B3E77" } },
@@ -88,7 +94,7 @@ function EditorPage() {
     [queryClient, gameId],
   );
 
-  if (!board || !theme) {
+  if (!board || !theme || !rawTheme) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
@@ -179,10 +185,12 @@ function EditorPage() {
         )}
       </AnimatePresence>
 
-      {/* Theme bar */}
+      {/* Theme bar — riceve il tema SALVATO, non quello scurito per la modalità
+          notte: è la base delle scritture su database, e salvare la versione
+          scurita distruggeva la palette scelta dall'utente. */}
       <ThemeBar
         gameId={gameId}
-        theme={theme}
+        theme={rawTheme}
         onSaved={refresh}
       />
 
@@ -425,10 +433,24 @@ function TileEditor({
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
 
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== tile.question) {
-      editorRef.current.innerHTML = tile.question;
+    // La domanda può arrivare da un JSON importato: si sanifica anche qui, non
+    // solo quando la si mostra in partita.
+    const safe = sanitizeHtml(tile.question);
+    if (editorRef.current && editorRef.current.innerHTML !== safe) {
+      editorRef.current.innerHTML = safe;
     }
   }, [tile.id, tile.question]);
+
+  /*
+   * Il pannello resta montato mentre la casella cambia sotto (per esempio se si
+   * modifica la scala punti): senza questa risincronizzazione i campi
+   * mostravano valori vecchi e li riscrivevano al primo salvataggio.
+   */
+  useEffect(() => {
+    setPoints(tile.points);
+    setAnswer(tile.answer);
+    setHint(tile.hint ?? "");
+  }, [tile.id, tile.points, tile.answer, tile.hint]);
 
   interface TilePatch {
     question?: string;
@@ -447,7 +469,7 @@ function TileEditor({
   );
 
   const saveQuestion = () => {
-    const html = editorRef.current?.innerHTML ?? "";
+    const html = sanitizeHtml(editorRef.current?.innerHTML ?? "");
     if (html !== tile.question) {
       void save({ question: html });
       toast.success("Saved", { duration: 1000 });
@@ -540,6 +562,16 @@ function TileEditor({
             contentEditable
             suppressContentEditableWarning
             onFocus={() => setFocused(true)}
+            onPaste={(e) => {
+              /*
+               * Incollare da una pagina esterna inserirebbe HTML vivo nel DOM
+               * prima ancora del salvataggio, cioè prima di qualunque
+               * sanificazione. Si incolla sempre come testo semplice.
+               */
+              e.preventDefault();
+              const text = e.clipboardData.getData("text/plain");
+              document.execCommand("insertText", false, text);
+            }}
             onBlur={() => {
               setFocused(false);
               saveQuestion();
@@ -635,7 +667,9 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
   const queryClient = useQueryClient();
   const [rowPoints, setRowPointsState] = useState(theme.rowPoints);
   const [radiusEditing, setRadiusEditing] = useState(false);
+  const [radiusDraft, setRadiusDraft] = useState("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setRowPointsState(theme.rowPoints), [theme.rowPoints]);
 
   /** Optimistically patch the cached theme so the board reacts instantly. */
@@ -650,13 +684,25 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
     [queryClient, gameId],
   );
 
+  /*
+   * Si inviano SOLO le chiavi modificate: il server le fonde con il tema
+   * salvato. Prima si spediva `{...theme, ...patch}`, e siccome `theme` era
+   * catturato dalla closure, un salvataggio ritardato riportava indietro
+   * qualunque altra modifica fatta nel frattempo.
+   */
   const saveTheme = useCallback(
     async (patch: Partial<ThemeSettings>) => {
-      await updateGame({ data: { gameId, theme: { ...theme, ...patch } } });
+      await updateGame({ data: { gameId, theme: patch } });
       onSaved();
     },
-    [gameId, theme, onSaved],
+    [gameId, onSaved],
   );
+
+  // Un salvataggio ritardato non deve partire dopo che il pannello è sparito.
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (textTimer.current) clearTimeout(textTimer.current);
+  }, []);
 
   const applyPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
     patchThemeCache(preset.theme);
@@ -665,22 +711,43 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
   };
 
   /** Instant local feedback + debounced save while dragging. */
-  const applyRadius = (radius: number) => {
+  const applyRadius = (value: number) => {
+    // `themeOf` riporta comunque a MIN_RADIUS: si limita qui, così ciò che si
+    // vede e ciò che finisce su database coincidono.
+    const radius = Math.max(MIN_RADIUS, Math.min(MAX_RADIUS, Math.round(value)));
     patchThemeCache({ radius });
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => void saveTheme({ radius }), 400);
   };
 
+  const commitRadiusDraft = () => {
+    const parsed = Number(radiusDraft);
+    if (Number.isFinite(parsed)) applyRadius(parsed);
+  };
+
   const [scope, setScope] = useState<TextScope | "all">("numbers");
   const current: TextStyle = (scope === "all" ? theme.textStyles?.numbers : theme.textStyles?.[scope]) ?? {};
 
-  /** Write a typography patch into the theme JSON for the selected scope(s). */
-  const applyTextStyle = async (patch: TextStyle) => {
+  const buildTextStyles = (patch: TextStyle) => {
     const scopes: TextScope[] = scope === "all" ? ["numbers", "questions", "categories"] : [scope];
     const next = { ...(theme.textStyles ?? {}) };
     for (const sc of scopes) next[sc] = { ...(next[sc] ?? {}), ...patch };
+    return next;
+  };
+
+  /** Write a typography patch into the theme JSON for the selected scope(s). */
+  const applyTextStyle = async (patch: TextStyle) => {
+    const next = buildTextStyles(patch);
     patchThemeCache({ textStyles: next });
     await saveTheme({ textStyles: next });
+  };
+
+  /** Lo slider della dimensione emette un evento a ogni scatto: si accorpano. */
+  const applyTextSize = (size: number) => {
+    const next = buildTextStyles({ size });
+    patchThemeCache({ textStyles: next });
+    if (textTimer.current) clearTimeout(textTimer.current);
+    textTimer.current = setTimeout(() => void saveTheme({ textStyles: next }), 400);
   };
 
   const applyTeamName = async (key: "teamAlpha" | "teamBravo", value: string) => {
@@ -691,9 +758,30 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
   };
 
   const applyRowPoints = async () => {
-    await setRowPoints({ data: { gameId, rowPoints } });
-    onSaved();
-    toast.success("Point ladder saved", { duration: 1200 });
+    /*
+     * Salvare a ogni uscita dal campo riscriveva la scala punti — e con essa i
+     * punteggi personalizzati delle singole caselle — anche quando l'utente non
+     * aveva toccato nulla. Si salva solo se il valore è davvero cambiato.
+     */
+    const unchanged =
+      rowPoints.length === theme.rowPoints.length &&
+      rowPoints.every((p, i) => p === theme.rowPoints[i]);
+    if (unchanged) return;
+
+    if (rowPoints.some((p) => !Number.isFinite(p))) {
+      setRowPointsState(theme.rowPoints);
+      toast.error("Points must be whole numbers");
+      return;
+    }
+
+    try {
+      await setRowPoints({ data: { gameId, rowPoints } });
+      onSaved();
+      toast.success("Point ladder saved", { duration: 1200 });
+    } catch (err) {
+      setRowPointsState(theme.rowPoints);
+      toast.error(err instanceof Error ? err.message : "Could not save the point ladder");
+    }
   };
 
   return (
@@ -721,10 +809,13 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
 
           <label className="flex h-10 items-center gap-2 text-xs font-semibold text-muted-foreground">
             Roundness
+            {/* Il minimo è 16 perché `themeOf` riporta comunque a 16 qualunque
+                valore inferiore: con lo slider a 0 il cursore rimbalzava
+                indietro e sembrava rotto. */}
             <input
               type="range"
-              min={0}
-              max={50}
+              min={MIN_RADIUS}
+              max={MAX_RADIUS}
               value={theme.radius}
               onChange={(e) => applyRadius(Number(e.target.value))}
               className="w-24 accent-[var(--ink-accent)]"
@@ -733,17 +824,25 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               <input
                 autoFocus
                 type="number"
-                min={0}
-                max={50}
-                value={theme.radius}
-                onChange={(e) => applyRadius(Math.max(0, Math.min(50, Number(e.target.value))))}
-                onBlur={() => setRadiusEditing(false)}
+                min={MIN_RADIUS}
+                max={MAX_RADIUS}
+                /* Si digita su una bozza e si applica all'uscita: limitando a
+                   ogni battuta, scrivere "45" diventava "4" e poi 16. */
+                value={radiusDraft}
+                onChange={(e) => setRadiusDraft(e.target.value)}
+                onBlur={() => {
+                  commitRadiusDraft();
+                  setRadiusEditing(false);
+                }}
                 onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
                 className="h-10 w-14 rounded-full bg-muted px-1 text-center text-xs font-bold text-foreground outline-none ring-2 ring-ink-accent"
               />
             ) : (
               <button
-                onDoubleClick={() => setRadiusEditing(true)}
+                onDoubleClick={() => {
+                  setRadiusDraft(String(theme.radius));
+                  setRadiusEditing(true);
+                }}
                 title="Double-click to type a value"
                 className="flex h-10 w-10 items-center justify-center rounded-full text-center font-bold text-foreground hover:bg-muted"
               >
@@ -787,7 +886,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               max={1.8}
               step={0.1}
               value={current.size ?? 1}
-              onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
+              onChange={(e) => applyTextSize(Number(e.target.value))}
               aria-label="Text size"
               className="w-20 accent-[var(--ink-accent)]"
             />
@@ -888,15 +987,25 @@ function TeamNameInput({
 function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: string; onClose: () => void }) {
   const navigate = useNavigate();
   const start = useServerFn(startSession);
-  const [nonce] = useState(() => Date.now());
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["session-start", gameId, nonce],
-    queryFn: () => start({ data: { gameId } }),
-    staleTime: 0,
-    gcTime: 0,
+
+  /*
+   * `startSession` CHIUDE tutte le sessioni attive del board prima di crearne
+   * una nuova: è una mutazione distruttiva. Stava dentro una `useQuery`, quindi
+   * bastava aprire questo popup — o anche solo riportare il focus sulla
+   * finestra — per uccidere la partita in corso. Ora parte solo al click.
+   */
+  const startMutation = useMutation({
+    mutationFn: () => start({ data: { gameId, timerSeconds: getSettings().timerSeconds } }),
+    onSuccess: (result) => {
+      void navigate({ to: "/host/$sessionId", params: { sessionId: result.session.id } });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Could not start the session");
+    },
   });
 
-  const joinUrl = `${window.location.origin}/play/${joinCode}`;
+  const origin = useOrigin();
+  const joinUrl = origin ? `${origin}/play/${joinCode}` : `/play/${joinCode}`;
 
   return (
     <motion.div
@@ -934,15 +1043,16 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
             <Copy className="h-4 w-4" /> Copy join link
           </button>
           <button
-            disabled={isLoading || isError}
-            onClick={() => {
-              if (data) void navigate({ to: "/host/$sessionId", params: { sessionId: data.session.id } });
-            }}
+            disabled={startMutation.isPending}
+            onClick={() => startMutation.mutate()}
             className="flex items-center justify-center gap-2 rounded-full bg-coral py-3.5 font-display text-sm font-black text-foreground elev-2 disabled:opacity-50"
           >
             <ExternalLink className="h-4 w-4" />
-            {isLoading ? "Preparing session…" : "Open Host Console"}
+            {startMutation.isPending ? "Starting session…" : "Start game & open host console"}
           </button>
+          <p className="text-[11px] leading-snug text-muted-foreground">
+            Starting a new game ends any game currently running on this board.
+          </p>
         </div>
       </motion.div>
     </motion.div>

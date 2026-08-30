@@ -158,7 +158,7 @@ function StudioPage() {
   const start = useServerFn(startSession);
   const handlePlay = async (gameId: string) => {
     try {
-      const { session } = await start({ data: { gameId } });
+      const { session } = await start({ data: { gameId, timerSeconds: getSettings().timerSeconds } });
       void navigate({ to: "/host/$sessionId", params: { sessionId: session.id } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start session");
@@ -412,7 +412,12 @@ function GameCard({
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => setDraftTitle(e.target.value)}
             onBlur={commitRename}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+            onKeyDown={(e) => {
+              // Senza questo l'Enter risale alla card e apre l'editor,
+              // facendo perdere ricerca e posizione nella lista.
+              e.stopPropagation();
+              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            }}
             maxLength={80}
             className="h-12 w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
           />

@@ -2,6 +2,26 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createPublicClient } from "@/lib/public-client.server";
 
+/**
+ * Colonne di `sessions` visibili al pubblico. Enumerate a mano di proposito:
+ * `select("*")` spedirebbe ai telefoni dei giocatori `final_answer` (la
+ * soluzione del Final Jeopardy) e `daily_double_tile_ids` (quali caselle
+ * nascondono un Daily Double). Il ruolo anon non ha più il permesso di
+ * leggere quelle due colonne, quindi un `*` fallirebbe comunque.
+ */
+const PUBLIC_SESSION_COLUMNS =
+  "id, game_id, host_id, status, phase, current_tile_id, active_player_id, timer_ends_at, timer_seconds, score_alpha, score_bravo, used_tile_ids, dd_wager, created_at, updated_at";
+
+/** Colonne di `players` visibili al pubblico: tutte tranne `secret`. */
+const PUBLIC_PLAYER_COLUMNS = "id, session_id, name, avatar, team, locked_out, created_at";
+
+/** Le funzioni SECURITY DEFINER restituiscono jsonb: qui lo si legge in sicurezza. */
+function readRpcResult(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 /** Public: look up an active session by the game's join code. */
 export const lookupSession = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ code: z.string().trim().min(4).max(10) }).parse(data))
@@ -16,9 +36,11 @@ export const lookupSession = createServerFn({ method: "GET" })
     if (!game) return { error: "not_found" as const };
     const { data: session } = await client
       .from("sessions")
-      .select("*")
+      .select(PUBLIC_SESSION_COLUMNS)
       .eq("game_id", game.id)
-      .in("status", ["lobby", "live", "final"])
+      // "finished" incluso: senza, a partita conclusa la sessione spariva dai
+      // telefoni e il podio non veniva mai mostrato.
+      .in("status", ["lobby", "live", "final", "finished"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -26,7 +48,13 @@ export const lookupSession = createServerFn({ method: "GET" })
     return { game, session };
   });
 
-/** Public: join a live session as a contestant. */
+/**
+ * Public: join a live session as a contestant.
+ *
+ * Passa dalla funzione `join_session` perché anon non può più inserire
+ * direttamente in `players`, e perché il segreto del giocatore va restituito
+ * una sola volta, qui: è la credenziale che autorizza buzz e risposta finale.
+ */
 export const joinGame = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
@@ -40,30 +68,37 @@ export const joinGame = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const code = data.code.toUpperCase();
-    const { data: game } = await client
-      .from("games")
-      .select("id, title")
-      .eq("join_code", code)
-      .maybeSingle();
-    if (!game) return { error: "not_found" as const };
-    const { data: session } = await client
-      .from("sessions")
-      .select("*")
-      .eq("game_id", game.id)
-      .in("status", ["lobby", "live", "final"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!session) return { error: "not_started" as const };
-
-    const { data: player, error } = await client
-      .from("players")
-      .insert({ session_id: session.id, name: data.name, avatar: data.avatar, team: data.team })
-      .select()
-      .single();
+    const { data: raw, error } = await client.rpc("join_session", {
+      p_code: data.code.toUpperCase(),
+      p_name: data.name,
+      p_avatar: data.avatar,
+      p_team: data.team,
+    });
     if (error) return { error: "join_failed" as const, message: error.message };
-    return { player, session, gameTitle: game.title };
+
+    const res = readRpcResult(raw);
+    if (res["ok"] !== true) {
+      const reason = String(res["reason"] ?? "join_failed");
+      if (reason === "not_found") return { error: "not_found" as const };
+      if (reason === "not_started") return { error: "not_started" as const };
+      if (reason === "full") return { error: "full" as const };
+      if (reason === "closed") return { error: "closed" as const };
+      return { error: "join_failed" as const, message: reason };
+    }
+
+    return {
+      player: {
+        id: String(res["player_id"]),
+        session_id: String(res["session_id"]),
+        name: String(res["name"]),
+        avatar: String(res["avatar"]),
+        team: String(res["team"]),
+      },
+      /** Da conservare sul dispositivo del giocatore: autorizza le sue scritture. */
+      secret: String(res["secret"]),
+      sessionId: String(res["session_id"]),
+      gameTitle: String(res["game_title"] ?? ""),
+    };
   });
 
 /**
@@ -84,13 +119,16 @@ export const getObsState = createServerFn({ method: "GET" })
     if (!game) return { error: "not_found" as const };
     const { data: session } = await client
       .from("sessions")
-      .select("*")
+      .select(PUBLIC_SESSION_COLUMNS)
       .eq("game_id", game.id)
-      .in("status", ["lobby", "live", "final"])
+      // "finished" incluso: senza, a partita conclusa la sessione spariva dai
+      // telefoni e il podio non veniva mai mostrato.
+      .in("status", ["lobby", "live", "final", "finished"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!session) return { error: "not_started" as const };
+    const sessionId = (session as unknown as { id: string }).id;
     const { data: categories } = await client
       .from("categories")
       .select("id, game_id, title, position")
@@ -100,13 +138,13 @@ export const getObsState = createServerFn({ method: "GET" })
     const { data: tiles } = await client.rpc("get_public_tile_points", { p_join_code: code });
     const { data: players } = await client
       .from("players")
-      .select("*")
-      .eq("session_id", session.id)
+      .select(PUBLIC_PLAYER_COLUMNS)
+      .eq("session_id", sessionId)
       .order("created_at");
     const { data: queue } = await client
       .from("buzzer_queue")
       .select("*")
-      .eq("session_id", session.id)
+      .eq("session_id", sessionId)
       .order("created_at");
     return {
       game,
@@ -123,11 +161,15 @@ export const getPlayerState = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const { data: session } = await client.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session } = await client
+      .from("sessions")
+      .select(PUBLIC_SESSION_COLUMNS)
+      .eq("id", data.sessionId)
+      .maybeSingle();
     if (!session) return { error: "not_found" as const };
     const { data: players } = await client
       .from("players")
-      .select("*")
+      .select(PUBLIC_PLAYER_COLUMNS)
       .eq("session_id", data.sessionId)
       .order("created_at");
     const { data: queue } = await client
@@ -135,56 +177,67 @@ export const getPlayerState = createServerFn({ method: "GET" })
       .select("*")
       .eq("session_id", data.sessionId)
       .order("created_at");
-    return { session, players: players ?? [], queue: queue ?? [] };
-  });
 
-/** Public: slam the buzzer. The DB trigger promotes the first buzzer instantly. */
-export const buzz = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ playerId: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
-    const client = createPublicClient();
-    const { data: player } = await client.from("players").select("*").eq("id", data.playerId).maybeSingle();
-    if (!player) return { ok: false as const, reason: "no_player" as const };
-    const { data: session } = await client.from("sessions").select("*").eq("id", player.session_id).single();
-    if (!session) return { ok: false as const, reason: "no_session" as const };
-    if (session.status !== "live" || !session.current_tile_id) {
-      return { ok: false as const, reason: "closed" as const };
-    }
-    if (session.phase !== "question_open" && session.phase !== "answering") {
-      return { ok: false as const, reason: "closed" as const };
-    }
-    const tileId = session.current_tile_id;
-
-    const { error } = await client.from("buzzer_queue").insert({
-      session_id: session.id,
-      tile_id: tileId,
-      player_id: player.id,
+    /*
+     * La domanda finale non è fra le colonne leggibili da anon: la funzione
+     * `get_final_question` la restituisce solo quando l'host l'ha davvero
+     * rivelata (fase `final_answer`). Prima era leggibile già in fase di
+     * puntata, quindi si poteva scommettere conoscendola in anticipo.
+     */
+    const { data: finalQuestion } = await client.rpc("get_final_question", {
+      p_session_id: data.sessionId,
     });
-    if (error && error.code !== "23505") {
-      return { ok: false as const, reason: "rejected" as const, message: error.message };
-    }
 
-    const { data: rows } = await client
-      .from("buzzer_queue")
-      .select("*")
-      .eq("session_id", session.id)
-      .eq("tile_id", tileId)
-      .in("status", ["queued", "active"])
-      .order("created_at");
-    const position = (rows ?? []).findIndex((r) => r.player_id === player.id) + 1;
     return {
-      ok: true as const,
-      position,
-      active: session.active_player_id === player.id,
+      session: { ...(session as Record<string, unknown>), final_question: finalQuestion ?? null },
+      players: players ?? [],
+      queue: queue ?? [],
     };
   });
 
-/** Public: submit a Final Jeopardy wager / answer for the player's team. */
+/**
+ * Public: slam the buzzer.
+ *
+ * Il segreto del giocatore è obbligatorio: senza, chiunque conoscesse un
+ * playerId (pubblico) poteva far buzzare un avversario e farlo penalizzare.
+ * L'inserimento avviene dentro `buzz_in`, che replica i controlli della
+ * vecchia policy RLS; il trigger `on_buzz` continua a promuovere il primo.
+ */
+export const buzz = createServerFn({ method: "POST" })
+  .inputValidator((data) =>
+    z.object({ playerId: z.string().uuid(), secret: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const client = createPublicClient();
+    const { data: raw, error } = await client.rpc("buzz_in", {
+      p_player_id: data.playerId,
+      p_secret: data.secret,
+    });
+    if (error) return { ok: false as const, reason: "rejected" as const, message: error.message };
+
+    const res = readRpcResult(raw);
+    if (res["ok"] !== true) {
+      return { ok: false as const, reason: String(res["reason"] ?? "rejected") };
+    }
+    return {
+      ok: true as const,
+      position: Number(res["position"] ?? 0),
+      active: res["active"] === true,
+    };
+  });
+
+/**
+ * Public: submit a Final Jeopardy wager / answer for the player's team.
+ *
+ * La squadra non arriva più dal client: è quella del giocatore identificato
+ * dal segreto, così non si può sovrascrivere la riga della squadra avversaria.
+ */
 export const submitFinalAnswer = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
       .object({
         playerId: z.string().uuid(),
+        secret: z.string().uuid(),
         wager: z.number().int().min(0).max(100000),
         answer: z.string().max(2000),
       })
@@ -192,19 +245,17 @@ export const submitFinalAnswer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const { data: player } = await client.from("players").select("*").eq("id", data.playerId).maybeSingle();
-    if (!player) return { ok: false as const, reason: "no_player" as const };
-    const { data: session } = await client.from("sessions").select("*").eq("id", player.session_id).single();
-    if (!session || session.status !== "final") return { ok: false as const, reason: "closed" as const };
-    if (session.phase !== "final_wager" && session.phase !== "final_answer") {
-      return { ok: false as const, reason: "closed" as const };
-    }
-    const { error } = await client
-      .from("final_answers")
-      .upsert(
-        { session_id: session.id, team: player.team, wager: data.wager, answer: data.answer },
-        { onConflict: "session_id,team" },
-      );
+    const { data: raw, error } = await client.rpc("submit_final", {
+      p_player_id: data.playerId,
+      p_secret: data.secret,
+      p_wager: data.wager,
+      p_answer: data.answer,
+    });
     if (error) return { ok: false as const, reason: "rejected" as const, message: error.message };
+
+    const res = readRpcResult(raw);
+    if (res["ok"] !== true) {
+      return { ok: false as const, reason: String(res["reason"] ?? "rejected") };
+    }
     return { ok: true as const };
   });

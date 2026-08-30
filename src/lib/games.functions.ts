@@ -5,6 +5,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 import { generateJoinCode } from "@/lib/join-code";
 import { createEmptyBoard, seedDemoGame } from "@/lib/games.server";
 import { DEFAULT_THEME } from "@/lib/types";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
@@ -75,7 +76,21 @@ export const updateGame = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     };
     if (data.title !== undefined) patch.title = data.title;
-    if (data.theme !== undefined) patch.theme = { ...DEFAULT_THEME, ...data.theme } as unknown as Json;
+    if (data.theme !== undefined) {
+      /*
+       * Il tema si AGGIORNA per chiavi, non si sostituisce. Sostituendolo, due
+       * salvataggi ravvicinati (lo slider della rotondità e un nome squadra) si
+       * annullavano a vicenda, e chiunque inviasse un tema costruito su una
+       * copia stantia riportava indietro tutto il resto.
+       */
+      const { data: current } = await context.supabase
+        .from("games")
+        .select("theme")
+        .eq("id", data.gameId)
+        .maybeSingle();
+      const existing = (current?.theme ?? {}) as Record<string, unknown>;
+      patch.theme = { ...DEFAULT_THEME, ...existing, ...data.theme } as unknown as Json;
+    }
     const { error } = await context.supabase.from("games").update(patch).eq("id", data.gameId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -112,6 +127,9 @@ export const updateTile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { tileId, ...raw } = data;
+    // La sanificazione dell'HTML non deve dipendere dal client: qui è il punto
+    // in cui la domanda entra davvero nel database.
+    if (raw.question !== undefined) raw.question = sanitizeHtml(raw.question);
     const patch = stripUndefined(raw) as Database["public"]["Tables"]["tiles"]["Update"];
     const { error } = await context.supabase.from("tiles").update(patch).eq("id", tileId);
     if (error) throw new Error(error.message);
@@ -226,9 +244,23 @@ const exportSchema = z.object({
               question: z.string().max(4000),
               answer: z.string().max(2000),
               hint: z.string().max(500).nullable().optional(),
+              // Percorsi nello storage: un backup che li perde non è un backup.
+              // Hanno senso solo per un ripristino sullo stesso account, perché
+              // le policy dello storage sono per cartella dell'host.
+              image_url: z.string().max(500).nullable().optional(),
+              audio_url: z.string().max(500).nullable().optional(),
             }),
           )
-          .max(5),
+          /*
+           * Esattamente 5 caselle, una per riga. Con `.max(5)` un file
+           * incompleto generava colonne con celle mancanti, che nell'editor
+           * risultavano vuote e non cliccabili: la board era irreparabile.
+           */
+          .length(5)
+          .refine(
+            (tiles) => new Set(tiles.map((t) => t.row_index)).size === 5,
+            { message: "Ogni colonna deve avere le righe da 0 a 4, senza ripetizioni" },
+          ),
       }),
     )
     .length(5),
@@ -261,6 +293,8 @@ export const exportGame = createServerFn({ method: "GET" })
             question: t.question,
             answer: t.answer,
             hint: t.hint,
+            image_url: t.image_url,
+            audio_url: t.audio_url,
           })),
       })),
     };
@@ -296,9 +330,13 @@ export const importGame = createServerFn({ method: "POST" })
             category_id: newCat.id,
             row_index: t.row_index,
             points: t.points,
-            question: t.question,
+            // Il file JSON arriva da terzi: l'HTML si sanifica QUI, all'ingresso,
+            // non solo al momento di mostrarlo.
+            question: sanitizeHtml(t.question),
             answer: t.answer,
             hint: t.hint ?? null,
+            image_url: t.image_url ?? null,
+            audio_url: t.audio_url ?? null,
           })),
         );
         if (tErr) throw new Error(tErr.message);

@@ -108,7 +108,13 @@ export function ObsQueueList({ state }: { state: ObsState }) {
     if (!state.session.current_tile_id) return [];
     return state.queue
       .filter((q) => q.tile_id === state.session.current_tile_id && (q.status === "queued" || q.status === "active"))
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+      .sort(
+        (a, b) =>
+          // La riga già promossa va sempre in testa: l'ordine per orario
+          // poteva contraddire il giocatore evidenziato come attivo.
+          (a.status === "active" ? -1 : b.status === "active" ? 1 : 0) ||
+          a.created_at.localeCompare(b.created_at),
+      );
   }, [state.queue, state.session.current_tile_id]);
 
   if (tileQueue.length === 0) return null;

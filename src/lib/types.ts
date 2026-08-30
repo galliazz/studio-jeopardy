@@ -119,6 +119,8 @@ export interface Session {
   current_tile_id: string | null;
   active_player_id: string | null;
   timer_ends_at: string | null;
+  /** Durata della finestra di risposta per questa sessione, in secondi. */
+  timer_seconds: number;
   score_alpha: number;
   score_bravo: number;
   used_tile_ids: string[];
@@ -150,6 +152,8 @@ export interface QueueEntry {
   status: QueueStatus;
   created_at: string;
   judged_at: string | null;
+  /** Punti realmente assegnati al giudizio (puntata compresa). */
+  delta: number | null;
 }
 
 export interface FinalAnswer {

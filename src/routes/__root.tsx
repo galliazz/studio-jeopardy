@@ -116,11 +116,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+/*
+ * Applica la modalità scura PRIMA del primo disegno. Senza, la classe veniva
+ * messa solo in un useEffect dopo l'idratazione e chi usa il tema scuro vedeva
+ * la pagina lampeggiare in chiaro a ogni caricamento.
+ * Deve restare in sintonia con `initThemeMode` in src/lib/theme-mode.ts.
+ */
+const THEME_BOOT_SCRIPT = `(function(){try{var k='jeopardestiny:mode';var s=localStorage.getItem(k);var m=(s==='dark'||s==='light')?s:(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.classList.toggle('dark',m==='dark');document.documentElement.style.colorScheme=m;}catch(e){}})();`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         {children}

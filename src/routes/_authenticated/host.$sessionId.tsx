@@ -91,9 +91,13 @@ function HostPage() {
   const { data } = useQuery({
     queryKey: ["host", sessionId],
     queryFn: () => fetchState({ data: { sessionId } }),
-    refetchOnWindowFocus: false,
+    // Rete di sicurezza contro i buchi di connessione: il realtime da solo non
+    // recupera ciò che si è perso mentre il canale era giù.
+    refetchOnWindowFocus: true,
+    refetchInterval: 15_000,
   });
-  useSessionRealtime(sessionId, [["host", sessionId]]);
+  // Solo l'host legge le risposte finali, quindi solo qui ha senso ascoltarle.
+  useSessionRealtime(sessionId, [["host", sessionId]], { includeFinalAnswers: true });
 
   const queryClient = useQueryClient();
   const state = data as unknown as HostState | undefined;
@@ -300,7 +304,10 @@ function HostPage() {
                 session.phase === "daily_double_wager") &&
                 currentTile && (
                   <QuestionOverlay
-                    key={currentTile.id + session.phase}
+                    /* Solo l'id della casella: includere la fase rimontava
+                       l'overlay a ogni buzz, facendo ripartire da capo la clip
+                       audio e sovrapponendo due overlay durante l'animazione. */
+                    key={currentTile.id}
                     session={session}
                     tile={currentTile}
                     category={currentCategory}
@@ -524,7 +531,9 @@ const SFX_BUTTONS = [
 ];
 
 function Soundboard({ game }: { game: Game }) {
-  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark") as ReturnType<typeof themeOf>;
+  // Tema SALVATO, non quello scurito per la modalità notte: qui sotto viene
+  // riscritto su database, e salvare i colori scuriti azzerava la palette.
+  const theme = themeOf(game);
   const fileRef = useRef<HTMLInputElement>(null);
   const custom = theme.customSounds ?? [];
 
@@ -635,7 +644,7 @@ function QuestionOverlay({
     (q) => q.tile_id === tile.id && q.player_id === session.active_player_id,
   );
   const alreadyJudged = activeEntry ? activeEntry.status === "correct" || activeEntry.status === "wrong" : false;
-  const countdown = useCountdown(session.timer_ends_at);
+  const countdown = useCountdown(session.timer_ends_at, session.timer_seconds);
   const lastSecond = useRef<number | null>(null);
   const alarmed = useRef<string | null>(null);
   /** Only flash/alarm when THIS timer was actually observed running first. */
@@ -664,6 +673,29 @@ function QuestionOverlay({
 
   const flashRed =
     countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
+
+  const queryClient = useQueryClient();
+  const [judging, setJudging] = useState(false);
+
+  /**
+   * Un solo giudizio per volta, sempre riferito al giocatore che l'host aveva
+   * davanti: dopo un "Wrong" il server promuove subito il successivo in coda, e
+   * un secondo click penalizzerebbe lui. Se il server rifiuta, la patch
+   * ottimistica applicata qui sopra viene annullata ricaricando lo stato vero.
+   */
+  const runJudge = async (correct: boolean, judgedPlayerId: string) => {
+    setJudging(true);
+    try {
+      await judgeAnswer({
+        data: { sessionId: session.id, correct, expectedPlayerId: judgedPlayerId },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Nothing was judged");
+      void queryClient.invalidateQueries({ queryKey: ["host", session.id] });
+    } finally {
+      setJudging(false);
+    }
+  };
 
   return (
     <motion.div
@@ -761,11 +793,13 @@ function QuestionOverlay({
                 Reveal answer
               </button>
             )}
-            {activePlayer && !alreadyJudged && (
+            {activePlayer && !alreadyJudged && session.phase !== "reveal" && (
               <>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
+                  disabled={judging}
                   onClick={() => {
+                    if (judging) return;
                     sfx.ding();
                     if (activePlayer) {
                       const value = session.dd_wager ?? tile.points;
@@ -787,15 +821,17 @@ function QuestionOverlay({
                         ),
                       });
                     }
-                    void judgeAnswer({ data: { sessionId: session.id, correct: true } });
+                    void runJudge(true, activePlayer.id);
                   }}
-                  className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
+                  className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2 disabled:opacity-50"
                 >
                   <Check className="h-5 w-5" /> Correct
                 </motion.button>
                 <motion.button
                   whileTap={{ scale: 0.94 }}
+                  disabled={judging}
                   onClick={() => {
+                    if (judging) return;
                     sfx.wrong();
                     if (activePlayer) {
                       const value = session.dd_wager ?? Math.round(tile.points / 2);
@@ -807,7 +843,9 @@ function QuestionOverlay({
                         session: {
                           phase: session.dd_wager != null ? "reveal" : nextQueued ? "answering" : "question_open",
                           active_player_id: nextQueued?.player_id ?? null,
-                          timer_ends_at: nextQueued ? new Date(Date.now() + 15_000).toISOString() : null,
+                          timer_ends_at: nextQueued
+                            ? new Date(Date.now() + (session.timer_seconds ?? 15) * 1000).toISOString()
+                            : null,
                           dd_wager: null,
                           ...(activePlayer.team === "alpha"
                             ? { score_alpha: session.score_alpha - value }
@@ -823,9 +861,9 @@ function QuestionOverlay({
                         ),
                       });
                     }
-                    void judgeAnswer({ data: { sessionId: session.id, correct: false } });
+                    void runJudge(false, activePlayer.id);
                   }}
-                  className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
+                  className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2 disabled:opacity-50"
                 >
                   <X className="h-5 w-5" /> Wrong
                 </motion.button>
@@ -926,7 +964,13 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
     if (!session.current_tile_id) return [];
     return queue
       .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
-      .sort((a, b) => a.created_at.localeCompare(b.created_at));
+      .sort(
+        (a, b) =>
+          // La riga già promossa va sempre in testa: l'ordine per orario
+          // poteva contraddire il giocatore evidenziato come attivo.
+          (a.status === "active" ? -1 : b.status === "active" ? 1 : 0) ||
+          a.created_at.localeCompare(b.created_at),
+      );
   }, [queue, session.current_tile_id]);
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
 
@@ -1048,7 +1092,7 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
 /* ------------------------------ Analytics dialog --------------------------- */
 
 function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => void }) {
-  const { queue, players, tiles } = state;
+  const { queue, players, tiles, finalAnswers } = state;
 
   const { series, playerStats } = useMemo(() => {
     const judged = queue
@@ -1056,15 +1100,32 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
       .sort((a, b) => (a.judged_at ?? "").localeCompare(b.judged_at ?? ""));
     let alpha = 0;
     let bravo = 0;
-    const series = judged.map((q, i) => {
+    const series: { n: number; alpha: number; bravo: number }[] = [];
+
+    for (const q of judged) {
       const player = players.find((p) => p.id === q.player_id);
+      // Niente attribuzione d'ufficio: prima i punti di un giocatore non
+      // trovato finivano comunque a Bravo.
+      if (!player) continue;
       const tile = tiles.find((t) => t.id === q.tile_id);
-      const pts = tile?.points ?? 0;
-      const delta = q.status === "correct" ? pts : -Math.round(pts / 2);
-      if (player?.team === "alpha") alpha += delta;
+      const points = tile?.points ?? 0;
+      // `delta` è il valore realmente applicato e comprende la puntata dei
+      // Daily Double; il ricalcolo dal valore della casella resta solo come
+      // ripiego per le partite giocate prima di questa modifica.
+      const delta = q.delta ?? (q.status === "correct" ? points : -Math.round(points / 2));
+      if (player.team === "alpha") alpha += delta;
       else bravo += delta;
-      return { n: i + 1, alpha, bravo };
-    });
+      series.push({ n: series.length + 1, alpha, bravo });
+    }
+
+    // Il Final Jeopardy muove i punteggi quanto tutto il resto: senza, il
+    // grafico si fermava prima del sorpasso decisivo.
+    for (const f of finalAnswers.filter((f) => f.judged !== null)) {
+      const delta = f.judged ? f.wager : -f.wager;
+      if (f.team === "alpha") alpha += delta;
+      else bravo += delta;
+      series.push({ n: series.length + 1, alpha, bravo });
+    }
 
     const perPlayer = new Map<string, { buzzes: number; correct: number; wrong: number }>();
     for (const q of queue) {
@@ -1079,7 +1140,7 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
       .filter((s) => s.buzzes > 0)
       .sort((a, b) => b.buzzes - a.buzzes);
     return { series, playerStats };
-  }, [queue, players, tiles]);
+  }, [queue, players, tiles, finalAnswers]);
 
   return (
     <Dialog onClose={onClose} title="Match analytics" subtitle="Score progression & buzzer activity" wide>
@@ -1256,6 +1317,7 @@ function FinalPanel({
 /* --------------------------------- Podium --------------------------------- */
 
 function Podium({ session, players, theme }: { session: Session; players: Player[]; theme: ThemeSettings }) {
+  const tie = session.score_alpha === session.score_bravo;
   const winner: Team = session.score_alpha >= session.score_bravo ? "alpha" : "bravo";
   const loser: Team = winner === "alpha" ? "bravo" : "alpha";
   const winScore = winner === "alpha" ? session.score_alpha : session.score_bravo;
@@ -1277,7 +1339,7 @@ function Podium({ session, players, theme }: { session: Session; players: Player
       >
         <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop"><Crown className="h-10 w-10 text-ink-gold" /></span>
         <h2 className="font-display text-3xl font-black text-ink-gold text-glow-gold">
-          {teamName(theme, winner)} wins!
+          {tie ? "It's a tie!" : `${teamName(theme, winner)} wins!`}
         </h2>
         <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">

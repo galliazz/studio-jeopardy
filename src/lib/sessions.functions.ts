@@ -1,12 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { shuffleIds, timerEnd } from "@/lib/sessions.server";
+import { clampTimerSeconds, shuffleIds, timerEnd } from "@/lib/sessions.server";
 
 /** Starts a fresh live session for a game. Picks Daily Double tiles. */
 export const startSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        gameId: z.string().uuid(),
+        /** Preferenza dell'host, dal pannello Impostazioni. */
+        timerSeconds: z.number().int().min(5).max(120).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: game, error: gErr } = await supabase.from("games").select("*").eq("id", data.gameId).single();
@@ -36,6 +44,7 @@ export const startSession = createServerFn({ method: "POST" })
         current_tile_id: null,
         active_player_id: null,
         timer_ends_at: null,
+        timer_seconds: clampTimerSeconds(data.timerSeconds),
         score_alpha: 0,
         score_bravo: 0,
         used_tile_ids: [],
@@ -68,9 +77,11 @@ export const getHostState = createServerFn({ method: "GET" })
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("*").in("category_id", catIds)
       : { data: [] };
+    // Colonne esplicite: `players.secret` è la credenziale dei giocatori e non
+    // deve raggiungere nemmeno il browser dell'host.
     const { data: players } = await supabase
       .from("players")
-      .select("*")
+      .select("id, session_id, name, avatar, team, locked_out, created_at")
       .eq("session_id", data.sessionId)
       .order("created_at");
     const { data: queue } = await supabase
@@ -137,13 +148,18 @@ export const startDailyDouble = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    const { data: session } = await supabase
+      .from("sessions")
+      .select("timer_seconds")
+      .eq("id", data.sessionId)
+      .maybeSingle();
     const { error } = await supabase
       .from("sessions")
       .update({
         phase: "answering",
         active_player_id: data.playerId,
         dd_wager: data.wager,
-        timer_ends_at: timerEnd(),
+        timer_ends_at: timerEnd(session?.timer_seconds),
       })
       .eq("id", data.sessionId);
     if (error) throw new Error(error.message);
@@ -157,16 +173,34 @@ export const startDailyDouble = createServerFn({ method: "POST" })
 export const judgeAnswer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ sessionId: z.string().uuid(), correct: z.boolean() }).parse(data),
+    z
+      .object({
+        sessionId: z.string().uuid(),
+        correct: z.boolean(),
+        /**
+         * Giocatore che l'host aveva davanti quando ha premuto. Obbligatorio:
+         * dopo un "Wrong" il server promuove subito il successivo in coda, e
+         * senza questo controllo un secondo click penalizzerebbe lui.
+         */
+        expectedPlayerId: z.string().uuid(),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
     if (error) throw new Error(error.message);
     if (!session.current_tile_id || !session.active_player_id) throw new Error("No active answer to judge");
+    if (session.active_player_id !== data.expectedPlayerId) {
+      throw new Error("The active player changed — nothing was judged");
+    }
 
     const { data: tile } = await supabase.from("tiles").select("*").eq("id", session.current_tile_id).single();
-    const { data: player } = await supabase.from("players").select("*").eq("id", session.active_player_id).single();
+    const { data: player } = await supabase
+      .from("players")
+      .select("id, session_id, name, avatar, team, locked_out, created_at")
+      .eq("id", session.active_player_id)
+      .single();
     if (!tile || !player) throw new Error("Missing tile or player");
 
     // Guard against double-judging: there must be an active queue row.
@@ -186,9 +220,33 @@ export const judgeAnswer = createServerFn({ method: "POST" })
     const teamCol = player.team === "alpha" ? "score_alpha" : "score_bravo";
     const newScore = (teamCol === "score_alpha" ? session.score_alpha : session.score_bravo) + delta;
 
+    if (isDD) {
+      /*
+       * Un Daily Double non passa dai buzzer, quindi non esiste una riga di
+       * coda da aggiornare: senza crearla, i suoi punti restavano invisibili
+       * al grafico Analytics, che contraddiceva il tabellone.
+       */
+      await supabase.from("buzzer_queue").upsert(
+        {
+          session_id: data.sessionId,
+          tile_id: session.current_tile_id,
+          player_id: session.active_player_id,
+          status: data.correct ? "correct" : "wrong",
+          judged_at: new Date().toISOString(),
+          delta,
+        },
+        { onConflict: "session_id,tile_id,player_id" },
+      );
+    }
+
     await supabase
       .from("buzzer_queue")
-      .update({ status: data.correct ? "correct" : "wrong", judged_at: new Date().toISOString() })
+      .update({
+        status: data.correct ? "correct" : "wrong",
+        judged_at: new Date().toISOString(),
+        // Valore realmente applicato: comprende la puntata dei Daily Double.
+        delta,
+      })
       .eq("session_id", data.sessionId)
       .eq("tile_id", session.current_tile_id)
       .eq("player_id", session.active_player_id)
@@ -253,7 +311,11 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       .update({
         ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
         ...(nextPlayerId
-          ? { phase: "answering" as const, active_player_id: nextPlayerId, timer_ends_at: timerEnd() }
+          ? {
+              phase: "answering" as const,
+              active_player_id: nextPlayerId,
+              timer_ends_at: timerEnd(session.timer_seconds),
+            }
           : { phase: "question_open" as const, active_player_id: null, timer_ends_at: null }),
       })
       .eq("id", data.sessionId);
@@ -319,16 +381,35 @@ export const clearQueue = createServerFn({ method: "POST" })
     const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
     if (error) throw new Error(error.message);
     if (session.current_tile_id) {
+      // Le righe vanno CANCELLATE, non marcate: `unique (session_id, tile_id,
+      // player_id)` impedirebbe altrimenti a chi ha già buzzato di rientrare,
+      // rendendo la casella ingiocabile proprio per chi era stato più veloce.
+      /*
+       * TUTTE le righe della casella, non solo quelle in attesa: chi era già
+       * stato giudicato conserva una riga 'wrong' o 'correct', e il vincolo di
+       * unicità gli impedirebbe comunque di ripremere. Filtrare per stato
+       * lasciava fuori proprio i giocatori che l'host vuole rimettere in gioco.
+       */
       await supabase
         .from("buzzer_queue")
-        .update({ status: "cleared", judged_at: new Date().toISOString() })
+        .delete()
         .eq("session_id", data.sessionId)
-        .eq("tile_id", session.current_tile_id)
-        .in("status", ["queued", "active"]);
+        .eq("tile_id", session.current_tile_id);
     }
+    // Riaprire i buzzer senza sbloccare chi era stato giudicato male non li
+    // riapre davvero: quei giocatori resterebbero esclusi dalla casella.
+    await supabase.from("players").update({ locked_out: false }).eq("session_id", data.sessionId);
     const { error: uErr } = await supabase
       .from("sessions")
-      .update({ phase: "question_open", active_player_id: null, timer_ends_at: null })
+      .update({
+        phase: "question_open",
+        active_player_id: null,
+        timer_ends_at: null,
+        // Senza azzerarla, una coda ripulita durante un Daily Double lasciava
+        // la puntata impostata e il controllo lato database rifiutava ogni
+        // buzz: la casella diventava impremibile per tutti.
+        dd_wager: null,
+      })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
     return { ok: true };
@@ -444,11 +525,27 @@ export const judgeFinal = createServerFn({ method: "POST" })
       .eq("session_id", data.sessionId)
       .eq("team", data.team)
       .maybeSingle();
-    const wager = entry?.wager ?? 0;
-    const delta = data.correct ? wager : -wager;
-    if (entry) {
-      await supabase.from("final_answers").update({ judged: data.correct }).eq("id", entry.id);
+    if (!entry) throw new Error("This team has no final answer to judge");
+    if (entry.judged !== null) return { ok: true, finished: false, alreadyJudged: true };
+
+    /*
+     * Aggiornamento condizionale: `.is("judged", null)` fa sì che di due click
+     * ravvicinati solo il primo trovi la riga ancora da giudicare. Senza questo,
+     * il secondo click accreditava la puntata una seconda volta e decideva la
+     * partita.
+     */
+    const { data: claimed } = await supabase
+      .from("final_answers")
+      .update({ judged: data.correct })
+      .eq("id", entry.id)
+      .is("judged", null)
+      .select("id");
+    if (!claimed || claimed.length === 0) {
+      return { ok: true, finished: false, alreadyJudged: true };
     }
+
+    const wager = entry.wager ?? 0;
+    const delta = data.correct ? wager : -wager;
     const newScore = (data.team === "alpha" ? session.score_alpha : session.score_bravo) + delta;
     const { data: others } = await supabase
       .from("final_answers")

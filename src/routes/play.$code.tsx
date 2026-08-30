@@ -37,6 +37,8 @@ interface StoredIdentity {
   name: string;
   avatar: string;
   team: Team;
+  /** Credenziale rilasciata da joinGame: autorizza buzz e risposta finale. */
+  secret: string;
 }
 
 function PlayerPage() {
@@ -46,6 +48,12 @@ function PlayerPage() {
     queryKey: ["lookup", code],
     queryFn: () => lookup({ data: { code } }),
     retry: 1,
+    /*
+     * Il codice d'accesso va risolto di nuovo ogni tanto: se l'host riavvia la
+     * partita nasce una nuova sessione, e senza questo i telefoni restavano
+     * agganciati a quella morta, fermi su "Waiting for the host…" per sempre.
+     */
+    refetchInterval: 15_000,
   });
 
   if (isLoading) {
@@ -105,7 +113,15 @@ function PlayerLobby({
   const [identity, setIdentity] = useState<StoredIdentity | null>(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      return raw ? (JSON.parse(raw) as StoredIdentity) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<StoredIdentity>;
+      // Le identità salvate prima dell'introduzione del segreto non possono più
+      // buzzare: si scartano e si rientra dal modulo di ingresso.
+      if (!parsed.playerId || !parsed.secret) {
+        localStorage.removeItem(storageKey);
+        return null;
+      }
+      return parsed as StoredIdentity;
     } catch {
       return null;
     }
@@ -118,7 +134,12 @@ function PlayerLobby({
         gameTitle={gameTitle}
         theme={theme}
         onJoined={(id) => {
-          localStorage.setItem(storageKey, JSON.stringify(id));
+          try {
+            localStorage.setItem(storageKey, JSON.stringify(id));
+          } catch {
+            /* navigazione privata o dati dei siti disattivati: si gioca lo stesso,
+               ma ricaricando la pagina si dovrà rientrare. */
+          }
           setIdentity(id);
         }}
       />
@@ -151,7 +172,11 @@ function JoinForm({
     try {
       const res = await joinGame({ data: { code, name: name.trim(), avatar, team } });
       if ("error" in res) {
-        toast.error(res.error === "not_started" ? "The host hasn't started yet" : "Could not join");
+        if (res.error === "not_started") toast.error("The host hasn't started yet");
+        else if (res.error === "full") toast.error("This game is full");
+        else if (res.error === "not_found") toast.error("No game matches that code");
+        else if (res.error === "closed") toast.error("This game has already moved on — joining is closed");
+        else toast.error("Could not join");
         return;
       }
       vibrate(30);
@@ -160,6 +185,7 @@ function JoinForm({
         name: res.player.name,
         avatar: res.player.avatar,
         team: res.player.team as Team,
+        secret: res.secret,
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not join");
@@ -257,10 +283,13 @@ function LivePlayer({
 }) {
   const queryClient = useQueryClient();
   const fetchState = useServerFn(getPlayerState);
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["play", sessionId],
     queryFn: () => fetchState({ data: { sessionId } }),
     refetchOnWindowFocus: true,
+    // Rete di sicurezza: il canale realtime è l'unica sincronizzazione, e gli
+    // eventi persi durante una disconnessione non tornano più da soli.
+    refetchInterval: 15_000,
   });
   useSessionRealtime(sessionId, [["play", sessionId]]);
 
@@ -291,14 +320,19 @@ function LivePlayer({
       session?.current_tile_id
         ? queue
             .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
-            .sort((a, b) => a.created_at.localeCompare(b.created_at))
+            .sort(
+              (a, b) =>
+                // La riga già promossa va sempre in testa.
+                (a.status === "active" ? -1 : b.status === "active" ? 1 : 0) ||
+                a.created_at.localeCompare(b.created_at),
+            )
         : [],
     [queue, session?.current_tile_id],
   );
   const myPosition = myEntry ? tileQueue.findIndex((q) => q.player_id === identity.playerId) + 1 : 0;
   const iAmActive = session?.active_player_id === identity.playerId;
 
-  const countdown = useCountdown(session?.timer_ends_at);
+  const countdown = useCountdown(session?.timer_ends_at, session?.timer_seconds);
 
   // Haptics/audio cues on becoming active
   const wasActive = useRef(false);
@@ -322,28 +356,34 @@ function LivePlayer({
       if (prev.queue.some((q) => q.tile_id === tileId && q.player_id === identity.playerId && (q.status === "queued" || q.status === "active"))) {
         return old;
       }
-      const hasActive = prev.queue.some((q) => q.tile_id === tileId && q.status === "active");
+      /*
+       * Sempre "queued", mai "active": chi decide chi ha vinto la volata è il
+       * server (trigger on_buzz). Promuovendosi da solo, il telefono del
+       * secondo arrivato mostrava "YOU'RE UP!" con vibrazione e suono per
+       * qualche centinaio di millisecondi — in diretta significa iniziare a
+       * rispondere fuori turno — per poi ripiegare su "IN LINE #2".
+       */
       const optimistic: QueueEntry = {
         id: `optimistic-${identity.playerId}-${now}`,
         session_id: sessionId,
         tile_id: tileId,
         player_id: identity.playerId,
-        status: hasActive ? "queued" : "active",
+        status: "queued",
         created_at: now,
         judged_at: null,
+        delta: null,
       };
-      return {
-        ...prev,
-        session: hasActive ? prev.session : { ...prev.session, active_player_id: identity.playerId, phase: "answering" },
-        queue: [...prev.queue, optimistic],
-      };
+      return { ...prev, queue: [...prev.queue, optimistic] };
     });
     try {
-      const res = await buzz({ data: { playerId: identity.playerId } });
+      const res = await buzz({ data: { playerId: identity.playerId, secret: identity.secret } });
       if (!res.ok) {
+        // Lo stato ottimistico qui sopra è ormai una bugia: si ricarica sempre.
         void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
         if (res.reason === "closed") toast.error("Buzzers are closed");
-        else toast.error(res.message ?? "Buzz rejected");
+        else if (res.reason === "locked_out") toast.error("You're locked out of this question");
+        else if (res.reason === "already_buzzed") toast.error("You already buzzed on this tile");
+        else toast.error("Buzz rejected");
       }
     } catch {
       void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
@@ -352,9 +392,21 @@ function LivePlayer({
   };
 
   const phase = session?.phase ?? "idle";
-  const status = session?.status ?? "lobby";
+  /*
+   * Niente ripiego su "lobby": prima QUALSIASI errore — sessione non
+   * raggiungibile, rete caduta, partita conclusa e quindi invisibile — mostrava
+   * la card rassicurante "You're in! Waiting for the host…", che restava lì per
+   * sempre. Ora caricamento, errore e stato reale sono distinti.
+   */
+  const status = session?.status ?? null;
   const locked = me?.locked_out ?? false;
-  const buzzerLive = status === "live" && (phase === "question_open" || phase === "answering") && !locked && !myEntry;
+  const buzzerLive =
+    status === "live" &&
+    (phase === "question_open" || phase === "answering") &&
+    // Durante un Daily Double risponde solo il concorrente designato.
+    session?.dd_wager == null &&
+    !locked &&
+    !myEntry;
 
   return (
     <Shell>
@@ -372,6 +424,18 @@ function LivePlayer({
         </div>
 
         <AnimatePresence mode="wait">
+          {!session && (
+            <StatusCard
+              key="offline"
+              icon={<Hourglass className="h-10 w-10 text-muted-foreground" />}
+              title={isPending ? "Connecting…" : "Can't reach the game"}
+            >
+              {isPending
+                ? "Getting the latest board state…"
+                : "The game isn't reachable right now. This page keeps retrying on its own."}
+            </StatusCard>
+          )}
+
           {status === "lobby" && (
             <StatusCard key="lobby" icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="You're in!">
               Waiting for the host to open the board…
@@ -418,6 +482,12 @@ function LivePlayer({
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">Answer out loud — the host is listening!</p>
                 </div>
+              ) : session?.dd_wager != null ? (
+                /* Il Daily Double è riservato al concorrente designato: gli altri
+                   non devono vedere un buzzer attivo. */
+                <StatusCard icon={<Zap className="h-10 w-10 text-ink-gold" />} title="Daily Double">
+                  Another contestant is answering this one. Buzzers are off.
+                </StatusCard>
               ) : locked ? (
                 <StatusCard icon={<Ban className="h-10 w-10 text-danger-ink" />} title="Locked out">
                   Incorrect — wait for the next question.
@@ -465,7 +535,9 @@ function LivePlayer({
             >
               <Trophy className="mb-3 h-14 w-14 text-ink-gold" />
               <h2 className="font-display text-2xl font-black">
-                {teamName(theme, (session?.score_alpha ?? 0) >= (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!
+                {(session?.score_alpha ?? 0) === (session?.score_bravo ?? 0)
+                  ? "It's a tie!"
+                  : `${teamName(theme, (session?.score_alpha ?? 0) > (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!`}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your team scored <span className="font-bold text-ink-gold">{myScore ?? 0}</span>
@@ -500,10 +572,17 @@ function FinalForm({
   const [sent, setSent] = useState(false);
   const maxWager = Math.max(0, myTeam === "alpha" ? session.score_alpha : session.score_bravo);
 
+  // Il Final ha due fasi consecutive (puntata, poi risposta) e il componente non
+  // viene rimontato fra l'una e l'altra: senza questo reset chi bloccava la
+  // puntata restava su "Locked in" e non vedeva mai il campo di risposta.
+  useEffect(() => setSent(false), [session.phase]);
+
   if (sent) {
     return (
       <StatusCard icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="Locked in">
-        Your team's final answer is in. Waiting for the host…
+        {session.phase === "final_wager"
+          ? "Wager locked in. Waiting for the host to reveal the question…"
+          : "Your team's final answer is in. Waiting for the host…"}
       </StatusCard>
     );
   }
@@ -514,17 +593,26 @@ function FinalForm({
       <p className="mb-5 text-center text-xs text-muted-foreground">
         One submission per team — {teamName(theme, myTeam)} · max wager {maxWager}
       </p>
-      <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-semibold text-muted-foreground">Wager</span>
-        <input
-          type="number"
-          min={0}
-          max={maxWager}
-          value={wager}
-          onChange={(e) => setWager(Math.max(0, Math.min(maxWager, Number(e.target.value))))}
-          className="h-14 w-full rounded-full bg-butter px-5 text-center font-display text-xl font-black text-ink-gold outline-none"
-        />
-      </label>
+      {/* A domanda rivelata la puntata è congelata anche lato server: mostrarla
+          ancora modificabile lascerebbe credere di poter scommettere sapendo
+          già se si conosce la risposta. */}
+      {session.phase === "final_wager" ? (
+        <label className="mb-3 block">
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Wager</span>
+          <input
+            type="number"
+            min={0}
+            max={maxWager}
+            value={wager}
+            onChange={(e) => setWager(Math.max(0, Math.min(maxWager, Number(e.target.value))))}
+            className="h-14 w-full rounded-full bg-butter px-5 text-center font-display text-xl font-black text-ink-gold outline-none"
+          />
+        </label>
+      ) : (
+        <p className="mb-3 rounded-full bg-muted px-5 py-3 text-center text-xs font-semibold text-muted-foreground">
+          Your wager is locked in — it can't change now that the question is out.
+        </p>
+      )}
       {session.phase === "final_answer" && (
         <label className="mb-3 block">
           <span className="mb-1 block text-xs font-semibold text-muted-foreground">{session.final_question}</span>
@@ -541,10 +629,14 @@ function FinalForm({
         whileTap={{ scale: 0.96 }}
         disabled={session.phase === "final_answer" && !answer.trim()}
         onClick={async () => {
-          const res = await submitFinalAnswer({ data: { playerId: identity.playerId, wager, answer: answer.trim() } });
+          const res = await submitFinalAnswer({
+            data: { playerId: identity.playerId, secret: identity.secret, wager, answer: answer.trim() },
+          });
           if (res.ok) {
             vibrate([40, 40, 40]);
             setSent(true);
+          } else if (res.reason === "already_judged") {
+            toast.error("The host has already judged your team's answer");
           } else {
             toast.error("Submission rejected");
           }

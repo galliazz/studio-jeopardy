@@ -13,12 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
+import { Route as ObsBoardRouteImport } from './routes/obs/board'
+import { Route as ObsCombinedRouteImport } from './routes/obs/combined'
+import { Route as ObsQueueRouteImport } from './routes/obs/queue'
 import { Route as PlayCodeRouteImport } from './routes/play.$code'
 import { Route as AuthenticatedEditGameIdRouteImport } from './routes/_authenticated/edit.$gameId'
 import { Route as AuthenticatedHostSessionIdRouteImport } from './routes/_authenticated/host.$sessionId'
-import { Route as ObsBoardRouteImport } from './routes/obs/board'
-import { Route as ObsQueueRouteImport } from './routes/obs/queue'
-import { Route as ObsCombinedRouteImport } from './routes/obs/combined'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,6 +39,21 @@ const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ObsBoardRoute = ObsBoardRouteImport.update({
+  id: '/obs/board',
+  path: '/obs/board',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObsCombinedRoute = ObsCombinedRouteImport.update({
+  id: '/obs/combined',
+  path: '/obs/combined',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObsQueueRoute = ObsQueueRouteImport.update({
+  id: '/obs/queue',
+  path: '/obs/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlayCodeRoute = PlayCodeRouteImport.update({
   id: '/play/$code',
   path: '/play/$code',
@@ -55,43 +70,28 @@ const AuthenticatedHostSessionIdRoute =
     path: '/host/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const ObsBoardRoute = ObsBoardRouteImport.update({
-  id: '/obs/board',
-  path: '/obs/board',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ObsQueueRoute = ObsQueueRouteImport.update({
-  id: '/obs/queue',
-  path: '/obs/queue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ObsCombinedRoute = ObsCombinedRouteImport.update({
-  id: '/obs/combined',
-  path: '/obs/combined',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/obs/board': typeof ObsBoardRoute
+  '/obs/combined': typeof ObsCombinedRoute
+  '/obs/queue': typeof ObsQueueRoute
   '/play/$code': typeof PlayCodeRoute
   '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
   '/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
-  '/obs/board': typeof ObsBoardRoute
-  '/obs/queue': typeof ObsQueueRoute
-  '/obs/combined': typeof ObsCombinedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/studio': typeof AuthenticatedStudioRoute
+  '/obs/board': typeof ObsBoardRoute
+  '/obs/combined': typeof ObsCombinedRoute
+  '/obs/queue': typeof ObsQueueRoute
   '/play/$code': typeof PlayCodeRoute
   '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
   '/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
-  '/obs/board': typeof ObsBoardRoute
-  '/obs/queue': typeof ObsQueueRoute
-  '/obs/combined': typeof ObsCombinedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -99,12 +99,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/studio': typeof AuthenticatedStudioRoute
+  '/obs/board': typeof ObsBoardRoute
+  '/obs/combined': typeof ObsCombinedRoute
+  '/obs/queue': typeof ObsQueueRoute
   '/play/$code': typeof PlayCodeRoute
   '/_authenticated/edit/$gameId': typeof AuthenticatedEditGameIdRoute
   '/_authenticated/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
-  '/obs/board': typeof ObsBoardRoute
-  '/obs/queue': typeof ObsQueueRoute
-  '/obs/combined': typeof ObsCombinedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -112,45 +112,45 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/studio'
+    | '/obs/board'
+    | '/obs/combined'
+    | '/obs/queue'
     | '/play/$code'
     | '/edit/$gameId'
     | '/host/$sessionId'
-    | '/obs/board'
-    | '/obs/queue'
-    | '/obs/combined'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/studio'
+    | '/obs/board'
+    | '/obs/combined'
+    | '/obs/queue'
     | '/play/$code'
     | '/edit/$gameId'
     | '/host/$sessionId'
-    | '/obs/board'
-    | '/obs/queue'
-    | '/obs/combined'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/studio'
+    | '/obs/board'
+    | '/obs/combined'
+    | '/obs/queue'
     | '/play/$code'
     | '/_authenticated/edit/$gameId'
     | '/_authenticated/host/$sessionId'
-    | '/obs/board'
-    | '/obs/queue'
-    | '/obs/combined'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  PlayCodeRoute: typeof PlayCodeRoute
   ObsBoardRoute: typeof ObsBoardRoute
-  ObsQueueRoute: typeof ObsQueueRoute
   ObsCombinedRoute: typeof ObsCombinedRoute
+  ObsQueueRoute: typeof ObsQueueRoute
+  PlayCodeRoute: typeof PlayCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -183,6 +183,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/obs/board': {
+      id: '/obs/board'
+      path: '/obs/board'
+      fullPath: '/obs/board'
+      preLoaderRoute: typeof ObsBoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/obs/combined': {
+      id: '/obs/combined'
+      path: '/obs/combined'
+      fullPath: '/obs/combined'
+      preLoaderRoute: typeof ObsCombinedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/obs/queue': {
+      id: '/obs/queue'
+      path: '/obs/queue'
+      fullPath: '/obs/queue'
+      preLoaderRoute: typeof ObsQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/play/$code': {
       id: '/play/$code'
       path: '/play/$code'
@@ -203,27 +224,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/host/$sessionId'
       preLoaderRoute: typeof AuthenticatedHostSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/obs/board': {
-      id: '/obs/board'
-      path: '/obs/board'
-      fullPath: '/obs/board'
-      preLoaderRoute: typeof ObsBoardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/obs/queue': {
-      id: '/obs/queue'
-      path: '/obs/queue'
-      fullPath: '/obs/queue'
-      preLoaderRoute: typeof ObsQueueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/obs/combined': {
-      id: '/obs/combined'
-      path: '/obs/combined'
-      fullPath: '/obs/combined'
-      preLoaderRoute: typeof ObsCombinedRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -247,10 +247,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  PlayCodeRoute: PlayCodeRoute,
   ObsBoardRoute: ObsBoardRoute,
-  ObsQueueRoute: ObsQueueRoute,
   ObsCombinedRoute: ObsCombinedRoute,
+  ObsQueueRoute: ObsQueueRoute,
+  PlayCodeRoute: PlayCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

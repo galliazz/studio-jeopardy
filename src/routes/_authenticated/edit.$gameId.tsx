@@ -839,11 +839,11 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               />
             ) : (
               <button
-                onDoubleClick={() => {
+                onClick={() => {
                   setRadiusDraft(String(theme.radius));
                   setRadiusEditing(true);
                 }}
-                title="Double-click to type a value"
+                title="Click to type a value"
                 className="flex h-10 w-10 items-center justify-center rounded-full text-center font-bold text-foreground hover:bg-muted"
               >
                 {theme.radius}
@@ -879,7 +879,10 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               </option>
             ))}
           </select>
-          <div className="flex h-10 items-center">
+          <div className="flex h-10 items-center gap-1.5">
+            <span className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+              <Type className="h-3.5 w-3.5" /> Size
+            </span>
             <input
               type="range"
               min={0.6}

@@ -379,10 +379,10 @@ export type Database = {
       get_public_tile_points: {
         Args: { p_join_code: string }
         Returns: {
-          id: string
           category_id: string
-          row_index: number
+          id: string
           points: number
+          row_index: number
         }[]
       }
       join_session: {

@@ -502,10 +502,10 @@ function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["pha
       <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Preview</h3>
       {tile ? (
         <div className={revealed ? "" : "select-none"}>
-          <p className={`text-sm font-semibold ${revealed ? "text-ink-gold" : "text-foreground"}`}>
+          <p className={`text-center text-xl font-black leading-snug ${revealed ? "text-ink-gold" : "text-foreground"}`}>
             {revealed || phase === "answering" || phase === "question_open" ? tile.answer || "—" : "—"}
           </p>
-          {tile.hint && <p className="mt-2 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
+          {tile.hint && <p className="mt-2 text-center text-sm italic text-muted-foreground">Hint: {tile.hint}</p>}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">Open a tile to see its answer here.</p>
@@ -764,7 +764,7 @@ function QuestionOverlay({
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 rounded-full bg-butter px-7 py-3 font-display text-lg font-black text-ink-gold sm:text-2xl"
+                className="mt-2 rounded-full bg-butter px-9 py-4 font-display text-2xl font-black leading-snug text-ink-gold sm:text-4xl"
               >
                 {tile.answer}
               </motion.div>
@@ -781,20 +781,13 @@ function QuestionOverlay({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {session.phase !== "reveal" && (
-              <button
-                onClick={() => {
-                  onHostStatePatch({ session: { phase: "reveal", timer_ends_at: null } });
-                  void revealAnswer({ data: { sessionId: session.id } });
-                }}
-                className="rounded-full bg-lilac px-7 py-3 text-sm font-bold text-foreground elev-1"
-              >
-                Reveal answer
-              </button>
-            )}
-            {activePlayer && !alreadyJudged && session.phase !== "reveal" && (
-              <>
+          {/* 3-zone action row: Correct (left) · Reveal/Close (center) · Wrong (right) */}
+          <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
+            <div className="flex justify-start">
+              {/* La guardia sulla fase serve anche qui: dopo un Daily Double
+                  giudicato non esiste una riga di coda, quindi `alreadyJudged`
+                  resta falso e i pulsanti sarebbero rimasti cliccabili. */}
+              {activePlayer && !alreadyJudged && session.phase !== "reveal" && (
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   disabled={judging}
@@ -827,6 +820,51 @@ function QuestionOverlay({
                 >
                   <Check className="h-5 w-5" /> Correct
                 </motion.button>
+              )}
+            </div>
+
+            <div className="flex justify-center">
+              {session.phase !== "reveal" ? (
+                <button
+                  onClick={() => {
+                    onHostStatePatch({ session: { phase: "reveal", timer_ends_at: null } });
+                    void revealAnswer({ data: { sessionId: session.id } });
+                  }}
+                  className="rounded-full bg-lilac px-8 py-3.5 font-display text-base font-black text-foreground elev-1 transition-transform hover:scale-105"
+                >
+                  Reveal answer
+                </button>
+              ) : (
+                <motion.button
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => {
+                    onHostStatePatch({
+                      session: {
+                        phase: "idle",
+                        current_tile_id: null,
+                        active_player_id: null,
+                        timer_ends_at: null,
+                        dd_wager: null,
+                        used_tile_ids: [...new Set([...session.used_tile_ids, tile.id])],
+                      },
+                      players: players.map((p) => ({ ...p, locked_out: false })),
+                      queue: queue.map((q) =>
+                        q.tile_id === tile.id && (q.status === "queued" || q.status === "active")
+                          ? { ...q, status: "cleared", judged_at: new Date().toISOString() }
+                          : q,
+                      ),
+                    });
+                    void closeTile({ data: { sessionId: session.id } });
+                  }}
+                  className="rounded-full bg-coral px-9 py-3.5 font-display text-base font-black text-foreground elev-2"
+                >
+                  Close tile
+                </motion.button>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              {activePlayer && !alreadyJudged && session.phase !== "reveal" && (
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   disabled={judging}
@@ -867,35 +905,8 @@ function QuestionOverlay({
                 >
                   <X className="h-5 w-5" /> Wrong
                 </motion.button>
-              </>
-            )}
-            {session.phase === "reveal" && (
-              <motion.button
-                whileTap={{ scale: 0.94 }}
-                onClick={() => {
-                  onHostStatePatch({
-                    session: {
-                      phase: "idle",
-                      current_tile_id: null,
-                      active_player_id: null,
-                      timer_ends_at: null,
-                      dd_wager: null,
-                      used_tile_ids: [...new Set([...session.used_tile_ids, tile.id])],
-                    },
-                    players: players.map((p) => ({ ...p, locked_out: false })),
-                    queue: queue.map((q) =>
-                      q.tile_id === tile.id && (q.status === "queued" || q.status === "active")
-                        ? { ...q, status: "cleared", judged_at: new Date().toISOString() }
-                        : q,
-                    ),
-                  });
-                  void closeTile({ data: { sessionId: session.id } });
-                }}
-                className="rounded-full bg-coral px-9 py-3.5 font-display text-base font-black text-foreground elev-2"
-              >
-                Close tile
-              </motion.button>
-            )}
+              )}
+            </div>
           </div>
         </>
       )}

@@ -599,22 +599,154 @@ function ObsLinksPanel({ joinCode }: { joinCode: string }) {
   );
 }
 
-/* ----------------------------- Answer preview ----------------------------- */
+/* --------------------------- Live control panel --------------------------- */
 
-function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["phase"] }) {
-  const revealed = phase === "reveal";
+/** Small key-hint label so the host learns the shortcuts in place. */
+function KeyHint({ k }: { k: string }) {
   return (
-    <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-2 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Answer Preview</h3>
-      {tile ? (
-        <div className={revealed ? "" : "select-none"}>
-          <p className={`text-center text-xl font-black leading-snug ${revealed ? "text-ink-gold" : "text-foreground"}`}>
-            {revealed || phase === "answering" || phase === "question_open" ? tile.answer || "—" : "—"}
+    <kbd className="ml-2 rounded-md border border-current/30 px-1.5 py-0.5 font-mono text-[10px] font-bold opacity-70">
+      {k}
+    </kbd>
+  );
+}
+
+function LiveControlPanel({
+  session,
+  tile,
+  category,
+  players,
+  queue,
+  actions,
+}: {
+  session: Session;
+  tile: Tile | null;
+  category: Category | null | undefined;
+  players: Player[];
+  queue: QueueEntry[];
+  actions: HostActions;
+}) {
+  const countdown = useCountdown(session.timer_ends_at);
+  const activePlayer = players.find((p) => p.id === session.active_player_id) ?? null;
+  const tileQueue = queue
+    .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const hasNext = tileQueue.some((q) => q.status === "queued");
+  const value = session.dd_wager ?? tile?.points ?? 0;
+  const phase = session.phase;
+
+  return (
+    <div className="rounded-[32px] bg-card p-5 elev-2">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live control</h3>
+        {tile && (
+          <span className="truncate rounded-full border border-foreground/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {category?.title ?? "Clue"} · {value}
+          </span>
+        )}
+      </div>
+
+      {!tile || phase === "idle" ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
+      ) : phase === "reveal" ? (
+        <div className="space-y-4">
+          <div className="rounded-[24px] border border-foreground/15 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Answer</p>
+            <p className="mt-1 font-display text-xl font-black text-ink-gold">{tile.answer || "—"}</p>
+          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            {activePlayer ? `Scored for ${activePlayer.name}` : "No score change"}
           </p>
-          {tile.hint && <p className="mt-2 text-center text-sm italic text-muted-foreground">Hint: {tile.hint}</p>}
+          <button
+            onClick={actions.closeTile}
+            className="flex min-h-12 w-full items-center justify-center rounded-full bg-coral px-6 font-display text-base font-black text-foreground elev-2"
+          >
+            Close tile <KeyHint k="Esc" />
+          </button>
+        </div>
+      ) : activePlayer ? (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center text-lg scallop ${
+                  activePlayer.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
+                }`}
+              >
+                {activePlayer.avatar}
+              </span>
+              <span
+                className={`truncate font-display text-2xl font-black leading-none ${
+                  activePlayer.team === "alpha" ? "text-team-alpha-ink" : "text-team-bravo-ink"
+                }`}
+              >
+                {activePlayer.name}
+              </span>
+            </div>
+            {countdown.seconds != null && (
+              <span
+                className={`shrink-0 font-display text-4xl font-black tabular-nums ${
+                  countdown.seconds <= 5 ? "text-danger-ink" : "text-foreground"
+                }`}
+              >
+                0:{String(countdown.seconds).padStart(2, "0")}
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={actions.judgeCorrect}
+              className="flex min-h-12 items-center justify-center rounded-full bg-success px-4 font-display text-base font-black text-success-ink elev-2"
+            >
+              <Check className="mr-1.5 h-5 w-5" /> +{value} <KeyHint k="C" />
+            </button>
+            <button
+              onClick={actions.judgeWrong}
+              className="flex min-h-12 items-center justify-center rounded-full bg-danger px-4 font-display text-base font-black text-danger-ink elev-2"
+            >
+              <X className="mr-1.5 h-5 w-5" /> Wrong <KeyHint k="X" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={actions.passToNext}
+              disabled={!hasNext}
+              className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
+            >
+              Pass to next <KeyHint k="N" />
+            </button>
+            <button
+              onClick={actions.restartTimer}
+              className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+            >
+              <RotateCcw className="mr-1.5 h-4 w-4" /> Timer <KeyHint k="R" />
+            </button>
+          </div>
+
+          <QueueList session={session} players={players} queue={queue} />
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Open a tile to see its answer here.</p>
+        <div className="space-y-3">
+          <p className="line-clamp-4 text-sm font-semibold text-foreground">
+            {tile.question.replace(/<[^>]*>/g, "") || "…"}
+          </p>
+          <div className="rounded-[24px] border border-dashed border-foreground/30 p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Host only · answer</p>
+            <p className="mt-1 font-display text-lg font-black text-ink-gold">{tile.answer || "—"}</p>
+            {tile.hint && <p className="mt-1 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
+          </div>
+          <p className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-ink-gold" /> Buzzers armed
+          </p>
+          <button
+            onClick={actions.reveal}
+            className="flex min-h-12 w-full items-center justify-center rounded-full bg-lilac px-6 font-display text-base font-black text-foreground"
+          >
+            Reveal answer <KeyHint k="Space" />
+          </button>
+          <QueueList session={session} players={players} queue={queue} />
+        </div>
       )}
     </div>
   );
@@ -622,16 +754,33 @@ function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["pha
 
 /* ------------------------------- Tool button ------------------------------ */
 
-function ToolButton({ icon: Icon, label, onClick }: { icon: typeof Flag; label: string; onClick: () => void }) {
+function ToolButton({
+  icon: Icon,
+  label,
+  onClick,
+  variant = "tonal",
+}: {
+  icon: typeof Flag;
+  label: string;
+  onClick: () => void;
+  variant?: "tonal" | "outlined" | "error";
+}) {
+  const styles =
+    variant === "tonal"
+      ? "bg-butter text-foreground"
+      : variant === "outlined"
+        ? "border border-foreground/25 text-foreground hover:bg-foreground/5"
+        : "border border-danger-ink/50 text-danger-ink hover:bg-danger/25";
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2.5 rounded-full bg-butter px-5 py-3 text-xs font-bold text-foreground transition-transform hover:scale-[1.03]"
+      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-xs font-bold transition-colors ${styles}`}
     >
-      <Icon className="h-4 w-4 text-ink-gold" /> {label}
+      <Icon className="h-4 w-4" /> {label}
     </button>
   );
 }
+
 
 /* ---------------------------- Question overlay ---------------------------- */
 

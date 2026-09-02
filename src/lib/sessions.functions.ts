@@ -479,3 +479,131 @@ export const finishSession = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ------------------------- Live host corrections -------------------------- */
+
+/** Manual score correction, available at any phase. */
+export const adjustScore = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        sessionId: z.string().uuid(),
+        team: z.enum(["alpha", "bravo"]),
+        delta: z.number().int().min(-100000).max(100000),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("score_alpha, score_bravo")
+      .eq("id", data.sessionId)
+      .single();
+    if (error) throw new Error(error.message);
+    const patch =
+      data.team === "alpha"
+        ? { score_alpha: session.score_alpha + data.delta }
+        : { score_bravo: session.score_bravo + data.delta };
+    const { error: uErr } = await supabase.from("sessions").update(patch).eq("id", data.sessionId);
+    if (uErr) throw new Error(uErr.message);
+    return { ok: true };
+  });
+
+/** Promotes the next queued buzzer for the open tile and restarts the clock. */
+export const passToNext = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    if (error) throw new Error(error.message);
+    if (!session.current_tile_id) throw new Error("No open tile");
+
+    if (session.active_player_id) {
+      await supabase
+        .from("buzzer_queue")
+        .update({ status: "cleared", judged_at: new Date().toISOString() })
+        .eq("session_id", data.sessionId)
+        .eq("tile_id", session.current_tile_id)
+        .eq("player_id", session.active_player_id)
+        .eq("status", "active");
+    }
+
+    const { data: queued } = await supabase
+      .from("buzzer_queue")
+      .select("*")
+      .eq("session_id", data.sessionId)
+      .eq("tile_id", session.current_tile_id)
+      .eq("status", "queued")
+      .order("created_at");
+    const next = (queued ?? [])[0] ?? null;
+    if (next) await supabase.from("buzzer_queue").update({ status: "active" }).eq("id", next.id);
+
+    const { error: uErr } = await supabase
+      .from("sessions")
+      .update(
+        next
+          ? { phase: "answering" as const, active_player_id: next.player_id, timer_ends_at: timerEnd() }
+          : { phase: "question_open" as const, active_player_id: null, timer_ends_at: null },
+      )
+      .eq("id", data.sessionId);
+    if (uErr) throw new Error(uErr.message);
+    return { ok: true, promoted: next?.player_id ?? null };
+  });
+
+/** Restarts the 15s clock for the player currently answering. */
+export const restartTimer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("sessions")
+      .update({ timer_ends_at: timerEnd() })
+      .eq("id", data.sessionId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Moves a player to the other team. */
+export const switchPlayerTeam = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ sessionId: z.string().uuid(), playerId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: player, error } = await supabase
+      .from("players")
+      .select("team")
+      .eq("id", data.playerId)
+      .eq("session_id", data.sessionId)
+      .single();
+    if (error) throw new Error(error.message);
+    const { error: uErr } = await supabase
+      .from("players")
+      .update({ team: player.team === "alpha" ? "bravo" : "alpha" })
+      .eq("id", data.playerId);
+    if (uErr) throw new Error(uErr.message);
+    return { ok: true };
+  });
+
+/** Removes a player from the session. */
+export const removePlayer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ sessionId: z.string().uuid(), playerId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    await supabase.from("buzzer_queue").delete().eq("session_id", data.sessionId).eq("player_id", data.playerId);
+    const { error } = await supabase
+      .from("players")
+      .delete()
+      .eq("id", data.playerId)
+      .eq("session_id", data.sessionId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

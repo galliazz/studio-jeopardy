@@ -150,6 +150,9 @@ function AuthListener() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  // OBS browser sources are pure graphics: no app chrome, no toasts.
+  const overlay = location.pathname.startsWith("/overlay/") || location.pathname.startsWith("/obs/");
 
   useEffect(() => {
     initThemeMode();
@@ -158,9 +161,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthListener />
-      <TopContextBar />
+      {!overlay && <TopContextBar />}
       <Outlet />
-      <Toaster position="top-center" richColors closeButton />
+      {!overlay && <Toaster position="top-center" richColors closeButton />}
     </QueryClientProvider>
   );
 }
@@ -169,7 +172,7 @@ function TopContextBar() {
   const location = useLocation();
   const path = location.pathname;
   // OBS browser-source overlays render with no chrome at all.
-  if (path.startsWith("/obs/")) return null;
+  if (path.startsWith("/obs/") || path.startsWith("/overlay/")) return null;
   // Studio renders its own sticky app bar instead of this floating pill.
   if (path === "/studio") return null;
 

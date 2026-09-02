@@ -142,6 +142,7 @@ export type Database = {
           host_id: string
           id: string
           join_code: string
+          overlay_token: string
           theme: Json
           title: string
           updated_at: string
@@ -151,6 +152,7 @@ export type Database = {
           host_id: string
           id?: string
           join_code: string
+          overlay_token?: string
           theme?: Json
           title?: string
           updated_at?: string
@@ -160,6 +162,7 @@ export type Database = {
           host_id?: string
           id?: string
           join_code?: string
+          overlay_token?: string
           theme?: Json
           title?: string
           updated_at?: string

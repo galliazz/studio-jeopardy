@@ -357,3 +357,19 @@ export const updateProfile = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Rotates a board's overlay token, invalidating every existing OBS link. */
+export const regenerateOverlayToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: game, error } = await supabase
+      .from("games")
+      .update({ overlay_token: crypto.randomUUID() })
+      .eq("id", data.gameId)
+      .select("id, overlay_token")
+      .single();
+    if (error) throw new Error(error.message);
+    return { overlayToken: game.overlay_token };
+  });

@@ -130,10 +130,10 @@ function toDark(hex: string, lightness: number, sat = 0.22): string {
  * Board surfaces come from the saved game theme (hex). In dark mode we present
  * the same hues at deep-pastel lightness. Data is never modified.
  */
-export function darkBoardColors(
-  theme: { bg: string; card: string; accent: string },
+export function darkBoardColors<T extends { bg: string; card: string; accent: string }>(
+  theme: T,
   isDark: boolean,
-) {
+): T {
   if (!isDark) return theme;
   return {
     ...theme,
@@ -141,4 +141,16 @@ export function darkBoardColors(
     card: toDark(theme.card, 0.24, 0.16),
     accent: toDark(theme.accent, 0.84, 0.14),
   };
+}
+
+/**
+ * Broadcast surfaces (OBS overlays) have no session and no stored preference,
+ * so they pin dark mode for the lifetime of the page without persisting it.
+ * A light overlay is never correct.
+ */
+export function forceDarkMode() {
+  preference = "dark";
+  mode = "dark";
+  apply("dark");
+  listeners.forEach((l) => l());
 }

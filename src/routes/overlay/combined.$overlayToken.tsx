@@ -22,33 +22,53 @@ function CombinedOverlay() {
   const state = useOverlayState(overlayToken);
   if (!state) return null;
 
+  /* Three isolated regions with clear empty space between them, so each copy
+     of the browser source can be cropped to exactly one region. */
+  const boardHeight = 600;
   return (
     <OverlayCanvas>
-      {/* Three isolated regions with generous gaps so each can be cropped alone. */}
-      <div style={{ position: "absolute", top: SAFE, left: 0, width: "100%", display: "flex", justifyContent: "center" }}>
-        <OverlayScores state={state} />
-      </div>
-
-      {/* Board: centre of the canvas and the dominant block. */}
+      {/* Scores: top centre. */}
       <div
         style={{
           position: "absolute",
-          top: 260,
+          top: SAFE,
+          left: 0,
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <OverlayScores state={state} />
+      </div>
+
+      {/* Board and clue: centre of the canvas and the dominant block. */}
+      <div
+        style={{
+          position: "absolute",
+          top: 270,
           left: "50%",
           transform: "translateX(-50%)",
-          width: 700,
-          height: 700,
+          height: boardHeight,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <OverlayBoard state={state} size={700} />
+        <OverlayBoard state={state} width={Math.round(boardHeight * (5 / 5.4))} height={boardHeight} />
       </div>
 
-      {/* Queue: right side, clear of the board so a crop isolates it. */}
-      <div style={{ position: "absolute", top: 320, right: SAFE, width: 480 }}>
-        <OverlayQueue state={state} />
+      {/* Queue: right column, clear of the board so a crop isolates it. */}
+      <div
+        style={{
+          position: "absolute",
+          top: 270,
+          right: SAFE,
+          width: 544,
+          maxHeight: 1080 - 270 - SAFE,
+          overflow: "hidden",
+        }}
+      >
+        <OverlayQueue state={state} align="left" />
       </div>
     </OverlayCanvas>
   );

@@ -255,6 +255,9 @@ function HostPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | "reset" | "end">(null);
+  /** Below 1200px the right column becomes a togglable slide-over panel. */
+  const [panelOpen, setPanelOpen] = useState(false);
+
 
   const setHostState = useCallback(
     (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {

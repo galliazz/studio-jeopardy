@@ -296,3 +296,33 @@
   text-shadow: 0 2px 14px color-mix(in oklab, var(--ink-gold) 30%, transparent);
 }
 
+
+/* ---------- Presentation preferences (Settings > Appearance / Performance) ---------- */
+
+/* Reduce motion: keep layout, drop non-essential animation. */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Background effects off: hide the ambient colored blobs. */
+html.no-bg-fx [data-bg-fx] {
+  display: none !important;
+}
+
+/* Graphics quality: trim blur and gradients on lower tiers. */
+html[data-graphics="medium"] [class*="backdrop-blur"] {
+  backdrop-filter: blur(4px) !important;
+}
+html[data-graphics="low"] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+}
+html[data-graphics="low"] [data-bg-fx] {
+  display: none !important;
+}
+html[data-graphics="low"] * {
+  box-shadow: none !important;
+}

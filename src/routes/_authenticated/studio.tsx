@@ -54,9 +54,10 @@ function StudioPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const bootstrap = useServerFn(bootstrapStudio);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["studio"],
     queryFn: () => bootstrap(),
+    retry: false,
   });
 
   const [search, setSearch] = useState("");
@@ -207,7 +208,11 @@ function StudioPage() {
             Welcome back, {displayName}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isLoading ? "Loading boards…" : `${boardCount} board${boardCount === 1 ? "" : "s"}`}
+            {isLoading
+              ? "Loading boards…"
+              : error
+                ? "Sign in to load your boards"
+                : `${boardCount} board${boardCount === 1 ? "" : "s"}`}
           </p>
         </header>
 
@@ -319,6 +324,16 @@ function StudioPage() {
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
+          </div>
+        ) : error ? (
+          <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
+            <p className="mb-4">You need to be signed in to load and create boards.</p>
+            <button
+              onClick={() => void navigate({ to: "/auth" })}
+              className="rounded-full bg-coral px-7 py-3 text-sm font-bold text-foreground elev-1"
+            >
+              Sign in
+            </button>
           </div>
         ) : games.length === 0 ? (
           <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">

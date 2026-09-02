@@ -291,6 +291,15 @@ export function OverlayBoard({ state, size }: { state: OverlayState; size: numbe
   );
 }
 
+/** Fluid clue size that fills the square box; never smaller than 44px on canvas. */
+function clueFontSize(len: number): number {
+  if (len < 60) return 96;
+  if (len < 110) return 80;
+  if (len < 180) return 66;
+  if (len < 280) return 54;
+  return 44;
+}
+
 function OverlayClue({ state }: { state: OverlayState }) {
   const theme = themeOf(state.game);
   const clue = state.clue!;
@@ -336,7 +345,8 @@ function OverlayClue({ state }: { state: OverlayState }) {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          fontSize: "clamp(44px, 5.4vh, 92px)",
+          // Canvas-relative (never viewport-relative): the root is transform-scaled.
+          fontSize: clueFontSize(clue.question.length),
           fontWeight: 900,
           lineHeight: 1.1,
         }}

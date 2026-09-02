@@ -32,6 +32,7 @@ export function QuestionOverlay({
   queue,
   theme,
   onHostStatePatch,
+  readOnly = false,
 }: {
   session: Session;
   tile: Tile;
@@ -39,7 +40,9 @@ export function QuestionOverlay({
   players: Player[];
   queue: QueueEntry[];
   theme: ThemeSettings;
-  onHostStatePatch: (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => void;
+  onHostStatePatch?: ((patch: HostPatch) => void) | undefined;
+  /** Mirror mode: no judging controls, no sound, no pointer interaction. */
+  readOnly?: boolean;
 }) {
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
@@ -59,7 +62,7 @@ export function QuestionOverlay({
   }, [session.timer_ends_at, countdown.expired]);
 
   useEffect(() => {
-    if (countdown.seconds == null) return;
+    if (readOnly || countdown.seconds == null) return;
     if (countdown.seconds !== lastSecond.current && countdown.seconds > 0) {
       if (countdown.seconds <= 5) sfx.urgentTick();
       else sfx.tick();
@@ -73,7 +76,7 @@ export function QuestionOverlay({
       alarmed.current = session.timer_ends_at;
       sfx.alarm();
     }
-  }, [countdown.seconds, countdown.expired, session.timer_ends_at]);
+  }, [readOnly, countdown.seconds, countdown.expired, session.timer_ends_at]);
 
   const flashRed =
     countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
@@ -176,6 +179,7 @@ export function QuestionOverlay({
           )}
 
           {/* 3-zone action row: Correct (left) · Reveal/Close (center) · Wrong (right) */}
+          {!readOnly && (
           <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3">
             <div className="flex justify-start">
               {activePlayer && !alreadyJudged && (
@@ -185,7 +189,7 @@ export function QuestionOverlay({
                     sfx.ding();
                     if (activePlayer) {
                       const value = session.dd_wager ?? tile.points;
-                      onHostStatePatch({
+                      onHostStatePatch?.({
                         session: {
                           phase: "reveal",
                           dd_wager: null,
@@ -216,7 +220,7 @@ export function QuestionOverlay({
               {session.phase !== "reveal" ? (
                 <button
                   onClick={() => {
-                    onHostStatePatch({ session: { phase: "reveal", timer_ends_at: null } });
+                    onHostStatePatch?.({ session: { phase: "reveal", timer_ends_at: null } });
                     void revealAnswer({ data: { sessionId: session.id } });
                   }}
                   className="rounded-full bg-lilac px-8 py-3.5 font-display text-base font-black text-foreground elev-1 transition-transform hover:scale-105"
@@ -227,7 +231,7 @@ export function QuestionOverlay({
                 <motion.button
                   whileTap={{ scale: 0.94 }}
                   onClick={() => {
-                    onHostStatePatch({
+                    onHostStatePatch?.({
                       session: {
                         phase: "idle",
                         current_tile_id: null,
@@ -264,7 +268,7 @@ export function QuestionOverlay({
                         (q) => q.tile_id === tile.id && q.status === "queued" && q.player_id !== activePlayer.id,
                       );
                       const now = new Date().toISOString();
-                      onHostStatePatch({
+                      onHostStatePatch?.({
                         session: {
                           phase: session.dd_wager != null ? "reveal" : nextQueued ? "answering" : "question_open",
                           active_player_id: nextQueued?.player_id ?? null,

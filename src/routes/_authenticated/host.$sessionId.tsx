@@ -306,7 +306,7 @@ function HostPage() {
                     category={currentCategory}
                     players={players}
                     queue={queue}
-                    accent={theme.accent}
+                    theme={theme}
                     onHostStatePatch={setHostState}
                   />
                 )}

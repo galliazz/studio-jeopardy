@@ -1118,7 +1118,7 @@ function ObsLinksPanel({ gameId, overlayToken }: { gameId: string; overlayToken:
             sfx.pop();
             setOpen((v) => !v);
           }}
-          className="flex flex-1 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+          className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground"
           aria-expanded={open}
         >
           <Radio className="h-3.5 w-3.5" /> OBS overlay links

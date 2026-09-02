@@ -349,3 +349,11 @@ html.overlay-mode *:focus-visible {
 html.overlay-mode ::-webkit-scrollbar {
   display: none;
 }
+
+/* Host Console: one consistent Studio-style focus ring for every control. */
+[data-host-console] :is(button, a, [role="button"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--ink-accent, var(--primary));
+}

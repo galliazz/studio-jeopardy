@@ -21,6 +21,8 @@ import {
   Plus,
   Keyboard,
   ExternalLink,
+  PanelRight,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Soundboard } from "@/components/Soundboard";
@@ -39,6 +41,8 @@ import {
   getHostState,
   openTile,
   closeTile,
+  clearQueue,
+
   resetBoard,
   judgeAnswer,
   revealAnswer,
@@ -108,7 +112,9 @@ export interface HostActions {
   passToNext: () => void;
   restartTimer: () => void;
   closeTile: () => void;
+  clearQueue: () => void;
 }
+
 
 /* ------------------------------ Confirmation ------------------------------ */
 
@@ -251,6 +257,9 @@ function HostPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | "reset" | "end">(null);
+  /** Below 1200px the right column becomes a togglable slide-over panel. */
+  const [panelOpen, setPanelOpen] = useState(false);
+
 
   const setHostState = useCallback(
     (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
@@ -340,7 +349,13 @@ function HostPage() {
           queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
         );
       },
+      clearQueue: () => {
+        void clearQueue({ data: { sessionId } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
     }),
+
     [activePlayerId, currentTileId, queryClient, sessionId, setHostSession],
   );
 
@@ -397,10 +412,10 @@ function HostPage() {
   };
 
   return (
-    <div className="min-h-screen text-foreground">
+    <div data-host-console className="flex h-screen flex-col overflow-hidden text-foreground">
       {/* TOP APP BAR — navigation, status and score only. Nothing filled. */}
-      <header className="sticky top-0 z-50 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2 sm:px-6">
+      <header className="z-50 shrink-0 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center gap-3 px-6 py-2">
           <button
             onClick={() => {
               if (
@@ -416,30 +431,49 @@ function HostPage() {
             <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
           </button>
 
-          <div className="min-w-0">
-            <h1 className="truncate font-display text-lg font-semibold leading-tight">{game.title}</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              Code <span className="font-mono font-bold">{game.join_code}</span>
-            </p>
+          {/* Title block: one truncating line, then chips that never wrap. */}
+          <div className="min-w-[220px] max-w-[420px] flex-1">
+            <h1 className="truncate font-display text-lg font-semibold leading-tight" title={game.title}>
+              {game.title}
+            </h1>
+            <div className="mt-0.5 flex flex-nowrap items-center gap-2 overflow-hidden">
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(game.join_code);
+                  toast.success("Join code copied");
+                }}
+                title="Copy join code"
+                aria-label={`Copy join code ${game.join_code}`}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/20 px-2.5 py-0.5 text-[11px] font-bold transition-colors hover:bg-foreground/5"
+              >
+                <span className="font-mono">{game.join_code}</span>
+                <Copy className="h-3 w-3 opacity-70" />
+              </button>
+              <span
+                className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                  players.length > 0
+                    ? "border-success-ink/40 text-success-ink"
+                    : "border-foreground/20 text-muted-foreground"
+                }`}
+              >
+                {players.length > 0 ? `Live · ${players.length}` : "In lobby"} · {tiles.length - played} left
+              </span>
+            </div>
           </div>
 
-          <span
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${
-              players.length > 0
-                ? "border-success-ink/40 text-success-ink"
-                : "border-foreground/20 text-muted-foreground"
-            }`}
-          >
-            {players.length > 0 ? `Live · ${players.length} player${players.length === 1 ? "" : "s"}` : "In lobby"}
-          </span>
-
-          <span className="hidden shrink-0 text-xs font-semibold text-muted-foreground md:inline">
-            {played} of {tiles.length} tiles played
-          </span>
 
 
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
+            <button
+              onClick={() => setPanelOpen((v) => !v)}
+              aria-label="Toggle live control panel"
+              title="Live control panel"
+              aria-pressed={panelOpen}
+              className="flex h-12 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5 min-[1200px]:hidden"
+            >
+              <PanelRight className="h-5 w-5" />
+            </button>
             <button
               onClick={() => setShortcutsOpen(true)}
               aria-label="Keyboard shortcuts"
@@ -450,6 +484,7 @@ function HostPage() {
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
+
                 <button
                   aria-label="Session options"
                   className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
@@ -485,9 +520,10 @@ function HostPage() {
          * Score row. It shares the main content grid so the centre gap between
          * the two chips sits exactly on the board column's horizontal centre.
          */}
-        <div className="mx-auto max-w-[1600px] px-3 pb-2 sm:px-6">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-            <div className="hidden lg:block" aria-hidden />
+        <div className="mx-auto max-w-[1600px] px-6 pb-2">
+          <div className="grid grid-cols-1 gap-6 min-[840px]:grid-cols-[320px_minmax(0,1fr)] min-[1200px]:grid-cols-[320px_minmax(0,1fr)_380px]">
+            <div className="hidden min-[840px]:block" aria-hidden />
+
             <div className="flex items-center">
               <div className="flex min-w-0 flex-1 justify-end">
                 <ScorePill
@@ -511,16 +547,18 @@ function HostPage() {
                 />
               </div>
             </div>
-            <div className="hidden lg:block" aria-hidden />
+            <div className="hidden min-[1200px]:block" aria-hidden />
           </div>
         </div>
       </header>
 
 
-      <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
+      {/* Body fills the remaining viewport: only the side columns scroll. */}
+      <div className="mx-auto min-h-0 w-full max-w-[1600px] flex-1 px-6 py-6">
+        <div className="grid h-full min-h-0 grid-cols-1 gap-6 min-[840px]:grid-cols-[320px_minmax(0,1fr)] min-[1200px]:grid-cols-[320px_minmax(0,1fr)_380px]">
           {/* LEFT: join, roster, OBS, soundboard, tools */}
-          <div className="order-2 space-y-4 lg:order-1">
+          <div className="order-2 min-h-0 space-y-6 overflow-y-auto pr-1 min-[840px]:order-1">
+
             <JoinCard joinCode={game.join_code} playerCount={players.length} />
             <PlayerRoster
               players={players}
@@ -540,7 +578,7 @@ function HostPage() {
             <Soundboard gameId={game.id} hostId={game.host_id} />
             <ObsLinksPanel gameId={game.id} overlayToken={game.overlay_token} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
-              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tools</h3>
+              <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Tools</h3>
               <div className="flex flex-col gap-2">
                 <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
                 <ToolButton
@@ -561,22 +599,29 @@ function HostPage() {
             </div>
           </div>
 
-          {/* CENTER: board + clue container transform */}
-          <div className="relative order-1 lg:order-2">
+          {/* CENTER: board + clue container transform. Never scrolls. */}
+          <div className="relative order-1 flex min-h-0 items-center justify-center overflow-hidden min-[840px]:order-2">
             <div
-              className="mx-auto flex w-full max-w-[1100px] flex-col p-2.5 elev-2 sm:p-5"
+              className="flex h-full max-h-full w-auto max-w-full flex-col p-2.5 elev-2 sm:p-5"
               style={{
                 backgroundColor: theme.bg,
                 borderRadius: theme.radius + 8,
-                minHeight: "calc(100vh - 8rem)",
+                aspectRatio: "5 / 5.4",
               }}
             >
+
               <div className="grid flex-1 grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-1 sm:gap-2.5">
                 {categories.map((cat) => (
                   <div
                     key={cat.id}
                     className="flex min-h-10 items-center justify-center overflow-hidden p-1 text-center text-[8px] font-bold uppercase leading-tight tracking-wide sm:min-h-16 sm:p-1.5 sm:text-xs"
-                    style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.6, color: theme.accent }}
+                    style={{
+                      /* Headers are the board colour shifted toward the accent so
+                         they separate from the tiles by ~6% luminance. */
+                      backgroundColor: `color-mix(in srgb, ${theme.card} 88%, ${theme.accent} 12%)`,
+                      borderRadius: theme.radius * 0.6,
+                      color: theme.accent,
+                    }}
                   >
                     <span className="line-clamp-2 w-full break-words">{cat.title}</span>
                   </div>
@@ -642,8 +687,17 @@ function HostPage() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT: the single live control panel */}
-          <div className="order-3 space-y-4">
+          {/*
+           * RIGHT: the single live control panel. Its own scroll at >=1200px,
+           * a togglable slide-over below that width.
+           */}
+          <div
+            className={`order-3 min-h-0 space-y-6 overflow-y-auto pr-1 min-[1200px]:block ${
+              panelOpen
+                ? "fixed inset-y-0 right-0 z-40 w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
+                : "hidden"
+            }`}
+          >
             <LiveControlPanel
               session={session}
               tile={currentTile}
@@ -658,6 +712,7 @@ function HostPage() {
           </div>
         </div>
       </div>
+
 
       <AnimatePresence>{ddOpen && <DDTilesDialog state={state} onClose={() => setDdOpen(false)} />}</AnimatePresence>
       <AnimatePresence>
@@ -832,7 +887,7 @@ function ScorePill({
         onClick={() => onAdjust(-step)}
         aria-label={`Subtract ${step} from ${name}`}
         title={`-${step}`}
-        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Minus className="h-4 w-4" />
       </button>
@@ -840,7 +895,7 @@ function ScorePill({
         onClick={() => onAdjust(step)}
         aria-label={`Add ${step} to ${name}`}
         title={`+${step}`}
-        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -929,22 +984,29 @@ function JoinCard({ joinCode, playerCount }: { joinCode: string; playerCount: nu
   }
 
   return (
-    <div className="overflow-hidden rounded-[32px] bg-mint text-center elev-1">
+    <div className="overflow-hidden rounded-[32px] bg-card text-center elev-1">
       <button
         onClick={() => {
           sfx.pop();
           setManual(false);
         }}
-        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-sm font-semibold text-muted-foreground"
         aria-expanded
       >
+        {/* A small dot carries the "accepting players" state instead of a filled card. */}
+        <span className="h-2 w-2 shrink-0 rounded-full bg-success-ink" aria-hidden />
         Players join anytime
         <ChevronDown className="h-4 w-4 rotate-180" />
       </button>
       <div className="px-5 pb-5">
-        <div className="mx-auto mb-3 w-fit rounded-[22px] bg-card p-2.5">
-          {joinUrl ? <QRCodeSVG value={joinUrl} size={128} /> : <div className="h-32 w-32" />}
+        <div className="mx-auto mb-3 w-fit rounded-[22px] border border-foreground/10 p-2 text-foreground">
+          {joinUrl ? (
+            <QRCodeSVG value={joinUrl} size={104} bgColor="transparent" fgColor="currentColor" />
+          ) : (
+            <div className="h-[104px] w-[104px]" />
+          )}
         </div>
+
         <button
           onClick={() => copy(joinCode, "Join code copied")}
           className="mx-auto flex min-h-12 items-center gap-2 rounded-full px-2 font-display text-2xl font-black tracking-[0.2em] text-ink-gold"
@@ -976,7 +1038,7 @@ function PlayerRoster({
 }) {
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
         Players · {players.length}
       </h3>
       {players.length === 0 ? (
@@ -1056,7 +1118,7 @@ function ObsLinksPanel({ gameId, overlayToken }: { gameId: string; overlayToken:
             sfx.pop();
             setOpen((v) => !v);
           }}
-          className="flex flex-1 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+          className="flex flex-1 items-center justify-center gap-2 text-sm font-semibold text-muted-foreground"
           aria-expanded={open}
         >
           <Radio className="h-3.5 w-3.5" /> OBS overlay links
@@ -1188,7 +1250,7 @@ function LiveControlPanel({
   return (
     <div className="rounded-[32px] bg-card p-5 elev-2">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live control</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (
           <span className="truncate rounded-full border border-foreground/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             {category?.title ?? "Clue"} · {value}
@@ -1275,7 +1337,7 @@ function LiveControlPanel({
             </button>
           </div>
 
-          <QueueList session={session} players={players} queue={queue} />
+          <QueueList session={session} players={players} queue={queue} onClear={actions.clearQueue} />
         </div>
       ) : (
         <div className="space-y-3">
@@ -1296,7 +1358,7 @@ function LiveControlPanel({
           >
             Reveal answer <KeyHint k="Space" />
           </button>
-          <QueueList session={session} players={players} queue={queue} />
+          <QueueList session={session} players={players} queue={queue} onClear={actions.clearQueue} />
         </div>
       )}
     </div>
@@ -1325,7 +1387,7 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-xs font-bold transition-colors ${styles}`}
+      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${styles}`}
     >
       <Icon className="h-4 w-4" /> {label}
     </button>
@@ -1670,10 +1732,12 @@ function QueueList({
   session,
   players,
   queue,
+  onClear,
 }: {
   session: Session;
   players: Player[];
   queue: QueueEntry[];
+  onClear?: () => void;
 }) {
   const tileQueue = useMemo(() => {
     if (!session.current_tile_id) return [];
@@ -1686,7 +1750,24 @@ function QueueList({
   if (tileQueue.length === 0) return null;
 
   return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-muted-foreground">Buzzer queue</h4>
+        {onClear && (
+          <button
+            onClick={() => {
+              if (window.confirm("Clear the buzzer queue? Everyone waiting is removed.")) onClear();
+            }}
+            aria-label="Clear queue"
+            title="Clear queue"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
     <ol className="space-y-2">
+
       {tileQueue.map((entry, i) => {
         const player = players.find((p) => p.id === entry.player_id);
         if (!player) return null;
@@ -1728,6 +1809,7 @@ function QueueList({
         );
       })}
     </ol>
+    </div>
   );
 }
 
@@ -1907,7 +1989,7 @@ function FinalPanel({
   const teams: Team[] = ["alpha", "bravo"];
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Final Jeopardy</h3>
+      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Final Jeopardy</h3>
       {session.phase === "final_wager" && (
         <>
           <p className="mb-3 text-sm text-muted-foreground">Teams are placing wagers…</p>

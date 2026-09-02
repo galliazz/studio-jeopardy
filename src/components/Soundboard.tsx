@@ -104,9 +104,10 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
 
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        <Volume2 className="h-3.5 w-3.5" /> Soundboard
+      <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+        <Volume2 className="h-4 w-4" /> Soundboard
       </h3>
+
 
       {clips.length === 0 ? (
         <button
@@ -167,27 +168,31 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
         </>
       )}
 
-      <div className="mt-4 flex items-center gap-3 border-t border-border pt-3">
-        <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <Slider
-          value={[Math.round(volume * 100)]}
-          min={0}
-          max={100}
-          step={1}
-          aria-label="Soundboard volume"
-          onValueChange={([v]) => {
-            const next = (v ?? 0) / 100;
-            setVolume(next);
-            setBoardVolume(next);
-          }}
-        />
-        <button
-          onClick={() => stopAll()}
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-xs font-bold text-foreground"
-        >
-          <Square className="h-3 w-3" /> Stop all
-        </button>
-      </div>
+      {/* Volume + Stop all only matter once there is something to play. */}
+      {clips.length > 0 && (
+        <div className="mt-4 flex items-center gap-3 border-t border-border pt-3">
+          <Volume2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <Slider
+            value={[Math.round(volume * 100)]}
+            min={0}
+            max={100}
+            step={1}
+            aria-label="Soundboard volume"
+            onValueChange={([v]) => {
+              const next = (v ?? 0) / 100;
+              setVolume(next);
+              setBoardVolume(next);
+            }}
+          />
+          <button
+            onClick={() => stopAll()}
+            className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-xs font-bold text-foreground"
+          >
+            <Square className="h-3 w-3" /> Stop all
+          </button>
+        </div>
+      )}
+
 
       <AddSoundDialog
         open={addOpen}

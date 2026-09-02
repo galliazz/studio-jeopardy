@@ -152,14 +152,14 @@ export function OverlayScores({ state }: { state: OverlayState }) {
 
 /* ------------------------------ queue region ------------------------------ */
 
-export function OverlayQueue({ state }: { state: OverlayState }) {
+export function OverlayQueue({ state, align = "right" }: { state: OverlayState; align?: "left" | "right" }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={FADE}
       className={`text-foreground ${SCRIM}`}
-      style={{ transform: "scale(1.9)", transformOrigin: "top right", width: 440 }}
+      style={{ transform: "scale(1.9)", transformOrigin: `top ${align}`, width: 440 }}
     >
       <QueueList session={state.session} players={state.players} queue={state.queue} />
     </motion.div>

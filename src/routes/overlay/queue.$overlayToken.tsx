@@ -41,7 +41,7 @@ function QueueOverlay() {
         }}
       >
         <OverlayScores state={state} />
-        <OverlayQueue state={state} />
+        <OverlayQueue state={state} align="left" />
       </div>
     </OverlayCanvas>
   );

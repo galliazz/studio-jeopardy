@@ -1732,10 +1732,12 @@ function QueueList({
   session,
   players,
   queue,
+  onClear,
 }: {
   session: Session;
   players: Player[];
   queue: QueueEntry[];
+  onClear?: () => void;
 }) {
   const tileQueue = useMemo(() => {
     if (!session.current_tile_id) return [];
@@ -1748,7 +1750,24 @@ function QueueList({
   if (tileQueue.length === 0) return null;
 
   return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-sm font-semibold text-muted-foreground">Buzzer queue</h4>
+        {onClear && (
+          <button
+            onClick={() => {
+              if (window.confirm("Clear the buzzer queue? Everyone waiting is removed.")) onClear();
+            }}
+            aria-label="Clear queue"
+            title="Clear queue"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
     <ol className="space-y-2">
+
       {tileQueue.map((entry, i) => {
         const player = players.find((p) => p.id === entry.player_id);
         if (!player) return null;

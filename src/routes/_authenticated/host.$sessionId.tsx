@@ -666,18 +666,15 @@ function QuestionOverlay({
     countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[65] flex items-center justify-center bg-foreground/40 p-2 backdrop-blur-sm lg:absolute lg:z-40 lg:rounded-[36px] lg:bg-foreground/25 lg:p-4"
-    >
+    <motion.div className="pointer-events-none absolute inset-0 z-40 flex justify-center">
       <motion.div
-        initial={{ scale: 0.9, y: 24 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.94, y: 12 }}
-        transition={{ type: "spring", stiffness: 200, damping: 22 }}
-        className="flex h-full max-h-[100svh] w-full flex-col overflow-y-auto rounded-[32px] bg-card p-4 elev-3 sm:p-8 lg:overflow-hidden"
+        layout
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26, duration: 0.4 }}
+        className="pointer-events-auto flex h-full w-full max-w-[1100px] flex-col overflow-y-auto p-2.5 elev-2 sm:p-5"
+        style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
       >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />

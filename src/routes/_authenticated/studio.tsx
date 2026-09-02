@@ -273,6 +273,7 @@ function StudioPage() {
 
       <StudioTopBar
         displayName={data?.profile?.username ?? "Host"}
+        avatarUrl={data?.profile?.avatar_url ?? null}
         onOpenSettings={() => setSettingsOpen(true)}
       />
 

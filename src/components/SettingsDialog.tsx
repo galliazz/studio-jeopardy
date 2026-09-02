@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings as SettingsIcon, X, Volume2 } from "lucide-react";
+import { Settings as SettingsIcon, X, Volume2, Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { bootstrapStudio, updateProfile } from "@/lib/games.functions";
@@ -20,6 +20,8 @@ import {
   type ThemePreference,
 } from "@/lib/theme-mode";
 import { sfx } from "@/lib/sfx";
+import { AccountAvatar, setAvatarValue, useAvatarValue } from "@/lib/avatar";
+import { ChooseAvatarDialog } from "@/components/ChooseAvatarDialog";
 import {
   Dialog,
   DialogContent,
@@ -133,6 +135,9 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [signedIn, setSignedIn] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const avatarBtnRef = useRef<HTMLButtonElement>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const avatarValue = useAvatarValue();
 
   useEffect(() => {
     const unsub = subscribeThemeMode(() => setTheme(getThemePreference()));
@@ -150,9 +155,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       setEmail(data.session.user.email ?? "");
       try {
         const boot = (await bootstrapStudio()) as {
-          profile?: { username?: string; preferences?: Partial<StudioSettings> | null };
+          profile?: {
+            username?: string;
+            avatar_url?: string | null;
+            preferences?: Partial<StudioSettings> | null;
+          };
         };
         if (!alive) return;
+        if (boot.profile?.avatar_url) setAvatarValue(boot.profile.avatar_url);
         if (boot.profile?.username) {
           setUsername(boot.profile.username);
           setSavedName(boot.profile.username);
@@ -233,9 +243,25 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           {/* 1. Account */}
           <Section title="Account">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac font-display text-lg font-black text-foreground">
-                {initial}
-              </div>
+              <button
+                ref={avatarBtnRef}
+                type="button"
+                onClick={() => setAvatarOpen(true)}
+                aria-label="Change avatar"
+                title="Change avatar"
+                className="relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <AccountAvatar
+                  value={avatarValue}
+                  initial={initial}
+                  className="h-12 w-12 text-lg"
+                  iconClassName="h-6 w-6"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card text-foreground elev-1">
+                  <Pencil className="h-3 w-3" />
+                </span>
+              </button>
+
               <div className="min-w-0 flex-1">
                 <label htmlFor="display-name" className="text-xs font-semibold text-muted-foreground">
                   Display name
@@ -362,6 +388,17 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </DialogContent>
+      {avatarOpen && (
+        <ChooseAvatarDialog
+          current={avatarValue}
+          initial={initial}
+          onClose={() => {
+            setAvatarOpen(false);
+            void queryClient.invalidateQueries({ queryKey: ["studio"] });
+            requestAnimationFrame(() => avatarBtnRef.current?.focus());
+          }}
+        />
+      )}
     </Dialog>
   );
 }

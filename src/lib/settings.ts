@@ -49,13 +49,25 @@ const listeners = new Set<(s: StudioSettings) => void>();
 function load(): StudioSettings {
   if (loaded || typeof window === "undefined") return current;
   loaded = true;
+  const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+  current = { ...DEFAULT_SETTINGS, reduceMotion: prefersReduced };
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (raw) current = { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<StudioSettings>) };
+    if (raw) current = { ...current, ...(JSON.parse(raw) as Partial<StudioSettings>) };
   } catch {
     /* ignore malformed storage */
   }
+  applyPresentation(current);
   return current;
+}
+
+/** Reflect presentation preferences on <html> so CSS can react to them. */
+function applyPresentation(s: StudioSettings) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.classList.toggle("reduce-motion", s.reduceMotion);
+  root.classList.toggle("no-bg-fx", !s.backgroundEffects);
+  root.dataset["graphics"] = s.graphics;
 }
 
 export function getSettings(): StudioSettings {

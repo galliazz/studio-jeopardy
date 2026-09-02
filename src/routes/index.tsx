@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { Zap, Gamepad2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { isPreviewSurface } from "@/lib/preview";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,7 +33,9 @@ function LandingPage() {
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
-    void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => setSignedIn(!!data.session || isPreviewSurface()));
   }, []);
 
   const join = () => {

@@ -399,6 +399,8 @@ function HostPage() {
   const theme = darkBoardColors(themeOf(game), isDark) as ReturnType<typeof themeOf>;
   const usedSet = new Set(session.used_tile_ids);
   const played = usedSet.size;
+  /** players[].connected — the only signal for "live" status and join-card collapse. */
+  const connectedCount = players.filter((p) => !p.locked_out).length;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
   const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
   /** The board's distinct point values, used as quick picks in the custom-score popover. */

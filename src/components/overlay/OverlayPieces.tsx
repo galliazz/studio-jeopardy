@@ -125,7 +125,8 @@ export function OverlayScores({ state }: { state: OverlayState }) {
       animate={{ opacity: 1, y: 0 }}
       transition={FADE}
       className={`flex items-center gap-10 ${SCRIM}`}
-      style={{ fontSize: 30 }}
+      /* Console-sized chips scaled up so every glyph clears 28px at 1080p. */
+      style={{ transform: "scale(2.6)", transformOrigin: "top center" }}
     >
       <ScorePill
         team="alpha"
@@ -158,7 +159,7 @@ export function OverlayQueue({ state }: { state: OverlayState }) {
       animate={{ opacity: 1, x: 0 }}
       transition={FADE}
       className={`text-foreground ${SCRIM}`}
-      style={{ fontSize: 22 }}
+      style={{ transform: "scale(1.9)", transformOrigin: "top right", width: 440 }}
     >
       <QueueList session={state.session} players={state.players} queue={state.queue} />
     </motion.div>

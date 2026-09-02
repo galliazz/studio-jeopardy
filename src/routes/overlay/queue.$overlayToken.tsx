@@ -37,7 +37,7 @@ function QueueOverlay() {
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          gap: 48,
+          gap: 140,
         }}
       >
         <OverlayScores state={state} />

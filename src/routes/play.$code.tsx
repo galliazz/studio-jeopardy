@@ -546,7 +546,9 @@ function FinalForm({
         whileTap={{ scale: 0.96 }}
         disabled={session.phase === "final_answer" && !answer.trim()}
         onClick={async () => {
-          const res = await submitFinalAnswer({ data: { playerId: identity.playerId, wager, answer: answer.trim() } });
+          const res = await submitFinalAnswer({
+            data: { playerId: identity.playerId, token: identity.token, wager, answer: answer.trim() },
+          });
           if (res.ok) {
             vibrate([40, 40, 40]);
             setSent(true);

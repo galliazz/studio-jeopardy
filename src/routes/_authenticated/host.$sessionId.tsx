@@ -1038,7 +1038,7 @@ function PlayerRoster({
 }) {
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
         Players · {players.length}
       </h3>
       {players.length === 0 ? (
@@ -1250,7 +1250,7 @@ function LiveControlPanel({
   return (
     <div className="rounded-[32px] bg-card p-5 elev-2">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Live control</h3>
+        <h3 className="text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (
           <span className="truncate rounded-full border border-foreground/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
             {category?.title ?? "Clue"} · {value}
@@ -1969,7 +1969,7 @@ function FinalPanel({
   const teams: Team[] = ["alpha", "bravo"];
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Final Jeopardy</h3>
+      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Final Jeopardy</h3>
       {session.phase === "final_wager" && (
         <>
           <p className="mb-3 text-sm text-muted-foreground">Teams are placing wagers…</p>

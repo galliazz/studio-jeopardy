@@ -322,6 +322,7 @@ function StudioPage() {
               <Search className="h-4 w-4" />
             </button>
             <input
+              ref={searchRef}
               value={search}
               onFocus={() => setSearchOpen(true)}
               onBlur={() => {

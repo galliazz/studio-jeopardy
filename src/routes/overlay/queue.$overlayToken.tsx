@@ -27,16 +27,17 @@ function QueueOverlay() {
 
   return (
     <OverlayCanvas>
-      {/* Corner-pinned: anchored to the top-left of the canvas, never centred. */}
       <div
         style={{
           position: "absolute",
           top: SAFE,
           left: SAFE,
+          width: 620,
+          maxHeight: 1080 - SAFE * 2,
+          overflow: "hidden",
           display: "flex",
           flexDirection: "column",
           gap: 48,
-          alignItems: "flex-start",
         }}
       >
         <OverlayScores state={state} />

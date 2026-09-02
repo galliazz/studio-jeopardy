@@ -22,7 +22,7 @@ function BoardOverlay() {
   const state = useOverlayState(overlayToken);
   if (!state) return null;
 
-  const size = 1080 - SAFE * 2;
+  const height = 1080 - SAFE * 2;
   return (
     <OverlayCanvas>
       <div
@@ -32,9 +32,10 @@ function BoardOverlay() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
         }}
       >
-        <OverlayBoard state={state} size={size} />
+        <OverlayBoard state={state} width={Math.round(height * (5 / 5.4))} height={height} />
       </div>
     </OverlayCanvas>
   );

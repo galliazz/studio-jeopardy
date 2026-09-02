@@ -21,7 +21,7 @@ export function AccountMenu({
   onOpenSettings,
 }: {
   displayName: string;
-  avatarUrl?: string | null;
+  avatarUrl?: string | null | undefined;
   onOpenSettings: () => void;
 }) {
   const [email, setEmail] = useState("");

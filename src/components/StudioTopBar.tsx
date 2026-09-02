@@ -12,7 +12,7 @@ export function StudioTopBar({
   onOpenSettings,
 }: {
   displayName: string;
-  avatarUrl?: string | null;
+  avatarUrl?: string | null | undefined;
   onOpenSettings: () => void;
 }) {
   return (

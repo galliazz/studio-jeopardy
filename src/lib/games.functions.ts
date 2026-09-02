@@ -346,6 +346,8 @@ export const updateProfile = createServerFn({ method: "POST" })
       .object({
         username: z.string().trim().min(2).max(24).optional(),
         avatar_url: z.string().max(500).nullable().optional(),
+        // Presentation preferences mirrored across the host's devices.
+        preferences: z.record(z.string(), z.unknown()).optional(),
       })
       .parse(data),
   )

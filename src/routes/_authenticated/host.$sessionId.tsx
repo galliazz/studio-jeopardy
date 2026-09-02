@@ -108,7 +108,9 @@ export interface HostActions {
   passToNext: () => void;
   restartTimer: () => void;
   closeTile: () => void;
+  clearQueue: () => void;
 }
+
 
 /* ------------------------------ Confirmation ------------------------------ */
 

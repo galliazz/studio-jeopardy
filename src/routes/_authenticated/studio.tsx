@@ -101,6 +101,8 @@ function StudioPage() {
   const [newTitle, setNewTitle] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string[]>([]);
   const importRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
   const games = useMemo(() => {
     const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));

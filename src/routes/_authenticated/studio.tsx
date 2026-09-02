@@ -316,7 +316,8 @@ function StudioPage() {
 
         {/* Game cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4">
+
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
@@ -326,7 +327,7 @@ function StudioPage() {
             No boards yet — create your first one!
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-stretch gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4">
 
             {games.map((game, i) => (
               <GameCard

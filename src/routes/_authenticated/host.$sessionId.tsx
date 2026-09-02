@@ -1380,7 +1380,7 @@ function LiveControlPanel({
       </div>
 
       {!tile || phase === "idle" ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
+        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
       ) : phase === "reveal" ? (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-foreground/15 p-4">

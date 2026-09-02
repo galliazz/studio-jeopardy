@@ -76,6 +76,7 @@ export function getSettings(): StudioSettings {
 
 export function setSettings(patch: Partial<StudioSettings>) {
   current = { ...load(), ...patch };
+  applyPresentation(current);
   if (typeof window !== "undefined") {
     try {
       window.localStorage.setItem(KEY, JSON.stringify(current));

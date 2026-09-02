@@ -547,7 +547,7 @@ function HostPage() {
                 />
               </div>
             </div>
-            <div className="hidden lg:block" aria-hidden />
+            <div className="hidden min-[1200px]:block" aria-hidden />
           </div>
         </div>
       </header>

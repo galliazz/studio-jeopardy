@@ -101,7 +101,28 @@ function StudioPage() {
   const [newTitle, setNewTitle] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string[]>([]);
   const importRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const searchWrapRef = useRef<HTMLDivElement>(null);
 
+  // Focus the search input as soon as the spring expands, and collapse it when
+  // the user clicks outside while the field is empty.
+  useEffect(() => {
+    if (searchOpen) {
+      const t = setTimeout(() => searchRef.current?.focus(), 0);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen && !search.trim()) return;
+    const handleDown = (e: MouseEvent) => {
+      if (searchWrapRef.current?.contains(e.target as Node)) return;
+      if (!search.trim()) setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", handleDown, true);
+    return () => document.removeEventListener("mousedown", handleDown, true);
+  }, [searchOpen, search]);
   const games = useMemo(() => {
     const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));
     if (!search.trim()) return all;
@@ -285,6 +306,7 @@ function StudioPage() {
           <div className="flex-1" />
           {/* Search grows leftward over the buttons, keeping the spring feel */}
           <motion.div
+            ref={searchWrapRef}
             layout
             animate={{ width: searchOpen || search ? 320 : 40 }}
             transition={{ type: "spring", stiffness: 380, damping: 18 }}
@@ -300,6 +322,7 @@ function StudioPage() {
               <Search className="h-4 w-4" />
             </button>
             <input
+              ref={searchRef}
               value={search}
               onFocus={() => setSearchOpen(true)}
               onBlur={() => {

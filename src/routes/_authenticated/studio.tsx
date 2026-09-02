@@ -111,6 +111,7 @@ function StudioPage() {
       const t = setTimeout(() => searchRef.current?.focus(), 0);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [searchOpen]);
 
   useEffect(() => {

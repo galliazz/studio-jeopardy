@@ -34,6 +34,8 @@ import { themeOf, type Game } from "@/lib/types";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { StudioTopBar } from "@/components/StudioTopBar";
+
 import { sfx } from "@/lib/sfx";
 import { getSettings } from "@/lib/settings";
 

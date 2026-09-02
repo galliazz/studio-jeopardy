@@ -80,7 +80,17 @@ function StudioPage() {
   const bootstrap = useServerFn(bootstrapStudio);
   const { data, isLoading, error } = useQuery({
     queryKey: ["studio"],
-    queryFn: () => bootstrap(),
+    // Swallow the "no authorization header" rejection so a signed-out preview
+    // renders the studio shell instead of crashing into the error overlay.
+    queryFn: async () => {
+      try {
+        return await bootstrap();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (/unauthor/i.test(message)) return null;
+        throw err;
+      }
+    },
     retry: false,
   });
 

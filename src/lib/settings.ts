@@ -116,5 +116,18 @@ export function useSettings(): StudioSettings {
 /** Effective gain multiplier used by the synthesized SFX engine. */
 export function sfxGain(): number {
   const s = load();
-  return s.muted ? 0 : Math.max(0, Math.min(1, s.volume));
+  if (s.muted) return 0;
+  return Math.max(0, Math.min(1, s.volume * s.masterVolume));
+}
+
+/** Subset of preferences mirrored to the signed-in host's profile. */
+export function syncablePreferences(s: StudioSettings = getSettings()) {
+  return {
+    volume: s.volume,
+    masterVolume: s.masterVolume,
+    muted: s.muted,
+    reduceMotion: s.reduceMotion,
+    graphics: s.graphics,
+    backgroundEffects: s.backgroundEffects,
+  };
 }

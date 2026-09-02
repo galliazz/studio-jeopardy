@@ -676,24 +676,27 @@ function HostPage() {
            * a togglable slide-over below that width.
            */}
           <div
-            className={`order-3 min-h-0 space-y-6 overflow-y-auto pr-1 min-[1200px]:block ${
+            className={`order-3 min-h-0 flex-col gap-6 overflow-y-auto min-[1200px]:flex ${
               panelOpen
-                ? "fixed inset-y-0 right-0 z-40 w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
+                ? "fixed inset-y-0 right-0 z-40 flex w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
                 : "hidden"
             }`}
           >
-            <LiveControlPanel
-              session={session}
-              tile={currentTile}
-              category={currentCategory}
-              players={players}
-              queue={queue}
-              actions={actions}
-            />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <LiveControlPanel
+                session={session}
+                tile={currentTile}
+                category={currentCategory}
+                players={players}
+                queue={queue}
+                actions={actions}
+              />
+            </div>
             {session.status === "final" && (
               <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
             )}
           </div>
+
         </div>
       </div>
 

@@ -18,6 +18,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   bootstrapStudio,

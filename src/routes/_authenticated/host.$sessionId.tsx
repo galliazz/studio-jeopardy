@@ -306,7 +306,7 @@ function HostPage() {
                     category={currentCategory}
                     players={players}
                     queue={queue}
-                    accent={theme.accent}
+                    theme={theme}
                     onHostStatePatch={setHostState}
                   />
                 )}
@@ -617,7 +617,7 @@ function QuestionOverlay({
   category,
   players,
   queue,
-  accent,
+  theme,
   onHostStatePatch,
 }: {
   session: Session;
@@ -625,7 +625,7 @@ function QuestionOverlay({
   category: Category | null | undefined;
   players: Player[];
   queue: QueueEntry[];
-  accent: string;
+  theme: ThemeSettings;
   onHostStatePatch: (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => void;
 }) {
   const imageUrl = useSignedUrl("game-media", tile.image_url);
@@ -666,18 +666,15 @@ function QuestionOverlay({
     countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[65] flex items-center justify-center bg-foreground/40 p-2 backdrop-blur-sm lg:absolute lg:z-40 lg:rounded-[36px] lg:bg-foreground/25 lg:p-4"
-    >
+    <motion.div className="pointer-events-none absolute inset-0 z-40 flex justify-center">
       <motion.div
-        initial={{ scale: 0.9, y: 24 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.94, y: 12 }}
-        transition={{ type: "spring", stiffness: 200, damping: 22 }}
-        className="flex h-full max-h-[100svh] w-full flex-col overflow-y-auto rounded-[32px] bg-card p-4 elev-3 sm:p-8 lg:overflow-hidden"
+        layout
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 260, damping: 26, duration: 0.4 }}
+        className="pointer-events-auto flex h-full w-full max-w-[1100px] flex-col overflow-y-auto p-2.5 elev-2 sm:p-5"
+        style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
       >
       {session.phase === "daily_double_wager" ? (
         <DailyDoubleWager session={session} players={players} />
@@ -710,19 +707,29 @@ function QuestionOverlay({
             </div>
           )}
 
-          {/* Category + value, big and centered */}
-          <div className="mt-4 text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-muted-foreground sm:text-sm">
+          {/* Compact header: category + value */}
+          <div
+            className="mt-2 flex items-center justify-between gap-3 px-4 py-2"
+            style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.6 }}
+          >
+            <p
+              className="truncate text-[10px] font-bold uppercase tracking-[0.3em] sm:text-xs"
+              style={{ color: theme.accent }}
+            >
               {category?.title ?? "Question"}
             </p>
-            <p className="font-display text-4xl font-black sm:text-6xl" style={{ color: accent }}>
+            <p className="shrink-0 font-display text-lg font-black sm:text-xl" style={{ color: theme.accent }}>
               {session.dd_wager ? `DD ${session.dd_wager}` : tile.points}
             </p>
           </div>
 
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto py-4 text-center">
+          <div
+            className="mt-2.5 flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto p-4 text-center sm:p-6"
+            style={{ backgroundColor: theme.card, borderRadius: theme.radius }}
+          >
             <div
-              className="max-w-3xl font-display text-xl font-bold leading-snug text-foreground sm:text-3xl [&_b]:text-ink-gold [&_strong]:text-ink-gold"
+              className="max-w-4xl font-display font-black leading-tight [&_b]:opacity-80 [&_strong]:opacity-80"
+              style={{ fontSize: "clamp(2rem, 4.2vw, 4.5rem)", color: theme.accent }}
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(tile.question || "…") }}
             />
             {imageUrl && <img src={imageUrl} alt="Question media" className="max-h-48 rounded-[24px] object-contain" />}
@@ -732,7 +739,13 @@ function QuestionOverlay({
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 rounded-full bg-butter px-9 py-4 font-display text-2xl font-black leading-snug text-ink-gold sm:text-4xl"
+                className="mt-2 px-9 py-4 font-display font-black leading-snug"
+                style={{
+                  backgroundColor: theme.bg,
+                  borderRadius: theme.radius,
+                  color: theme.accent,
+                  fontSize: "clamp(1.5rem, 3vw, 3rem)",
+                }}
               >
                 {tile.answer}
               </motion.div>

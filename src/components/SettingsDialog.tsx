@@ -378,7 +378,8 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
                 onCheckedChange={(v) => syncPrefs({ backgroundEffects: v })}
               />
             </Row>
-          </Section>
+          </Section>}
+
 
           <div className="flex justify-end border-t border-border pt-4">
             <button

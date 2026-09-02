@@ -999,8 +999,12 @@ function JoinCard({ joinCode, playerCount }: { joinCode: string; playerCount: nu
         <ChevronDown className="h-4 w-4 rotate-180" />
       </button>
       <div className="px-5 pb-5">
-        <div className="mx-auto mb-3 w-fit rounded-[22px] border border-foreground/10 bg-background p-2">
-          {joinUrl ? <QRCodeSVG value={joinUrl} size={104} /> : <div className="h-[104px] w-[104px]" />}
+        <div className="mx-auto mb-3 w-fit rounded-[22px] border border-foreground/10 p-2 text-foreground">
+          {joinUrl ? (
+            <QRCodeSVG value={joinUrl} size={104} bgColor="transparent" fgColor="currentColor" />
+          ) : (
+            <div className="h-[104px] w-[104px]" />
+          )}
         </div>
 
         <button

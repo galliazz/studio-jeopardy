@@ -1337,7 +1337,7 @@ function LiveControlPanel({
             </button>
           </div>
 
-          <QueueList session={session} players={players} queue={queue} />
+          <QueueList session={session} players={players} queue={queue} onClear={actions.clearQueue} />
         </div>
       ) : (
         <div className="space-y-3">
@@ -1358,7 +1358,7 @@ function LiveControlPanel({
           >
             Reveal answer <KeyHint k="Space" />
           </button>
-          <QueueList session={session} players={players} queue={queue} />
+          <QueueList session={session} players={players} queue={queue} onClear={actions.clearQueue} />
         </div>
       )}
     </div>

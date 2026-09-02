@@ -21,6 +21,8 @@ import {
   Plus,
   Keyboard,
   ExternalLink,
+  PanelRight,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Soundboard } from "@/components/Soundboard";

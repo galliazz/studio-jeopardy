@@ -134,7 +134,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <div className="min-h-52 flex-1 overflow-y-auto pr-1">
           {tab === "profile" && (
             <div>
+              {/* Appearance — Day/Night switch lives here now */}
+              <Label>Appearance</Label>
+              <div className="mb-4 flex items-center gap-3">
+                <ThemeToggle />
+                <span className="text-xs text-muted-foreground">Switch the whole app between day and night.</span>
+              </div>
               {signedIn ? (
+
                 <>
                   <Label>Host display name</Label>
                   <input

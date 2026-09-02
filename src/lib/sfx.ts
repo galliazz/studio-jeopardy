@@ -199,8 +199,13 @@ export const sfx = {
     crash(0.6, 0.18);
     tone(523.25, 0.5, { type: "triangle", gain: 0.1, delay: 0.6, slideTo: 392 });
   },
+  /** crowd applause on its own */
+  applause() {
+    applause(0);
+  },
   /** daily double reveal — drum roll + crash */
   dailyDouble() {
+
     drumRoll(0);
   },
   /** standalone accelerating drum roll ending on a crash */

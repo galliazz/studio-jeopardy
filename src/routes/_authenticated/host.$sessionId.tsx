@@ -464,6 +464,15 @@ function HostPage() {
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
             <button
+              onClick={() => setPanelOpen((v) => !v)}
+              aria-label="Toggle live control panel"
+              title="Live control panel"
+              aria-pressed={panelOpen}
+              className="flex h-12 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5 min-[1200px]:hidden"
+            >
+              <PanelRight className="h-5 w-5" />
+            </button>
+            <button
               onClick={() => setShortcutsOpen(true)}
               aria-label="Keyboard shortcuts"
               title="Keyboard shortcuts (?)"
@@ -473,6 +482,7 @@ function HostPage() {
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
+
                 <button
                   aria-label="Session options"
                   className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"

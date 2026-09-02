@@ -134,7 +134,12 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [nameError, setNameError] = useState<string | null>(null);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => subscribeThemeMode(() => setTheme(getThemePreference())), []);
+  useEffect(() => {
+    const unsub = subscribeThemeMode(() => setTheme(getThemePreference()));
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -201,7 +206,6 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        showCloseButton={false}
         className="max-h-svh w-full max-w-none gap-0 overflow-y-auto rounded-none border-0 p-0 sm:max-h-[88svh] sm:max-w-[560px] sm:rounded-[32px] sm:border"
       >
         {/* Compact top app bar (full-screen phone layout) */}
@@ -316,7 +320,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             </Row>
             <Row label="Test sound">
               <button
-                onClick={() => sfx.correct()}
+                onClick={() => sfx.ding()}
                 className="flex h-10 items-center gap-2 rounded-full bg-muted px-4 text-sm font-bold text-foreground"
               >
                 <Volume2 className="h-4 w-4" /> Play

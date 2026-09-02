@@ -363,12 +363,12 @@ function StudioPage() {
   );
 }
 
+type BoardStats = { total: number; ready: number; grid: boolean[][] };
+
 function GameCard({
   game,
   index,
-  menuOpen,
-  onToggleMenu,
-  onCloseMenu,
+  stats,
   onPlay,
   onRename,
   onDuplicate,
@@ -378,9 +378,7 @@ function GameCard({
 }: {
   game: Game;
   index: number;
-  menuOpen: boolean;
-  onToggleMenu: () => void;
-  onCloseMenu: () => void;
+  stats?: BoardStats;
   onPlay: () => void;
   onRename: (title: string) => void;
   onDuplicate: () => void;
@@ -392,19 +390,12 @@ function GameCard({
   const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
   const [draftTitle, setDraftTitle] = useState(game.title);
-  const [showQr, setShowQr] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   useEffect(() => setDraftTitle(game.title), [game.title]);
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCloseMenu();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [menuOpen, onCloseMenu]);
+
   const joinUrl =
     typeof window === "undefined" ? `/play/${game.join_code}` : `${window.location.origin}/play/${game.join_code}`;
-
 
   const commitRename = () => {
     setRenaming(false);
@@ -413,165 +404,204 @@ function GameCard({
     else setDraftTitle(game.title);
   };
 
+  const total = stats?.total ?? 0;
+  const ready = stats?.ready ?? 0;
+  const complete = total > 0 && ready === total;
+  const grid = stats?.grid;
+
+  const openEditor = () => void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+
   const tints = ["bg-lilac", "bg-mint", "bg-peach", "bg-sky", "bg-blush", "bg-butter"];
   const tint = tints[index % tints.length];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, type: "spring", stiffness: 160, damping: 20 }}
-      role="link"
-      tabIndex={0}
-      title="Open in editor"
-      onClick={() => void navigate({ to: "/edit/$gameId", params: { gameId: game.id } })}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
-      }}
-      className={`group relative flex h-full cursor-pointer flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
-    >
-      <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
-        {renaming ? (
-          <input
-            autoFocus
-            value={draftTitle}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => setDraftTitle(e.target.value)}
-            onBlur={commitRename}
-            onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-            maxLength={80}
-            className="h-12 w-full rounded-full bg-card px-3 py-1 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
-          />
-        ) : (
-          /* Fixed two-line box keeps every card's title on the same baseline */
-          <h3
-            className="line-clamp-2 min-h-12 min-w-0 flex-1 font-display text-xl font-black leading-6"
-            title={game.title}
-          >
-            {game.title}
-          </h3>
-        )}
-        <div className="relative">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleMenu();
-            }}
-            aria-label="Board options"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-lilac text-foreground transition-colors hover:brightness-95"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-          {menuOpen && (
-            <>
-              {/* Click-away backdrop */}
-              <button
-                aria-label="Close menu"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCloseMenu();
-                }}
-                className="fixed inset-0 z-10 cursor-default"
-              />
-              <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-11 z-20 w-60 overflow-hidden rounded-[28px] bg-popover p-2 elev-3"
-              >
-                {/* Share block: join code, link, QR */}
-                <div className="mb-1 rounded-[22px] bg-muted/60 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Join code</p>
-                  <p className="font-mono text-lg font-black tracking-widest text-foreground">{game.join_code}</p>
-                  <div className="mt-2 flex gap-1.5">
-                    <button
-                      onClick={() => {
-                        void navigator.clipboard.writeText(joinUrl);
-                        toast.success("Join link copied");
-                      }}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-card px-3 py-2 text-xs font-bold elev-1"
-                    >
-                      <LinkIcon className="h-3.5 w-3.5" /> Copy link
-                    </button>
-                    <button
-                      onClick={() => setShowQr((v) => !v)}
-                      aria-label="Show QR code"
-                      className="flex items-center justify-center gap-1.5 rounded-full bg-card px-3 py-2 text-xs font-bold elev-1"
-                    >
-                      <QrCode className="h-3.5 w-3.5" /> QR
-                    </button>
-                  </div>
-                  {showQr && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="mt-2 flex justify-center rounded-[18px] bg-white p-2"
-                    >
-                      <QRCodeSVG value={joinUrl} size={124} />
-                    </motion.div>
-                  )}
-                </div>
-                {[
-                  { icon: Pencil, label: "Rename", fn: () => { onCloseMenu(); setRenaming(true); } },
-                  { icon: Copy, label: "Duplicate", fn: onDuplicate },
-                  { icon: Download, label: "Export JSON", fn: onExport },
-                  { icon: FileSpreadsheet, label: "Export Excel", fn: onExportXlsx },
-                  { icon: Trash2, label: "Delete", fn: onDelete, danger: true },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      item.fn();
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-muted ${
-                      item.danger ? "text-danger-ink" : "text-foreground"
-                    }`}
-                  >
-                    <item.icon className="h-4 w-4" /> {item.label}
-                  </button>
-                ))}
-              </motion.div>
-            </>
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05, type: "spring", stiffness: 160, damping: 20 }}
+        role="button"
+        tabIndex={0}
+        title="Open in editor"
+        onClick={openEditor}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openEditor();
+          }
+        }}
+        className={`group relative flex cursor-pointer flex-col rounded-[36px] ${tint} p-6 elev-1 outline-none transition-transform hover:-translate-y-1 hover:elev-2 focus-visible:-translate-y-1 focus-visible:elev-2 focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+      >
+        {/* a) Title row — fixed 48px, single-line title + minimal-emphasis menu */}
+        <div className="mb-4 flex h-12 min-w-0 items-center gap-2">
+          {renaming ? (
+            <input
+              autoFocus
+              value={draftTitle}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") {
+                  setDraftTitle(game.title);
+                  setRenaming(false);
+                }
+              }}
+              maxLength={80}
+              className="h-10 w-full min-w-0 rounded-full bg-card px-3 font-display text-lg font-bold outline-none ring-2 ring-ink-accent"
+            />
+          ) : (
+            <h3
+              title={game.title}
+              className="min-w-0 flex-1 truncate whitespace-nowrap font-display text-xl font-black"
+            >
+              {game.title}
+            </h3>
+          )}
+
+          <div className="relative z-20 shrink-0" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Board options"
+                  className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/10">
+                    <MoreVertical className="h-4 w-4" />
+                  </span>
+                </span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="bottom" className="w-56 rounded-[24px] p-2">
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={() => setJoinOpen(true)}
+                >
+                  <QrCode className="mr-2 h-4 w-4" /> Join code
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={() => setRenaming(true)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" /> Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onDuplicate}>
+                  <Copy className="mr-2 h-4 w-4" /> Duplicate
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onExport}>
+                  <Download className="mr-2 h-4 w-4" /> Export JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onExportXlsx}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold text-danger-ink focus:text-danger-ink"
+                  onSelect={() => setConfirmDelete(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* b) Board preview — three distinct surface levels, dashed cells when empty */}
+        <div className="mb-4 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3" style={{ backgroundColor: theme.bg }}>
+          {Array.from({ length: 5 }).map((_, col) => (
+            <div
+              key={col}
+              className="aspect-square rounded-[7px]"
+              style={{ backgroundColor: theme.accent }}
+            />
+          ))}
+          {Array.from({ length: 5 }).map((_, row) =>
+            Array.from({ length: 5 }).map((__, col) => {
+              const filled = grid ? Boolean(grid[col]?.[row]) : true;
+              return (
+                <div
+                  key={`${row}-${col}`}
+                  className="aspect-square rounded-[7px]"
+                  style={
+                    filled
+                      ? { backgroundColor: theme.card }
+                      : { border: `1.5px dashed ${theme.card}`, backgroundColor: "transparent" }
+                  }
+                />
+              );
+            }),
           )}
         </div>
-      </div>
 
-      {/* Mini grid preview */}
-      <div className="mb-5 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3" style={{ backgroundColor: theme.bg }}>
-        {Array.from({ length: 25 }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square rounded-[7px]"
-            style={{ backgroundColor: i < 5 ? theme.accent : theme.card, opacity: i < 5 ? 0.85 : 1 }}
-          />
-        ))}
-      </div>
+        {/* c) Status row */}
+        <p className="mb-3 text-xs font-semibold text-foreground/70">
+          {complete ? "Ready to play" : `${ready} of ${total || 25} tiles ready`}
+        </p>
 
-      <div className="flex items-center gap-2">
-        <motion.button
-          whileTap={{ scale: 0.96 }}
+        {/* d) Full-width CTA */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={(e) => {
             e.stopPropagation();
             onPlay();
           }}
-          className="flex flex-1 items-center justify-center gap-2.5 rounded-full bg-coral py-5 font-display text-xl font-black text-foreground elev-2 transition-transform hover:scale-[1.02]"
-        >
-          <Play className="h-6 w-6" /> Play
-        </motion.button>
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              onPlay();
+            }
           }}
-          aria-label="Edit board"
-          title="Edit board"
-          className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-card text-foreground elev-1 transition-transform hover:scale-[1.05]"
+          className="relative z-20 flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2"
         >
-          <Pencil className="h-5 w-5" />
-        </motion.button>
-      </div>
-    </motion.div>
+          <Play className="h-5 w-5" /> Play
+        </div>
+      </motion.div>
+
+      {/* Join code + QR dialog */}
+      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+        <DialogContent className="rounded-[32px] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Join code</DialogTitle>
+            <DialogDescription>Players can join with this code or by scanning the QR.</DialogDescription>
+          </DialogHeader>
+          <p className="text-center font-mono text-3xl font-black tracking-widest text-foreground">{game.join_code}</p>
+          <div className="flex justify-center rounded-[18px] bg-white p-3">
+            <QRCodeSVG value={joinUrl} size={160} />
+          </div>
+          <button
+            onClick={() => {
+              void navigator.clipboard.writeText(joinUrl);
+              toast.success("Join link copied");
+            }}
+            className="flex items-center justify-center gap-2 rounded-full bg-lilac px-5 py-3 text-sm font-bold text-foreground elev-1"
+          >
+            <LinkIcon className="h-4 w-4" /> Copy link
+          </button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent className="rounded-[32px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display">Delete “{game.title}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the board and all of its clues. You can undo right after deleting.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="rounded-full bg-coral text-foreground" onClick={onDelete}>
+              Delete board
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

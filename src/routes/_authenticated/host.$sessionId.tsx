@@ -1027,22 +1027,42 @@ const OBS_VIEWS: { path: string; label: string; hint: string }[] = [
   { path: "combined", label: "Combined overlay", hint: "Board, scores and queue together" },
 ];
 
-function ObsLinksPanel({ joinCode }: { joinCode: string }) {
+function ObsLinksPanel({ gameId, overlayToken }: { gameId: string; overlayToken: string }) {
   const origin = useOrigin();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [confirmRotate, setConfirmRotate] = useState(false);
+  const rotate = useServerFn(regenerateOverlayToken);
+
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <button
-        onClick={() => {
-          sfx.pop();
-          setOpen((v) => !v);
-        }}
-        className="flex w-full items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
-        aria-expanded={open}
-      >
-        <Radio className="h-3.5 w-3.5" /> OBS overlay links
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => {
+            sfx.pop();
+            setOpen((v) => !v);
+          }}
+          className="flex flex-1 items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+          aria-expanded={open}
+        >
+          <Radio className="h-3.5 w-3.5" /> OBS overlay links
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label="Overlay link options"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="rounded-2xl">
+            <DropdownMenuItem onSelect={() => setConfirmRotate(true)}>Regenerate links</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -1054,33 +1074,68 @@ function ObsLinksPanel({ joinCode }: { joinCode: string }) {
           >
             <div className="space-y-2 pt-3">
               {OBS_VIEWS.map((v) => {
-                const url = origin ? `${origin}/obs/${v.path}?code=${joinCode}` : "";
+                const url = origin ? `${origin}/overlay/${v.path}/${overlayToken}` : "";
                 return (
-                  <button
-                    key={v.path}
-                    onClick={() => {
-                      void navigator.clipboard.writeText(url);
-                      toast.success(`${v.label} URL copied — paste into an OBS browser source`);
-                    }}
-                    className="w-full rounded-[22px] bg-muted px-4 py-3 text-left transition-transform hover:scale-[1.02]"
-                  >
-                    <p className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-                      <Copy className="h-3.5 w-3.5" /> {v.label}
-                    </p>
-                    <p className="truncate text-[11px] text-muted-foreground">{v.hint}</p>
-                  </button>
+                  <div key={v.path} className="rounded-[22px] bg-muted px-4 py-3">
+                    <p className="text-sm font-bold text-foreground">{v.label}</p>
+                    <p className="text-[11px] text-muted-foreground">{v.hint}</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <code className="min-w-0 flex-1 truncate rounded-lg bg-card px-2 py-1 font-mono text-[10px] text-muted-foreground">
+                        {url}
+                      </code>
+                      <button
+                        aria-label={`Copy ${v.label} link`}
+                        onClick={() => {
+                          void navigator.clipboard.writeText(url);
+                          toast.success("Link copied");
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-card"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Open ${v.label} in a new tab`}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-card"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
                 );
               })}
-              <p className="text-[11px] text-muted-foreground">
-                Transparent background — add as a Browser Source in OBS and it stays in sync live.
-              </p>
+              <ul className="space-y-1 pt-1 text-[11px] text-muted-foreground">
+                <li>· Add as a Browser Source</li>
+                <li>· Width 1920, height 1080</li>
+                <li>· Uncheck “Shutdown source when not visible”</li>
+                <li>· Uncheck “Refresh browser when scene becomes active”</li>
+              </ul>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {confirmRotate && (
+        <ConfirmDialog
+          title="Regenerate overlay links?"
+          body="The current links stop working immediately. Any OBS browser source still using them will go blank until you paste the new links."
+          confirmLabel="Regenerate"
+          destructive
+          onCancel={() => setConfirmRotate(false)}
+          onConfirm={async () => {
+            setConfirmRotate(false);
+            await rotate({ data: { gameId } });
+            void queryClient.invalidateQueries();
+            toast.success("Overlay links regenerated");
+          }}
+        />
+      )}
     </div>
   );
 }
+
 
 /* --------------------------- Live control panel --------------------------- */
 

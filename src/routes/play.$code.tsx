@@ -159,6 +159,7 @@ function JoinForm({
       vibrate(30);
       onJoined({
         playerId: res.player.id,
+        token: res.token,
         name: res.player.name,
         avatar: res.player.avatar,
         team: res.player.team as Team,

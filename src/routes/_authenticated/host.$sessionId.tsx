@@ -599,16 +599,17 @@ function HostPage() {
             </div>
           </div>
 
-          {/* CENTER: board + clue container transform */}
-          <div className="relative order-1 lg:order-2">
+          {/* CENTER: board + clue container transform. Never scrolls. */}
+          <div className="relative order-1 flex min-h-0 items-center justify-center overflow-hidden min-[840px]:order-2">
             <div
-              className="mx-auto flex w-full max-w-[1100px] flex-col p-2.5 elev-2 sm:p-5"
+              className="flex h-full max-h-full w-auto max-w-full flex-col p-2.5 elev-2 sm:p-5"
               style={{
                 backgroundColor: theme.bg,
                 borderRadius: theme.radius + 8,
-                minHeight: "calc(100vh - 8rem)",
+                aspectRatio: "5 / 5.4",
               }}
             >
+
               <div className="grid flex-1 grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-1 sm:gap-2.5">
                 {categories.map((cat) => (
                   <div

@@ -417,7 +417,7 @@ function GameCard({
       onKeyDown={(e) => {
         if (e.key === "Enter") void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
       }}
-      className={`group relative flex cursor-pointer flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
+      className={`group relative flex h-full cursor-pointer flex-col rounded-[36px] ${tint} p-6 elev-1 transition-transform hover:-translate-y-1 hover:elev-2`}
     >
       <div className="mb-4 flex min-w-0 items-start justify-between gap-2">
         {renaming ? (

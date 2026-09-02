@@ -24,7 +24,7 @@ function CombinedOverlay() {
 
   /* Three isolated regions with clear empty space between them, so each copy
      of the browser source can be cropped to exactly one region. */
-  const boardHeight = 640;
+  const boardHeight = 600;
   return (
     <OverlayCanvas>
       {/* Scores: top centre. */}
@@ -45,7 +45,7 @@ function CombinedOverlay() {
       <div
         style={{
           position: "absolute",
-          top: 240,
+          top: 270,
           left: "50%",
           transform: "translateX(-50%)",
           height: boardHeight,
@@ -61,10 +61,10 @@ function CombinedOverlay() {
       <div
         style={{
           position: "absolute",
-          top: 240,
+          top: 270,
           right: SAFE,
-          width: 440,
-          maxHeight: 1080 - 240 - SAFE,
+          width: 544,
+          maxHeight: 1080 - 270 - SAFE,
           overflow: "hidden",
         }}
       >

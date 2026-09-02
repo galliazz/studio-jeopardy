@@ -32,7 +32,7 @@ function QueueOverlay() {
           position: "absolute",
           top: SAFE,
           left: SAFE,
-          width: 620,
+          width: 700,
           maxHeight: 1080 - SAFE * 2,
           overflow: "hidden",
           display: "flex",

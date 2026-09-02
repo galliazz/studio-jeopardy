@@ -156,7 +156,7 @@ export function OverlayScores({ state }: { state: OverlayState }) {
 
 export function OverlayQueue({ state, align = "right" }: { state: OverlayState; align?: "left" | "right" }) {
   return (
-    <div style={{ transform: "scale(1.9)", transformOrigin: `top ${align}`, width: 440 }}>
+    <div style={{ transform: "scale(1.6)", transformOrigin: `top ${align}`, width: 340 }}>
     <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}

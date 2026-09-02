@@ -306,6 +306,7 @@ function StudioPage() {
           <div className="flex-1" />
           {/* Search grows leftward over the buttons, keeping the spring feel */}
           <motion.div
+            ref={searchWrapRef}
             layout
             animate={{ width: searchOpen || search ? 320 : 40 }}
             transition={{ type: "spring", stiffness: 380, damping: 18 }}

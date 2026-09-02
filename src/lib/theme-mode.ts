@@ -130,10 +130,10 @@ function toDark(hex: string, lightness: number, sat = 0.22): string {
  * Board surfaces come from the saved game theme (hex). In dark mode we present
  * the same hues at deep-pastel lightness. Data is never modified.
  */
-export function darkBoardColors(
-  theme: { bg: string; card: string; accent: string },
+export function darkBoardColors<T extends { bg: string; card: string; accent: string }>(
+  theme: T,
   isDark: boolean,
-) {
+): T {
   if (!isDark) return theme;
   return {
     ...theme,

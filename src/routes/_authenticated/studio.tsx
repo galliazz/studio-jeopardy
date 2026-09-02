@@ -129,15 +129,34 @@ function StudioPage() {
     }
   };
 
-  const handleDelete = async (gameId: string) => {
-    setOpenMenu(null);
-    try {
-      await deleteGame({ data: { gameId } });
-      toast.success("Board deleted");
-      void refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Delete failed");
-    }
+  /**
+   * Deletion is deferred a few seconds so the snackbar can offer Undo — the
+   * card disappears immediately, the server call only fires once the grace
+   * period elapses.
+   */
+  const handleDelete = (gameId: string, title: string) => {
+    setPendingDelete((prev) => [...prev, gameId]);
+    let undone = false;
+    const timer = setTimeout(() => {
+      if (undone) return;
+      void deleteGame({ data: { gameId } })
+        .then(() => refresh())
+        .catch((err: unknown) => {
+          setPendingDelete((prev) => prev.filter((id) => id !== gameId));
+          toast.error(err instanceof Error ? err.message : "Delete failed");
+        });
+    }, 6000);
+    toast.success(`“${title}” deleted`, {
+      duration: 6000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          undone = true;
+          clearTimeout(timer);
+          setPendingDelete((prev) => prev.filter((id) => id !== gameId));
+        },
+      },
+    });
   };
 
   const handleExport = async (gameId: string) => {

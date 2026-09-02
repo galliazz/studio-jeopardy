@@ -596,71 +596,25 @@ function HostPage() {
 
           {/* CENTER: board + clue container transform. Never scrolls. */}
           <div className="relative order-1 flex min-h-0 items-center justify-center overflow-hidden min-[840px]:order-2">
-            <div
-              className="flex h-full max-h-full w-auto max-w-full flex-col p-2.5 elev-2 sm:p-5"
-              style={{
-                backgroundColor: theme.bg,
-                borderRadius: theme.radius + 8,
-                aspectRatio: "5 / 5.4",
+            <BoardGrid
+              theme={theme}
+              categories={categories}
+              tiles={tiles}
+              usedIds={usedSet}
+              disabled={session.status === "final" || session.status === "finished"}
+              onOpenTile={(tileId) => {
+                const isDD = session.daily_double_tile_ids.includes(tileId);
+                setHostSession({
+                  status: "live",
+                  current_tile_id: tileId,
+                  active_player_id: null,
+                  timer_ends_at: null,
+                  dd_wager: null,
+                  phase: isDD ? "daily_double_wager" : "question_open",
+                });
+                void openTile({ data: { sessionId, tileId } });
               }}
-            >
-
-              <div className="grid flex-1 grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-1 sm:gap-2.5">
-                {categories.map((cat) => (
-                  <div
-                    key={cat.id}
-                    className="flex min-h-10 items-center justify-center overflow-hidden p-1 text-center text-[8px] font-bold uppercase leading-tight tracking-wide sm:min-h-16 sm:p-1.5 sm:text-xs"
-                    style={{
-                      /* Headers are the board colour shifted toward the accent so
-                         they separate from the tiles by ~6% luminance. */
-                      backgroundColor: `color-mix(in srgb, ${theme.card} 88%, ${theme.accent} 12%)`,
-                      borderRadius: theme.radius * 0.6,
-                      color: theme.accent,
-                    }}
-                  >
-                    <span className="line-clamp-2 w-full break-words">{cat.title}</span>
-                  </div>
-                ))}
-                {[0, 1, 2, 3, 4].map((row) =>
-                  categories.map((cat) => {
-                    const tile = tiles.find((t) => t.category_id === cat.id && t.row_index === row);
-                    if (!tile) return <div key={`${cat.id}-${row}`} />;
-                    const used = usedSet.has(tile.id);
-                    return (
-                      <motion.button
-                        key={tile.id}
-                        {...(used ? {} : { whileTap: { scale: 0.94 } })}
-                        disabled={used || session.status === "final" || session.status === "finished"}
-                        onClick={() => {
-                          const isDD = session.daily_double_tile_ids.includes(tile.id);
-                          setHostSession({
-                            status: "live",
-                            current_tile_id: tile.id,
-                            active_player_id: null,
-                            timer_ends_at: null,
-                            dd_wager: null,
-                            phase: isDD ? "daily_double_wager" : "question_open",
-                          });
-                          void openTile({ data: { sessionId, tileId: tile.id } });
-                        }}
-                        className="flex min-h-12 items-center justify-center font-display text-base font-black tracking-tight transition-all sm:text-3xl"
-                        style={{
-                          backgroundColor: used ? "transparent" : theme.card,
-                          borderRadius: theme.radius,
-                          color: used ? "transparent" : theme.accent,
-                          opacity: used ? 0.35 : 1,
-                          boxShadow: used
-                            ? "none"
-                            : `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 30%, transparent)`,
-                        }}
-                      >
-                        {used ? "✓" : tile.points}
-                      </motion.button>
-                    );
-                  }),
-                )}
-              </div>
-            </div>
+            />
 
             <AnimatePresence>
               {(session.phase === "question_open" ||

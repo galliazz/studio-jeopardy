@@ -19,6 +19,8 @@ import { bootstrapStudio, exportGame, updateProfile } from "@/lib/games.function
 import { getSettings, resetSettings, setSettings, useSettings } from "@/lib/settings";
 import { PLAYER_AVATARS, type Game } from "@/lib/types";
 import { sfx } from "@/lib/sfx";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 
 type Tab = "profile" | "audio" | "teams" | "gameplay" | "data";
 
@@ -134,7 +136,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <div className="min-h-52 flex-1 overflow-y-auto pr-1">
           {tab === "profile" && (
             <div>
+              {/* Appearance — Day/Night switch lives here now */}
+              <Label>Appearance</Label>
+              <div className="mb-4 flex items-center gap-3">
+                <ThemeToggle />
+                <span className="text-xs text-muted-foreground">Switch the whole app between day and night.</span>
+              </div>
               {signedIn ? (
+
                 <>
                   <Label>Host display name</Label>
                   <input

@@ -21,7 +21,6 @@ export function useObsState(code: string) {
     queryFn: () => fetchState({ data: { code } }),
     enabled: code.length >= 4,
     refetchOnWindowFocus: false,
-    refetchInterval: 15_000,
   });
   const state = data && !("error" in data) ? (data as unknown as ObsState) : null;
   useSessionRealtime(state?.session.id, [["obs", code]]);

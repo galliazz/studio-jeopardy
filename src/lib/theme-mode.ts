@@ -142,3 +142,15 @@ export function darkBoardColors(
     accent: toDark(theme.accent, 0.84, 0.14),
   };
 }
+
+/**
+ * Broadcast surfaces (OBS overlays) have no session and no stored preference,
+ * so they pin dark mode for the lifetime of the page without persisting it.
+ * A light overlay is never correct.
+ */
+export function forceDarkMode() {
+  preference = "dark";
+  mode = "dark";
+  apply("dark");
+  listeners.forEach((l) => l());
+}

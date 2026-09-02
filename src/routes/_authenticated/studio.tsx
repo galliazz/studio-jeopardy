@@ -104,7 +104,24 @@ function StudioPage() {
   const searchRef = useRef<HTMLInputElement>(null);
   const searchWrapRef = useRef<HTMLDivElement>(null);
 
-  const games = useMemo(() => {
+  // Focus the search input as soon as the spring expands, and collapse it when
+  // the user clicks outside while the field is empty.
+  useEffect(() => {
+    if (searchOpen) {
+      const t = setTimeout(() => searchRef.current?.focus(), 0);
+      return () => clearTimeout(t);
+    }
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen && !search.trim()) return;
+    const handleDown = (e: MouseEvent) => {
+      if (searchWrapRef.current?.contains(e.target as Node)) return;
+      if (!search.trim()) setSearchOpen(false);
+    };
+    document.addEventListener("mousedown", handleDown, true);
+    return () => document.removeEventListener("mousedown", handleDown, true);
+  }, [searchOpen, search]);
     const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));
     if (!search.trim()) return all;
     return all.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()));

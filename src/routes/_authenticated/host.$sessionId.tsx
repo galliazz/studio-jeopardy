@@ -399,6 +399,8 @@ function HostPage() {
   const theme = darkBoardColors(themeOf(game), isDark) as ReturnType<typeof themeOf>;
   const usedSet = new Set(session.used_tile_ids);
   const played = usedSet.size;
+  /** players[].connected — the only signal for "live" status and join-card collapse. */
+  const connectedCount = players.filter((p) => !p.locked_out).length;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
   const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
   /** The board's distinct point values, used as quick picks in the custom-score popover. */
@@ -460,12 +462,18 @@ function HostPage() {
           <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1">
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
-                players.length > 0 ? "bg-success-ink" : "bg-foreground/30"
+                connectedCount > 0 ? "bg-success-ink" : "bg-foreground/30"
               }`}
               aria-hidden
             />
-            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
-              {players.length > 0 ? `Live · ${players.length}` : "In lobby"}
+            <span
+              className={`whitespace-nowrap text-[11px] font-bold ${
+                connectedCount > 0 ? "text-success-ink" : "text-muted-foreground"
+              }`}
+            >
+              {connectedCount > 0
+                ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}`
+                : "In lobby"}
             </span>
             <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
             <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
@@ -543,7 +551,7 @@ function HostPage() {
           {/* LEFT: join, roster, OBS, soundboard, tools */}
           <div className="order-2 min-h-0 space-y-6 overflow-y-auto pr-1 min-[840px]:order-1">
 
-            <JoinCard joinCode={game.join_code} playerCount={players.length} />
+            <JoinCard joinCode={game.join_code} playerCount={connectedCount} />
             <PlayerRoster
               players={players}
               onSwitchTeam={(playerId) => {
@@ -572,12 +580,11 @@ function HostPage() {
                   onClick={() => setAnalyticsOpen(true)}
                 />
                 <ToolButton icon={Flag} label="Final Jeopardy" variant="outlined" onClick={() => setFinalOpen(true)} />
-                <ToolButton
-                  icon={Crown}
-                  label="End game"
-                  variant="error"
-                  onClick={() => setConfirm("end")}
-                />
+              </div>
+              {/* Irreversible action, kept apart from the reversible tools above. */}
+              <div className="my-3 h-px bg-foreground/10" aria-hidden />
+              <div className="grid grid-cols-2 gap-2">
+                <ToolButton icon={Crown} label="End game" variant="error" onClick={() => setConfirm("end")} />
               </div>
 
             </div>

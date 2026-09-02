@@ -1151,12 +1151,16 @@ function PlayerRoster({
 }) {
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
-        Players · {players.length}
-      </h3>
+      <h3 className="text-sm font-semibold text-muted-foreground">Players</h3>
       {players.length === 0 ? (
         <p className="py-3 text-center text-sm text-muted-foreground">Nobody has joined yet.</p>
       ) : (
+        <p className="mb-2 mt-0.5 text-sm text-foreground">
+          {players.length} {players.length === 1 ? "player" : "players"} connected
+        </p>
+      )}
+      {players.length > 0 && (
+
         <ul className="space-y-1">
           {players.map((p) => {
             const connected = !p.locked_out;

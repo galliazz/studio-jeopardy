@@ -179,10 +179,16 @@ function HostPage() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <ScorePill team="alpha" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
-            <ScorePill team="bravo" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
+          <div className="flex w-full items-center">
+            <div className="flex min-w-0 flex-1 justify-end">
+              <ScorePill team="alpha" side="left" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
+            </div>
+            <div className="w-4 shrink-0" aria-hidden />
+            <div className="flex min-w-0 flex-1 justify-start">
+              <ScorePill team="bravo" side="right" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
+            </div>
           </div>
+
           <div className="flex items-center justify-end gap-2">
             <ThemeToggle />
             <button

@@ -553,10 +553,12 @@ function HostPage() {
       </header>
 
 
-      <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
+      {/* Body fills the remaining viewport: only the side columns scroll. */}
+      <div className="mx-auto min-h-0 w-full max-w-[1600px] flex-1 px-6 py-6">
+        <div className="grid h-full min-h-0 grid-cols-1 gap-6 min-[840px]:grid-cols-[320px_minmax(0,1fr)] min-[1200px]:grid-cols-[320px_minmax(0,1fr)_380px]">
           {/* LEFT: join, roster, OBS, soundboard, tools */}
-          <div className="order-2 space-y-4 lg:order-1">
+          <div className="order-2 min-h-0 space-y-6 overflow-y-auto pr-1 min-[840px]:order-1">
+
             <JoinCard joinCode={game.join_code} playerCount={players.length} />
             <PlayerRoster
               players={players}

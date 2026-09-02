@@ -54,9 +54,10 @@ function StudioPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const bootstrap = useServerFn(bootstrapStudio);
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["studio"],
     queryFn: () => bootstrap(),
+    retry: false,
   });
 
   const [search, setSearch] = useState("");

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Play, Square, Repeat, Check, UploadCloud, Plus } from "lucide-react";
+import { Play, Square, Repeat, Check, UploadCloud, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
@@ -453,5 +453,3 @@ function TrimStep({
     </div>
   );
 }
-
-export { X as _X };

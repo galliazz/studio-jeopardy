@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings as SettingsIcon, X, Volume2 } from "lucide-react";
+import { Settings as SettingsIcon, X, Volume2, Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { bootstrapStudio, updateProfile } from "@/lib/games.functions";
@@ -20,6 +20,8 @@ import {
   type ThemePreference,
 } from "@/lib/theme-mode";
 import { sfx } from "@/lib/sfx";
+import { AccountAvatar, setAvatarValue, useAvatarValue } from "@/lib/avatar";
+import { ChooseAvatarDialog } from "@/components/ChooseAvatarDialog";
 import {
   Dialog,
   DialogContent,
@@ -133,6 +135,9 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const [signedIn, setSignedIn] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const avatarBtnRef = useRef<HTMLButtonElement>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const avatarValue = useAvatarValue();
 
   useEffect(() => {
     const unsub = subscribeThemeMode(() => setTheme(getThemePreference()));
@@ -150,9 +155,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       setEmail(data.session.user.email ?? "");
       try {
         const boot = (await bootstrapStudio()) as {
-          profile?: { username?: string; preferences?: Partial<StudioSettings> | null };
+          profile?: {
+            username?: string;
+            avatar_url?: string | null;
+            preferences?: Partial<StudioSettings> | null;
+          };
         };
         if (!alive) return;
+        if (boot.profile?.avatar_url) setAvatarValue(boot.profile.avatar_url);
         if (boot.profile?.username) {
           setUsername(boot.profile.username);
           setSavedName(boot.profile.username);
@@ -378,6 +388,17 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </DialogContent>
+      {avatarOpen && (
+        <ChooseAvatarDialog
+          current={avatarValue}
+          initial={initial}
+          onClose={() => {
+            setAvatarOpen(false);
+            void queryClient.invalidateQueries({ queryKey: ["studio"] });
+            requestAnimationFrame(() => avatarBtnRef.current?.focus());
+          }}
+        />
+      )}
     </Dialog>
   );
 }

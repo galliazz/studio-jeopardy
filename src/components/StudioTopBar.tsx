@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Zap, Settings as SettingsIcon, LogOut } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { AccountAvatar, useAvatarValue } from "@/lib/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,9 +17,11 @@ import {
  */
 export function StudioTopBar({
   displayName,
+  avatarUrl,
   onOpenSettings,
 }: {
   displayName: string;
+  avatarUrl?: string | null;
   onOpenSettings: () => void;
 }) {
   const [email, setEmail] = useState("");
@@ -34,6 +37,7 @@ export function StudioTopBar({
   }, []);
 
   const initial = (displayName.trim()[0] ?? "?").toUpperCase();
+  const avatarValue = useAvatarValue(avatarUrl ?? null);
 
   return (
     <header className="sticky top-0 z-50 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
@@ -53,9 +57,7 @@ export function StudioTopBar({
               aria-label="Account menu"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ink-accent"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-lilac font-display text-base font-bold text-foreground">
-                {initial}
-              </span>
+              <AccountAvatar value={avatarValue} initial={initial} className="h-10 w-10 text-base" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64 rounded-[24px] p-2">

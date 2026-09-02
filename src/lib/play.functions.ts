@@ -249,3 +249,78 @@ export const submitFinalAnswer = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, reason: "rejected" as const };
     return { ok: true as const };
   });
+
+/**
+ * Public: token-scoped snapshot for the OBS mirror overlays.
+ * The clue text ships only while a tile is open; the answer text ships only
+ * once the host has revealed it. An unknown or rotated token returns null so
+ * the overlay can render a fully transparent page.
+ */
+export const getOverlayState = createServerFn({ method: "GET" })
+  .inputValidator((data) => z.object({ token: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: game } = await db
+      .from("games")
+      .select("id, title, join_code, theme")
+      .eq("overlay_token", data.token)
+      .maybeSingle();
+    if (!game) return null;
+
+    const { data: session } = await db
+      .from("sessions")
+      .select(SESSION_PUBLIC_COLS)
+      .eq("game_id", game.id)
+      .in("status", ["lobby", "live", "final"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!session) return null;
+
+    const { data: categories } = await db
+      .from("categories")
+      .select("id, game_id, title, position")
+      .eq("game_id", game.id)
+      .order("position");
+    const catIds = (categories ?? []).map((c) => c.id);
+    const { data: tiles } = catIds.length
+      ? await db.from("tiles").select("id, category_id, row_index, points").in("category_id", catIds)
+      : { data: [] };
+    const { data: players } = await db
+      .from("players")
+      .select(PLAYER_PUBLIC_COLS)
+      .eq("session_id", session.id)
+      .order("created_at");
+    const { data: queue } = await db
+      .from("buzzer_queue")
+      .select("*")
+      .eq("session_id", session.id)
+      .order("created_at");
+
+    let clue: { category: string; points: number; question: string; answer: string | null } | null = null;
+    if (session.current_tile_id) {
+      const { data: tile } = await db
+        .from("tiles")
+        .select("id, category_id, points, question, answer")
+        .eq("id", session.current_tile_id)
+        .maybeSingle();
+      if (tile) {
+        clue = {
+          category: (categories ?? []).find((c) => c.id === tile.category_id)?.title ?? "",
+          points: session.dd_wager ?? tile.points,
+          question: tile.question,
+          answer: session.phase === "reveal" ? tile.answer : null,
+        };
+      }
+    }
+
+    return {
+      game,
+      session,
+      categories: categories ?? [],
+      tiles: tiles ?? [],
+      players: players ?? [],
+      queue: queue ?? [],
+      clue,
+    };
+  });

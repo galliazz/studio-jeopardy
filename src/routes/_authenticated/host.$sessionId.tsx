@@ -756,13 +756,16 @@ function ScorePill({
   name,
   score,
   players,
+  onAdjust,
 }: {
   team: Team;
   side: "left" | "right";
   name: string;
   score: number;
   players: Player[];
+  onAdjust?: ((delta: number) => void) | undefined;
 }) {
+
   const members = players.filter((p) => p.team === team);
   const collapsed = members.length >= 6;
   const mirrored = side === "left";

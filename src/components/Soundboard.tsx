@@ -104,9 +104,10 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
 
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        <Volume2 className="h-3.5 w-3.5" /> Soundboard
+      <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+        <Volume2 className="h-4 w-4" /> Soundboard
       </h3>
+
 
       {clips.length === 0 ? (
         <button

@@ -580,12 +580,11 @@ function HostPage() {
                   onClick={() => setAnalyticsOpen(true)}
                 />
                 <ToolButton icon={Flag} label="Final Jeopardy" variant="outlined" onClick={() => setFinalOpen(true)} />
-                <ToolButton
-                  icon={Crown}
-                  label="End game"
-                  variant="error"
-                  onClick={() => setConfirm("end")}
-                />
+              </div>
+              {/* Irreversible action, kept apart from the reversible tools above. */}
+              <div className="my-3 h-px bg-foreground/10" aria-hidden />
+              <div className="grid grid-cols-2 gap-2">
+                <ToolButton icon={Crown} label="End game" variant="error" onClick={() => setConfirm("end")} />
               </div>
 
             </div>

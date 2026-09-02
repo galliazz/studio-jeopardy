@@ -184,6 +184,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
 
   const saveName = async () => {
     const v = username.trim();
+    // Never scold an untouched, still-loading field (e.g. signed-out preview).
+    if (!v && !savedName) return;
     if (v.length < 2 || v.length > 24) {
       setNameError("Use 2 to 24 characters");
       return;

@@ -181,6 +181,7 @@ export type Database = {
           id: string
           locked_out: boolean
           name: string
+          player_token: string
           session_id: string
           team: string
         }
@@ -190,6 +191,7 @@ export type Database = {
           id?: string
           locked_out?: boolean
           name: string
+          player_token?: string
           session_id: string
           team?: string
         }
@@ -199,6 +201,7 @@ export type Database = {
           id?: string
           locked_out?: boolean
           name?: string
+          player_token?: string
           session_id?: string
           team?: string
         }
@@ -373,15 +376,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_public_tile_points: {
-        Args: { p_join_code: string }
-        Returns: {
-          category_id: string
-          id: string
-          points: number
-          row_index: number
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

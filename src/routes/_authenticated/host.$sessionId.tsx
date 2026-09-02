@@ -460,12 +460,18 @@ function HostPage() {
           <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1">
             <span
               className={`h-2 w-2 shrink-0 rounded-full ${
-                players.length > 0 ? "bg-success-ink" : "bg-foreground/30"
+                connectedCount > 0 ? "bg-success-ink" : "bg-foreground/30"
               }`}
               aria-hidden
             />
-            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
-              {players.length > 0 ? `Live · ${players.length}` : "In lobby"}
+            <span
+              className={`whitespace-nowrap text-[11px] font-bold ${
+                connectedCount > 0 ? "text-success-ink" : "text-muted-foreground"
+              }`}
+            >
+              {connectedCount > 0
+                ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}`
+                : "In lobby"}
             </span>
             <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
             <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">

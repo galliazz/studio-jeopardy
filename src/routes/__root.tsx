@@ -170,6 +170,9 @@ function TopContextBar() {
   const path = location.pathname;
   // OBS browser-source overlays render with no chrome at all.
   if (path.startsWith("/obs/")) return null;
+  // Studio renders its own sticky app bar instead of this floating pill.
+  if (path === "/studio") return null;
+
   const label = screenLabel(path);
   // Host console and the editor relocate the Day/Night switch into their own top bars.
   const showThemeToggleHere = !path.startsWith("/host/") && !path.startsWith("/edit/");

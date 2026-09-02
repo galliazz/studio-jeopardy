@@ -808,7 +808,29 @@ function ScorePill({
     </div>
   );
 
-  return (
+  const step = 100;
+  const adjust = onAdjust && (
+    <div className={`flex shrink-0 items-center ${mirrored ? "flex-row" : "flex-row-reverse"}`}>
+      <button
+        onClick={() => onAdjust(-step)}
+        aria-label={`Subtract ${step} from ${name}`}
+        title={`-${step}`}
+        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+      >
+        <Minus className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => onAdjust(step)}
+        aria-label={`Add ${step} to ${name}`}
+        title={`+${step}`}
+        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+      >
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  );
+
+  const pill = (
     <motion.div
       layout
       transition={{ type: "spring", stiffness: 400, damping: 30 }}
@@ -829,7 +851,24 @@ function ScorePill({
       )}
     </motion.div>
   );
+
+  return (
+    <div className="flex items-center">
+      {mirrored ? (
+        <>
+          {adjust}
+          {pill}
+        </>
+      ) : (
+        <>
+          {pill}
+          {adjust}
+        </>
+      )}
+    </div>
+  );
 }
+
 
 
 /* ------------------------------- Join card -------------------------------- */

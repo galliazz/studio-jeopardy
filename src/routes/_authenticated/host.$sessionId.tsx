@@ -8,8 +8,6 @@ import {
   ArrowLeft,
   RotateCcw,
   Trash2,
-  Volume2,
-  Plus,
   Sparkles,
   BarChart3,
   Crown,
@@ -21,6 +19,7 @@ import {
   Radio,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Soundboard } from "@/components/Soundboard";
 import { QRCodeSVG } from "qrcode.react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
@@ -44,7 +43,7 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
-import { uploadMedia, useSignedUrl } from "@/lib/media";
+import { useSignedUrl } from "@/lib/media";
 import {
   themeOf,
   teamName,
@@ -221,7 +220,7 @@ function HostPage() {
           <div className="order-2 space-y-4 lg:order-1">
             <JoinCard joinCode={game.join_code} />
             <AnswerPreview tile={currentTile} phase={session.phase} />
-            <Soundboard game={game} />
+            <Soundboard gameId={game.id} hostId={game.host_id} />
             <ObsLinksPanel joinCode={game.join_code} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
               <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -618,95 +617,6 @@ function AnswerPreview({ tile, phase }: { tile: Tile | null; phase: Session["pha
         <p className="text-sm text-muted-foreground">Open a tile to see its answer here.</p>
       )}
     </div>
-  );
-}
-
-/* ------------------------------- Soundboard ------------------------------- */
-
-const SFX_BUTTONS = [
-  { key: "buzz", label: "Buzzer", play: () => sfx.buzz() },
-  { key: "ding", label: "Correct", play: () => sfx.ding() },
-  { key: "wrong", label: "Wrong answer", play: () => sfx.wrong() },
-  { key: "victory", label: "Victory", play: () => sfx.victory() },
-  { key: "sad", label: "Sad", play: () => sfx.sad() },
-  { key: "drumroll", label: "Drum roll", play: () => sfx.drumroll() },
-  { key: "funny", label: "Funny", play: () => sfx.funny() },
-  { key: "suspense", label: "Suspense", play: () => sfx.suspense() },
-  { key: "dd", label: "Daily Double", play: () => sfx.dailyDouble() },
-  { key: "alarm", label: "Time's Up", play: () => sfx.alarm() },
-  { key: "fanfare", label: "Fanfare", play: () => sfx.fanfare() },
-];
-
-function Soundboard({ game }: { game: Game }) {
-  const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark") as ReturnType<typeof themeOf>;
-  const fileRef = useRef<HTMLInputElement>(null);
-  const custom = theme.customSounds ?? [];
-
-  return (
-    <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-        <Volume2 className="h-3.5 w-3.5" /> Soundboard
-      </h3>
-      <div className="flex flex-wrap gap-2">
-        {SFX_BUTTONS.map((b) => (
-          <button
-            key={b.key}
-            onClick={b.play}
-            className="rounded-full bg-lilac px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105 active:scale-95"
-          >
-            {b.label}
-          </button>
-        ))}
-        {custom.map((c) => (
-          <CustomSound key={c.path} name={c.name} path={c.path} />
-        ))}
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-1 rounded-full border-2 border-dashed border-border px-4 py-2 text-xs font-bold text-muted-foreground hover:text-foreground"
-        >
-          <Plus className="h-3 w-3" /> Add
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="audio/*"
-          className="hidden"
-          onChange={async (e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (!f) return;
-            if (f.size > 10 * 1024 * 1024) {
-              toast.error("Audio capped at 10MB");
-              return;
-            }
-            try {
-              const path = await uploadMedia("game-media", game.host_id, game.id, f);
-              await updateGame({
-                data: { gameId: game.id, theme: { ...theme, customSounds: [...custom, { name: f.name.slice(0, 20), path }] } },
-              });
-              toast.success("Sound added");
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Upload failed");
-            }
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function CustomSound({ name, path }: { name: string; path: string }) {
-  const url = useSignedUrl("game-media", path);
-  return (
-    <button
-      onClick={() => {
-        if (url) void new Audio(url).play();
-      }}
-      className="max-w-28 truncate rounded-full bg-peach px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
-      title={name}
-    >
-      {name}
-    </button>
   );
 }
 

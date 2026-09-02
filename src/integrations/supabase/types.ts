@@ -324,6 +324,59 @@ export type Database = {
           },
         ]
       }
+      soundboard_clips: {
+        Row: {
+          created_at: string
+          gain: number
+          game_id: string
+          host_id: string
+          id: string
+          name: string
+          position: number
+          preset_key: string | null
+          source: string
+          storage_path: string | null
+          trim_end_ms: number
+          trim_start_ms: number
+        }
+        Insert: {
+          created_at?: string
+          gain?: number
+          game_id: string
+          host_id: string
+          id?: string
+          name?: string
+          position?: number
+          preset_key?: string | null
+          source?: string
+          storage_path?: string | null
+          trim_end_ms?: number
+          trim_start_ms?: number
+        }
+        Update: {
+          created_at?: string
+          gain?: number
+          game_id?: string
+          host_id?: string
+          id?: string
+          name?: string
+          position?: number
+          preset_key?: string | null
+          source?: string
+          storage_path?: string | null
+          trim_end_ms?: number
+          trim_start_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "soundboard_clips_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tiles: {
         Row: {
           answer: string

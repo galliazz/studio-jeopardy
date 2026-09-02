@@ -5,9 +5,13 @@
 
 import { useEffect, useState } from "react";
 
+export type GraphicsQuality = "high" | "medium" | "low";
+
 export interface StudioSettings {
-  /** 0 – 1 master multiplier for synthesized SFX. */
+  /** 0 – 1 sound-effects level. */
   volume: number;
+  /** 0 – 1 master output level, multiplied with `volume`. */
+  masterVolume: number;
   muted: boolean;
   /** Default countdown length offered to new games (seconds). */
   timerSeconds: number;
@@ -15,15 +19,25 @@ export interface StudioSettings {
   haptics: boolean;
   teamAlpha: string;
   teamBravo: string;
+  /** Presentation-only: disable non-essential animations. */
+  reduceMotion: boolean;
+  /** Presentation-only: blur / gradients / heavy animation budget. */
+  graphics: GraphicsQuality;
+  /** Presentation-only: ambient colored background blobs. */
+  backgroundEffects: boolean;
 }
 
 export const DEFAULT_SETTINGS: StudioSettings = {
   volume: 0.8,
+  masterVolume: 0.8,
   muted: false,
   timerSeconds: 15,
   haptics: true,
   teamAlpha: "Alpha",
   teamBravo: "Bravo",
+  reduceMotion: false,
+  graphics: "high",
+  backgroundEffects: true,
 };
 
 const KEY = "jd-studio-settings";

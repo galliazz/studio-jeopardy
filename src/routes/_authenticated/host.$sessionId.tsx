@@ -20,6 +20,7 @@ import {
   Minus,
   Plus,
   Keyboard,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Soundboard } from "@/components/Soundboard";
@@ -53,7 +54,7 @@ import {
   switchPlayerTeam,
   removePlayer,
 } from "@/lib/sessions.functions";
-import { updateGame, bootstrapStudio } from "@/lib/games.functions";
+import { updateGame, bootstrapStudio, regenerateOverlayToken } from "@/lib/games.functions";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
@@ -524,7 +525,7 @@ function HostPage() {
               }}
             />
             <Soundboard gameId={game.id} hostId={game.host_id} />
-            <ObsLinksPanel joinCode={game.join_code} />
+            <ObsLinksPanel gameId={game.id} overlayToken={game.overlay_token} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
               <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tools</h3>
               <div className="flex flex-col gap-2">
@@ -1122,8 +1123,7 @@ function ObsLinksPanel({ gameId, overlayToken }: { gameId: string; overlayToken:
           title="Regenerate overlay links?"
           body="The current links stop working immediately. Any OBS browser source still using them will go blank until you paste the new links."
           confirmLabel="Regenerate"
-          destructive
-          onCancel={() => setConfirmRotate(false)}
+          onClose={() => setConfirmRotate(false)}
           onConfirm={async () => {
             setConfirmRotate(false);
             await rotate({ data: { gameId } });

@@ -8,8 +8,6 @@ import {
   ArrowLeft,
   RotateCcw,
   Trash2,
-  Volume2,
-  Plus,
   Sparkles,
   BarChart3,
   Crown,
@@ -45,7 +43,7 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
-import { uploadMedia, useSignedUrl } from "@/lib/media";
+import { useSignedUrl } from "@/lib/media";
 import {
   themeOf,
   teamName,

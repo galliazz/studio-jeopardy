@@ -887,7 +887,7 @@ function ScorePill({
         onClick={() => onAdjust(-step)}
         aria-label={`Subtract ${step} from ${name}`}
         title={`-${step}`}
-        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Minus className="h-4 w-4" />
       </button>
@@ -895,7 +895,7 @@ function ScorePill({
         onClick={() => onAdjust(step)}
         aria-label={`Add ${step} to ${name}`}
         title={`+${step}`}
-        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -1387,7 +1387,7 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-xs font-bold transition-colors ${styles}`}
+      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${styles}`}
     >
       <Icon className="h-4 w-4" /> {label}
     </button>

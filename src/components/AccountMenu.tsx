@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Settings as SettingsIcon, LogOut, type LucideIcon } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { AccountAvatar, useAvatarValue } from "@/lib/avatar";
@@ -11,18 +11,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+export interface AccountMenuItem {
+  icon: LucideIcon;
+  label: string;
+  onSelect: () => void;
+  /** Extra classes, e.g. responsive visibility. */
+  className?: string;
+}
+
 /**
  * Shared account avatar + dropdown used by every app bar (Studio, Host).
- * Emphasis: text-only menu items, no filled surfaces.
+ * Emphasis: text-only menu items, no filled surfaces. Pages may inject their
+ * own rows above Settings and one destructive row at the very bottom.
  */
 export function AccountMenu({
   displayName,
   avatarUrl,
   onOpenSettings,
+  items,
+  dangerItem,
 }: {
   displayName: string;
   avatarUrl?: string | null | undefined;
   onOpenSettings: () => void;
+  items?: AccountMenuItem[];
+  dangerItem?: AccountMenuItem | undefined;
 }) {
   const [email, setEmail] = useState("");
 
@@ -38,6 +51,7 @@ export function AccountMenu({
 
   const initial = (displayName.trim()[0] ?? "?").toUpperCase();
   const avatarValue = useAvatarValue(avatarUrl ?? null);
+  const rowClass = "rounded-full px-3 py-2.5 text-sm font-semibold";
 
   return (
     <DropdownMenu>
@@ -55,18 +69,47 @@ export function AccountMenu({
           <p className="truncate text-xs text-muted-foreground">{email || "Signed in"}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="rounded-full px-3 py-2.5 text-sm font-semibold" onSelect={onOpenSettings}>
+        {items && items.length > 0 && (
+          <>
+            {items.map((it) => {
+              const Icon = it.icon;
+              return (
+                <DropdownMenuItem
+                  key={it.label}
+                  className={`${rowClass} ${it.className ?? ""}`}
+                  onSelect={it.onSelect}
+                >
+                  <Icon className="mr-2 h-4 w-4" /> {it.label}
+                </DropdownMenuItem>
+              );
+            })}
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <DropdownMenuItem className={rowClass} onSelect={onOpenSettings}>
           <SettingsIcon className="mr-2 h-4 w-4" /> Settings
         </DropdownMenuItem>
         <DropdownMenuItem
-          className="rounded-full px-3 py-2.5 text-sm font-semibold"
+          className={rowClass}
           onSelect={() => {
             void supabase.auth.signOut().then(() => (window.location.href = "/auth"));
           }}
         >
           <LogOut className="mr-2 h-4 w-4" /> Sign out
         </DropdownMenuItem>
+        {dangerItem && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className={`${rowClass} text-danger-ink focus:text-danger-ink`}
+              onSelect={dangerItem.onSelect}
+            >
+              <dangerItem.icon className="mr-2 h-4 w-4" /> {dangerItem.label}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
+

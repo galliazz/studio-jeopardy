@@ -37,6 +37,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
 import {
   getHostState,
   openTile,
@@ -399,6 +401,10 @@ function HostPage() {
   const played = usedSet.size;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
   const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
+  /** The board's distinct point values, used as quick picks in the custom-score popover. */
+  const pointValues = Array.from(new Set(tiles.map((t) => t.points))).sort((a, b) => a - b);
+
+
 
   const bumpScore = (team: Team, delta: number) => {
     setHostSession(
@@ -431,87 +437,58 @@ function HostPage() {
             <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
           </button>
 
-          {/* Title block: one truncating line, then chips that never wrap. */}
-          <div className="min-w-[220px] max-w-[420px] flex-1">
+          {/* Title block: one truncating line, then the join-code chip. */}
+          <div className="min-w-[200px] max-w-[360px] flex-1">
             <h1 className="truncate font-display text-lg font-semibold leading-tight" title={game.title}>
               {game.title}
             </h1>
-            <div className="mt-0.5 flex flex-nowrap items-center gap-2 overflow-hidden">
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(game.join_code);
-                  toast.success("Join code copied");
-                }}
-                title="Copy join code"
-                aria-label={`Copy join code ${game.join_code}`}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/20 px-2.5 py-0.5 text-[11px] font-bold transition-colors hover:bg-foreground/5"
-              >
-                <span className="font-mono">{game.join_code}</span>
-                <Copy className="h-3 w-3 opacity-70" />
-              </button>
-              <span
-                className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                  players.length > 0
-                    ? "border-success-ink/40 text-success-ink"
-                    : "border-foreground/20 text-muted-foreground"
-                }`}
-              >
-                {players.length > 0 ? `Live · ${players.length}` : "In lobby"} · {tiles.length - played} left
-              </span>
-            </div>
+            <button
+              onClick={() => {
+                void navigator.clipboard.writeText(game.join_code);
+                toast.success("Join code copied");
+              }}
+              title="Copy join code"
+              aria-label={`Copy join code ${game.join_code}`}
+              className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/20 px-2.5 py-0.5 text-[11px] font-bold transition-colors hover:bg-foreground/5"
+            >
+              <span className="font-mono">{game.join_code}</span>
+              <Copy className="h-3 w-3 opacity-70" />
+            </button>
           </div>
 
+          {/* Status group: connection state and remaining tiles, kept together. */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                players.length > 0 ? "bg-success-ink" : "bg-foreground/30"
+              }`}
+              aria-hidden
+            />
+            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
+              {players.length > 0 ? `Live · ${players.length}` : "In lobby"}
+            </span>
+            <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
+            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
+              {tiles.length - played}/{tiles.length} left
+            </span>
+          </div>
 
-
-
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <button
-              onClick={() => setPanelOpen((v) => !v)}
-              aria-label="Toggle live control panel"
-              title="Live control panel"
-              aria-pressed={panelOpen}
-              className="flex h-12 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5 min-[1200px]:hidden"
-            >
-              <PanelRight className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => setShortcutsOpen(true)}
-              aria-label="Keyboard shortcuts"
-              title="Keyboard shortcuts (?)"
-              className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
-            >
-              <Keyboard className="h-5 w-5" />
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-
-                <button
-                  aria-label="Session options"
-                  className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-[24px] p-2">
-                <DropdownMenuItem
-                  className="rounded-full px-3 py-2.5 text-sm font-semibold"
-                  onSelect={() => setDdOpen(true)}
-                >
-                  Daily Double tiles
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="rounded-full px-3 py-2.5 text-sm font-semibold text-danger-ink"
-                  onSelect={() => setConfirm("reset")}
-                >
-                  Reset board
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="ml-auto flex shrink-0 items-center">
             <AccountMenu
               displayName={profile?.username ?? "Host"}
               avatarUrl={profile?.avatar_url ?? null}
               onOpenSettings={() => setSettingsOpen(true)}
+              items={[
+                { icon: Keyboard, label: "Keyboard shortcuts", onSelect: () => setShortcutsOpen(true) },
+                { icon: Sparkles, label: "Daily Double tiles", onSelect: () => setDdOpen(true) },
+                {
+                  icon: PanelRight,
+                  label: "Live control panel",
+                  onSelect: () => setPanelOpen((v) => !v),
+                  className: "min-[1200px]:hidden",
+                },
+              ]}
+              dangerItem={{ icon: RotateCcw, label: "Reset board", onSelect: () => setConfirm("reset") }}
             />
           </div>
         </div>
@@ -532,7 +509,10 @@ function HostPage() {
                   name={teamName(theme, "alpha")}
                   score={session.score_alpha}
                   players={players}
+                  step={currentTile ? (session.dd_wager ?? currentTile.points) : 100}
+                  quickValues={pointValues}
                   onAdjust={(d) => bumpScore("alpha", d)}
+                  onSet={(v) => bumpScore("alpha", v - session.score_alpha)}
                 />
               </div>
               <div className="w-4 shrink-0" aria-hidden />
@@ -543,7 +523,10 @@ function HostPage() {
                   name={teamName(theme, "bravo")}
                   score={session.score_bravo}
                   players={players}
+                  step={currentTile ? (session.dd_wager ?? currentTile.points) : 100}
+                  quickValues={pointValues}
                   onAdjust={(d) => bumpScore("bravo", d)}
+                  onSet={(v) => bumpScore("bravo", v - session.score_bravo)}
                 />
               </div>
             </div>
@@ -551,6 +534,7 @@ function HostPage() {
           </div>
         </div>
       </header>
+
 
 
       {/* Body fills the remaining viewport: only the side columns scroll. */}
@@ -579,8 +563,8 @@ function HostPage() {
             <ObsLinksPanel gameId={game.id} overlayToken={game.overlay_token} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
               <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Tools</h3>
-              <div className="flex flex-col gap-2">
-                <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
+              <div className="grid grid-cols-2 gap-2">
+                <ToolButton icon={Sparkles} label="Daily Double" onClick={() => setDdOpen(true)} />
                 <ToolButton
                   icon={BarChart3}
                   label="Analytics"
@@ -588,14 +572,14 @@ function HostPage() {
                   onClick={() => setAnalyticsOpen(true)}
                 />
                 <ToolButton icon={Flag} label="Final Jeopardy" variant="outlined" onClick={() => setFinalOpen(true)} />
-                <div className="my-1 border-t border-foreground/10" />
                 <ToolButton
                   icon={Crown}
-                  label="End game & podium"
+                  label="End game"
                   variant="error"
                   onClick={() => setConfirm("end")}
                 />
               </div>
+
             </div>
           </div>
 
@@ -692,24 +676,27 @@ function HostPage() {
            * a togglable slide-over below that width.
            */}
           <div
-            className={`order-3 min-h-0 space-y-6 overflow-y-auto pr-1 min-[1200px]:block ${
+            className={`order-3 min-h-0 flex-col gap-6 overflow-y-auto min-[1200px]:flex ${
               panelOpen
-                ? "fixed inset-y-0 right-0 z-40 w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
+                ? "fixed inset-y-0 right-0 z-40 flex w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
                 : "hidden"
             }`}
           >
-            <LiveControlPanel
-              session={session}
-              tile={currentTile}
-              category={currentCategory}
-              players={players}
-              queue={queue}
-              actions={actions}
-            />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <LiveControlPanel
+                session={session}
+                tile={currentTile}
+                category={currentCategory}
+                players={players}
+                queue={queue}
+                actions={actions}
+              />
+            </div>
             {session.status === "final" && (
               <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
             )}
           </div>
+
         </div>
       </div>
 
@@ -819,20 +806,168 @@ function TeamCountBadge({ team, count }: { team: Team; count: number }) {
   );
 }
 
+/** Compact minus / custom / plus cluster attached to the outer side of a chip. */
+function ScoreControls({
+  name,
+  step,
+  quickValues,
+  mirrored,
+  onAdjust,
+}: {
+  name: string;
+  step: number;
+  quickValues: number[];
+  mirrored: boolean;
+  onAdjust: (delta: number) => void;
+}) {
+  const [custom, setCustom] = useState("");
+  const btn =
+    "flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  const amount = Number(custom) || 0;
+
+  return (
+    <div
+      className={`flex shrink-0 items-center gap-0.5 rounded-full border border-foreground/15 p-1 ${
+        mirrored ? "mr-2 flex-row" : "ml-2 flex-row-reverse"
+      }`}
+    >
+      <button onClick={() => onAdjust(-step)} aria-label={`Subtract ${step} from ${name}`} title={`−${step}`} className={btn}>
+        <Minus className="h-4 w-4" />
+      </button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button aria-label={`Custom score change for ${name}`} title="Custom amount" className={btn}>
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="center" className="w-64 rounded-[24px] p-4">
+          <p className="mb-2 text-sm font-semibold text-muted-foreground">Custom amount</p>
+          <input
+            type="number"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder="0"
+            aria-label="Custom amount"
+            className="h-11 w-full rounded-full border border-foreground/20 bg-transparent px-4 text-sm font-bold outline-none focus-visible:ring-2 focus-visible:ring-ink-accent"
+          />
+          {quickValues.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {quickValues.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setCustom(String(v))}
+                  className="min-h-9 rounded-full border border-foreground/20 px-3 text-xs font-bold transition-colors hover:bg-foreground/5"
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              disabled={!amount}
+              onClick={() => {
+                onAdjust(Math.abs(amount));
+                setCustom("");
+              }}
+              className="min-h-11 rounded-full bg-success px-3 text-sm font-black text-success-ink disabled:opacity-40"
+            >
+              Add
+            </button>
+            <button
+              disabled={!amount}
+              onClick={() => {
+                onAdjust(-Math.abs(amount));
+                setCustom("");
+              }}
+              className="min-h-11 rounded-full bg-danger px-3 text-sm font-black text-danger-ink disabled:opacity-40"
+            >
+              Subtract
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
+      <button onClick={() => onAdjust(step)} aria-label={`Add ${step} to ${name}`} title={`+${step}`} className={btn}>
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+/** The score value, editable in place on double click without shifting layout. */
+function EditableScore({ score, name, onSet }: { score: number; name: string; onSet?: ((value: number) => void) | undefined }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(score));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  const commit = () => {
+    const next = Number(draft);
+    if (Number.isFinite(next) && next !== score) onSet?.(next);
+    setEditing(false);
+  };
+
+  const shared = "min-w-[4.5ch] font-display text-base font-black leading-none";
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        value={draft}
+        aria-label={`${name} score`}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") setEditing(false);
+        }}
+        className={`${shared} w-[4.5ch] appearance-none border-0 bg-transparent p-0 text-inherit outline-none`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${shared} cursor-text`}
+      title="Double-click to edit"
+      onDoubleClick={() => {
+        if (!onSet) return;
+        setDraft(String(score));
+        setEditing(true);
+      }}
+    >
+      <CountUpScore value={score} />
+    </div>
+  );
+}
+
 function ScorePill({
   team,
   side,
   name,
   score,
   players,
+  step,
+  quickValues,
   onAdjust,
+  onSet,
 }: {
   team: Team;
   side: "left" | "right";
   name: string;
   score: number;
   players: Player[];
+  step: number;
+  quickValues: number[];
   onAdjust?: ((delta: number) => void) | undefined;
+  onSet?: ((value: number) => void) | undefined;
 }) {
 
   const members = players.filter((p) => p.team === team);
@@ -874,32 +1009,12 @@ function ScorePill({
   const text = (
     <div className={`text-foreground ${mirrored ? "text-right" : "text-left"}`}>
       <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">{name}</div>
-      <div className="min-w-[4.5ch] font-display text-base font-black leading-none">
-        <CountUpScore value={score} />
-      </div>
+      <EditableScore score={score} name={name} onSet={onSet} />
     </div>
   );
 
-  const step = 100;
   const adjust = onAdjust && (
-    <div className={`flex shrink-0 items-center ${mirrored ? "flex-row" : "flex-row-reverse"}`}>
-      <button
-        onClick={() => onAdjust(-step)}
-        aria-label={`Subtract ${step} from ${name}`}
-        title={`-${step}`}
-        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <Minus className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => onAdjust(step)}
-        aria-label={`Add ${step} to ${name}`}
-        title={`+${step}`}
-        className="flex h-12 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <Plus className="h-4 w-4" />
-      </button>
-    </div>
+    <ScoreControls name={name} step={step} quickValues={quickValues} mirrored={mirrored} onAdjust={onAdjust} />
   );
 
   const pill = (
@@ -940,6 +1055,7 @@ function ScorePill({
     </div>
   );
 }
+
 
 
 
@@ -990,22 +1106,23 @@ function JoinCard({ joinCode, playerCount }: { joinCode: string; playerCount: nu
           sfx.pop();
           setManual(false);
         }}
-        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-sm font-semibold text-muted-foreground"
+        className="flex min-h-12 w-full items-center gap-2 px-5 text-sm font-semibold text-muted-foreground"
         aria-expanded
       >
         {/* A small dot carries the "accepting players" state instead of a filled card. */}
         <span className="h-2 w-2 shrink-0 rounded-full bg-success-ink" aria-hidden />
-        Players join anytime
-        <ChevronDown className="h-4 w-4 rotate-180" />
+        Join
+        <ChevronDown className="ml-auto h-4 w-4 rotate-180" />
       </button>
       <div className="px-5 pb-5">
-        <div className="mx-auto mb-3 w-fit rounded-[22px] border border-foreground/10 p-2 text-foreground">
+        <div className="mx-auto mb-3 w-fit rounded-[18px] border border-foreground/10 p-2 text-foreground">
           {joinUrl ? (
-            <QRCodeSVG value={joinUrl} size={104} bgColor="transparent" fgColor="currentColor" />
+            <QRCodeSVG value={joinUrl} size={80} bgColor="transparent" fgColor="currentColor" />
           ) : (
-            <div className="h-[104px] w-[104px]" />
+            <div className="h-20 w-20" />
           )}
         </div>
+
 
         <button
           onClick={() => copy(joinCode, "Join code copied")}
@@ -1038,12 +1155,16 @@ function PlayerRoster({
 }) {
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
-        Players · {players.length}
-      </h3>
+      <h3 className="text-sm font-semibold text-muted-foreground">Players</h3>
       {players.length === 0 ? (
         <p className="py-3 text-center text-sm text-muted-foreground">Nobody has joined yet.</p>
       ) : (
+        <p className="mb-2 mt-0.5 text-sm text-foreground">
+          {players.length} {players.length === 1 ? "player" : "players"} connected
+        </p>
+      )}
+      {players.length > 0 && (
+
         <ul className="space-y-1">
           {players.map((p) => {
             const connected = !p.locked_out;
@@ -1248,7 +1369,7 @@ function LiveControlPanel({
   const phase = session.phase;
 
   return (
-    <div className="rounded-[32px] bg-card p-5 elev-2">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (
@@ -1259,7 +1380,7 @@ function LiveControlPanel({
       </div>
 
       {!tile || phase === "idle" ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
+        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
       ) : phase === "reveal" ? (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-foreground/15 p-4">
@@ -1387,12 +1508,14 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${styles}`}
+      className={`flex aspect-square min-h-12 flex-col items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${styles}`}
     >
-      <Icon className="h-4 w-4" /> {label}
+      <Icon className="h-5 w-5" />
+      <span className="leading-tight">{label}</span>
     </button>
   );
 }
+
 
 
 /* ---------------------------- Question overlay ---------------------------- */

@@ -3,9 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Clock, Ban, Trophy, Hourglass } from "lucide-react";
+import { Zap, Clock, Ban, Trophy, Hourglass, Loader2, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
 import { lookupSession, joinGame, getPlayerState, buzz, submitFinalAnswer } from "@/lib/play.functions";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
@@ -128,7 +129,18 @@ function PlayerLobby({
       />
     );
   }
-  return <LivePlayer sessionId={session.id} identity={identity} gameTitle={gameTitle} theme={theme} />;
+  return (
+    <LivePlayer
+      sessionId={session.id}
+      identity={identity}
+      gameTitle={gameTitle}
+      theme={theme}
+      onChangeIdentity={() => {
+        localStorage.removeItem(storageKey);
+        setIdentity(null);
+      }}
+    />
+  );
 }
 
 /* -------------------------------- Join form ------------------------------- */
@@ -318,11 +330,13 @@ function LivePlayer({
   identity,
   gameTitle,
   theme,
+  onChangeIdentity,
 }: {
   sessionId: string;
   identity: StoredIdentity;
   gameTitle: string;
   theme: ThemeSettings;
+  onChangeIdentity: () => void;
 }) {
   const queryClient = useQueryClient();
   const fetchState = useServerFn(getPlayerState);
@@ -442,9 +456,41 @@ function LivePlayer({
 
         <AnimatePresence mode="wait">
           {status === "lobby" && (
-            <StatusCard key="lobby" icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="You're in!">
-              Waiting for the host to open the board…
-            </StatusCard>
+            <motion.div
+              key="lobby"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="flex w-full flex-col items-center rounded-[36px] bg-card px-6 py-9 text-center elev-2"
+            >
+              <Hourglass className="h-10 w-10 text-ink-gold" />
+              <h2 className="mt-3 font-display text-xl font-black">You're in</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Waiting for the host to open the board…</p>
+
+              <div className="mt-6 flex w-full items-center gap-3 rounded-[28px] bg-muted p-3 text-left">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background text-2xl">
+                  {identity.avatar}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-bold text-foreground">{identity.name}</p>
+                  <span
+                    className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-foreground ${
+                      myTeam === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
+                    }`}
+                  >
+                    {teamName(theme, myTeam)}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onChangeIdentity}
+                className="mt-3 min-h-12 w-full rounded-full border-2 border-border px-4 text-sm font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Change name, avatar or team
+              </button>
+            </motion.div>
           )}
 
           {status === "live" && phase === "idle" && (
@@ -659,9 +705,23 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
-    <div className="relative flex min-h-[100svh] items-center justify-center px-4 pb-8 pt-16 text-foreground">
-      <div className="w-full max-w-md lg:max-w-xl">{children}</div>
+    // Centred when there is room, scrollable (never clipped) when there is not,
+    // so a short landscape viewport or an open keyboard keeps the button reachable.
+    <div className="relative min-h-[100svh] overflow-y-auto text-foreground">
+      <button
+        type="button"
+        onClick={() => setSettingsOpen(true)}
+        aria-label="Settings"
+        className="fixed right-3 top-3 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground elev-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <SettingsIcon className="h-5 w-5" />
+      </button>
+      <div className="flex min-h-[100svh] items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-20">
+        <div className="w-full max-w-md lg:max-w-xl">{children}</div>
+      </div>
+      {settingsOpen && <SettingsDialog variant="guest" onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

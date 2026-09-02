@@ -3,9 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Clock, Ban, Trophy, Hourglass } from "lucide-react";
+import { Zap, Clock, Ban, Trophy, Hourglass, Loader2, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
 import { lookupSession, joinGame, getPlayerState, buzz, submitFinalAnswer } from "@/lib/play.functions";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
@@ -128,10 +129,24 @@ function PlayerLobby({
       />
     );
   }
-  return <LivePlayer sessionId={session.id} identity={identity} gameTitle={gameTitle} theme={theme} />;
+  return (
+    <LivePlayer
+      sessionId={session.id}
+      identity={identity}
+      gameTitle={gameTitle}
+      theme={theme}
+      onChangeIdentity={() => {
+        localStorage.removeItem(storageKey);
+        setIdentity(null);
+      }}
+    />
+  );
 }
 
 /* -------------------------------- Join form ------------------------------- */
+
+const NAME_MIN = 2;
+const NAME_MAX = 25;
 
 function JoinForm({
   code,
@@ -145,17 +160,35 @@ function JoinForm({
   onJoined: (id: StoredIdentity) => void;
 }) {
   const [name, setName] = useState("");
-  const [avatar, setAvatar] = useState(PLAYER_AVATARS[0]!);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [team, setTeam] = useState<Team>("alpha");
   const [busy, setBusy] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  const trimmed = name.trim();
+  const nameOk = trimmed.length >= NAME_MIN && trimmed.length <= NAME_MAX;
+  const canJoin = nameOk && !!avatar && !busy;
 
   const join = async () => {
-    if (!name.trim() || busy) return;
+    if (!avatar || busy) return;
+    if (!nameOk) {
+      setNameError(`Use ${NAME_MIN} to ${NAME_MAX} characters`);
+      return;
+    }
+    setNameError(null);
+    setJoinError(null);
     setBusy(true);
     try {
-      const res = await joinGame({ data: { code, name: name.trim(), avatar, team } });
+      const res = await joinGame({ data: { code, name: trimmed, avatar, team } });
       if ("error" in res) {
-        toast.error(res.error === "not_started" ? "The host hasn't started yet" : "Could not join");
+        setJoinError(
+          res.error === "not_started"
+            ? "This game isn't accepting players right now."
+            : res.error === "not_found"
+              ? "That game has finished or no longer exists."
+              : "The game is full or closed — ask the host.",
+        );
         return;
       }
       vibrate(30);
@@ -167,7 +200,7 @@ function JoinForm({
         team: res.player.team as Team,
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not join");
+      setJoinError(err instanceof Error ? err.message : "Could not join — try again.");
     } finally {
       setBusy(false);
     }
@@ -181,22 +214,57 @@ function JoinForm({
         transition={{ type: "spring", stiffness: 160, damping: 20 }}
         className="w-full"
       >
-        <p className="mb-1 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Guest Player Setup
-        </p>
         <h1 className="mb-1 text-center font-display text-2xl font-black">{gameTitle}</h1>
-        <p className="mb-6 text-center text-xs text-muted-foreground">
-          No account needed — just pick a name, avatar and team.
+        <p className="mb-6 text-center text-sm text-muted-foreground">
+          No account needed — pick a name, avatar and team.
         </p>
 
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">Pick your avatar</p>
-        <div className="mb-4 grid grid-cols-8 gap-1.5">
+        {/* Name */}
+        <div className="mb-5">
+          <label htmlFor="player-name" className="mb-1.5 block text-sm font-semibold text-muted-foreground">
+            Your name
+          </label>
+          <input
+            id="player-name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (nameError) setNameError(null);
+            }}
+            onBlur={() => {
+              const v = name.trim();
+              setNameError(v && !nameOk ? `Use ${NAME_MIN} to ${NAME_MAX} characters` : null);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && void join()}
+            maxLength={NAME_MAX}
+            autoComplete="off"
+            aria-invalid={!!nameError}
+            className={`h-14 w-full rounded-2xl border bg-background px-4 text-base font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${
+              nameError ? "border-destructive" : "border-border"
+            }`}
+          />
+          <div className="mt-1 flex min-h-4 items-center justify-between gap-3">
+            <span className="text-xs text-destructive">{nameError}</span>
+            {name.length > 20 && (
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {name.length}/{NAME_MAX}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Avatar */}
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">Your avatar</p>
+        <div className="mb-5 grid grid-cols-6 gap-2 sm:grid-cols-8">
           {PLAYER_AVATARS.map((a) => (
             <button
               key={a}
+              type="button"
+              aria-label={`Avatar ${a}`}
+              aria-pressed={avatar === a}
               onClick={() => setAvatar(a)}
-              className={`flex aspect-square items-center justify-center text-xl transition-all scallop ${
-                avatar === a ? "scale-110 bg-butter" : "bg-muted"
+              className={`flex aspect-square min-h-12 min-w-12 items-center justify-center rounded-full bg-muted text-2xl outline-none transition-transform active:scale-95 ${
+                avatar === a ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : ""
               }`}
             >
               {a}
@@ -204,42 +272,50 @@ function JoinForm({
           ))}
         </div>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void join()}
-          placeholder="Your name"
-          maxLength={20}
-          className="mb-4 h-14 w-full rounded-full bg-muted px-5 text-center text-lg font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
-        />
-
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">Choose your team</p>
-        <div className="mb-6 grid grid-cols-2 gap-2">
-          {(["alpha", "bravo"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTeam(t)}
-              className={`rounded-full py-4 font-display text-sm font-black uppercase tracking-wider text-foreground transition-all ${
-                t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
-              } ${team === t ? "elev-2 ring-4 ring-ink-accent" : "opacity-50"}`}
-            >
-              {teamName(theme, t)}
-            </button>
-          ))}
+        {/* Team */}
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">Your team</p>
+        <div className="mb-6 grid grid-cols-2 gap-3">
+          {(["alpha", "bravo"] as const).map((t) => {
+            const selected = team === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setTeam(t)}
+                className={`min-h-12 rounded-full px-3 py-3 font-display text-sm font-black uppercase tracking-wider outline-none transition-colors ${
+                  selected
+                    ? `text-foreground elev-2 ${t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`
+                    : "border-2 border-border bg-transparent text-muted-foreground"
+                }`}
+              >
+                {teamName(theme, t)}
+              </button>
+            );
+          })}
         </div>
 
+        {joinError && (
+          <p role="alert" className="mb-3 text-center text-sm font-semibold text-destructive">
+            {joinError}
+          </p>
+        )}
+
+        {/* Primary action, kept in thumb reach at the bottom of the content block */}
         <motion.button
-          whileTap={{ scale: 0.96 }}
-          disabled={!name.trim() || busy}
+          whileTap={{ scale: canJoin ? 0.96 : 1 }}
+          disabled={!canJoin}
           onClick={() => void join()}
-          className="h-14 w-full rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
+          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
         >
-          {busy ? "Joining…" : "Join Game"}
+          {busy && <Loader2 className="h-5 w-5 animate-spin" />}
+          {busy ? "Joining…" : "Join game"}
         </motion.button>
       </motion.div>
     </Shell>
   );
 }
+
 
 /* ------------------------------- Live player ------------------------------ */
 
@@ -254,11 +330,13 @@ function LivePlayer({
   identity,
   gameTitle,
   theme,
+  onChangeIdentity,
 }: {
   sessionId: string;
   identity: StoredIdentity;
   gameTitle: string;
   theme: ThemeSettings;
+  onChangeIdentity: () => void;
 }) {
   const queryClient = useQueryClient();
   const fetchState = useServerFn(getPlayerState);
@@ -378,9 +456,41 @@ function LivePlayer({
 
         <AnimatePresence mode="wait">
           {status === "lobby" && (
-            <StatusCard key="lobby" icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="You're in!">
-              Waiting for the host to open the board…
-            </StatusCard>
+            <motion.div
+              key="lobby"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="flex w-full flex-col items-center rounded-[36px] bg-card px-6 py-9 text-center elev-2"
+            >
+              <Hourglass className="h-10 w-10 text-ink-gold" />
+              <h2 className="mt-3 font-display text-xl font-black">You're in</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Waiting for the host to open the board…</p>
+
+              <div className="mt-6 flex w-full items-center gap-3 rounded-[28px] bg-muted p-3 text-left">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background text-2xl">
+                  {identity.avatar}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-bold text-foreground">{identity.name}</p>
+                  <span
+                    className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-foreground ${
+                      myTeam === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
+                    }`}
+                  >
+                    {teamName(theme, myTeam)}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onChangeIdentity}
+                className="mt-3 min-h-12 w-full rounded-full border-2 border-border px-4 text-sm font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Change name, avatar or team
+              </button>
+            </motion.div>
           )}
 
           {status === "live" && phase === "idle" && (
@@ -595,9 +705,23 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
-    <div className="relative flex min-h-[100svh] items-center justify-center px-4 pb-8 pt-16 text-foreground">
-      <div className="w-full max-w-md lg:max-w-xl">{children}</div>
+    // Centred when there is room, scrollable (never clipped) when there is not,
+    // so a short landscape viewport or an open keyboard keeps the button reachable.
+    <div className="relative min-h-[100svh] overflow-y-auto text-foreground">
+      <button
+        type="button"
+        onClick={() => setSettingsOpen(true)}
+        aria-label="Settings"
+        className="fixed right-3 top-3 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground elev-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <SettingsIcon className="h-5 w-5" />
+      </button>
+      <div className="flex min-h-[100svh] items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-20">
+        <div className="w-full max-w-md lg:max-w-xl">{children}</div>
+      </div>
+      {settingsOpen && <SettingsDialog variant="guest" onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

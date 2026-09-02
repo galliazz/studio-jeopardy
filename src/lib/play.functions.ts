@@ -55,7 +55,7 @@ export const joinGame = createServerFn({ method: "POST" })
     z
       .object({
         code: z.string().trim().min(4).max(10),
-        name: z.string().trim().min(1).max(20),
+        name: z.string().trim().min(2).max(25),
         avatar: z.string().min(1).max(8),
         team: z.enum(["alpha", "bravo"]),
       })

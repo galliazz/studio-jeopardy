@@ -187,71 +187,82 @@ function StudioPage() {
     }
   };
 
+  const displayName = data?.profile?.username ?? "there";
+  const boardCount = (data?.games ?? []).length;
+
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-x-hidden">
       <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl" />
 
-      <div className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-10 sm:px-8">
-        {/* Greeting banner — click opens the shared Settings panel (Account, Preferences, General) */}
-        <button
-          onClick={() => {
-            sfx.pop();
-            setSettingsOpen(true);
-          }}
-          className="mb-8 flex w-full flex-wrap items-center gap-4 rounded-[36px] bg-blush p-6 text-left elev-1 transition-transform hover:scale-[1.005] sm:p-8"
-        >
-          <div className="flex h-14 w-14 items-center justify-center bg-butter scallop">
-            <Zap className="h-7 w-7 text-ink-gold" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Welcome, <span className="font-semibold text-foreground">{data?.profile?.username ?? "…"}</span>
-            </p>
-            <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">Your Jeopardy Studio</h1>
-          </div>
-        </button>
+      <StudioTopBar
+        displayName={data?.profile?.username ?? "Host"}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      <div className="relative z-10 mx-auto max-w-[1440px] px-4 pb-24 pt-8 sm:px-6">
+        {/* Page header — plain text, no card */}
+        <header className="mb-8">
+          <h2 className="font-display text-[28px] font-black leading-9 tracking-tight text-foreground sm:text-[32px]">
+            Welcome back, {displayName}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {isLoading ? "Loading boards…" : `${boardCount} board${boardCount === 1 ? "" : "s"}`}
+          </p>
+        </header>
 
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
 
-        {/* Action row */}
-        <div className="mb-8 flex flex-wrap items-center gap-3">
-          {/* Search expands with an overshooting spring when focused */}
-          <motion.div
-            layout
-            animate={{ flexGrow: searchOpen || search ? 1 : 0, width: searchOpen || search ? "auto" : 56 }}
-            transition={{ type: "spring", stiffness: 380, damping: 18 }}
-            className="flex min-w-9 items-center gap-2 overflow-hidden rounded-full bg-lilac/50 px-2 elev-1"
-          >
-            <button
-              aria-label="Search boards"
-              onClick={() => setSearchOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lilac"
-            >
-              <Search className="h-4 w-4 text-foreground" />
-            </button>
-            <input
-              value={search}
-              onFocus={() => setSearchOpen(true)}
-              onBlur={() => setSearchOpen(false)}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search boards…"
-              className="h-14 w-full min-w-0 bg-transparent pr-3 text-sm outline-none placeholder:text-muted-foreground/60"
-            />
-          </motion.div>
+        {/* Action row: primary CTA, secondary action, spacer, low-emphasis search */}
+        <div className="relative mb-8 flex items-center gap-3">
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setCreating(true)}
-            className="flex items-center gap-2 rounded-full bg-coral px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
+            className="flex h-12 items-center gap-2 rounded-full bg-coral px-7 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
           >
             <Plus className="h-5 w-5" /> Create a new game
           </motion.button>
           <button
             onClick={() => importRef.current?.click()}
-            className="flex items-center gap-2 rounded-full bg-lilac px-6 py-4 text-sm font-bold text-foreground elev-1 transition-transform hover:scale-105"
+            className="flex h-12 items-center gap-2 rounded-full border-2 border-foreground/20 bg-transparent px-6 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
           >
             <Upload className="h-4 w-4" /> Import JSON
           </button>
+          <div className="flex-1" />
+          {/* Search grows leftward over the buttons, keeping the spring feel */}
+          <motion.div
+            layout
+            animate={{ width: searchOpen || search ? 320 : 40 }}
+            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            className={`relative z-10 flex h-10 max-w-[calc(100vw-3rem)] shrink-0 items-center overflow-hidden rounded-full ${
+              searchOpen || search ? "bg-card elev-1" : ""
+            }`}
+          >
+            <button
+              aria-label="Search boards"
+              onClick={() => setSearchOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/5"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+            <input
+              value={search}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => {
+                if (!search.trim()) setSearchOpen(false);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setSearch("");
+                  setSearchOpen(false);
+                  (e.target as HTMLInputElement).blur();
+                }
+              }}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search boards…"
+              className="h-10 w-full min-w-0 bg-transparent pr-4 text-sm outline-none placeholder:text-muted-foreground/60"
+            />
+          </motion.div>
           <input
             ref={importRef}
             type="file"
@@ -264,6 +275,7 @@ function StudioPage() {
             }}
           />
         </div>
+
 
 
         {/* Create dialog (inline card) */}

@@ -1,13 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
   ArrowLeft,
   RotateCcw,
-  Trash2,
   Sparkles,
   BarChart3,
   Crown,
@@ -17,16 +16,28 @@ import {
   ChevronDown,
   Copy,
   Radio,
+  MoreHorizontal,
+  Minus,
+  Plus,
+  Keyboard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Soundboard } from "@/components/Soundboard";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { AccountMenu } from "@/components/AccountMenu";
 import { QRCodeSVG } from "qrcode.react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   getHostState,
   openTile,
   closeTile,
-  clearQueue,
   resetBoard,
   judgeAnswer,
   revealAnswer,
@@ -36,8 +47,13 @@ import {
   beginFinalAnswers,
   judgeFinal,
   finishSession,
+  adjustScore,
+  passToNext,
+  restartTimer,
+  switchPlayerTeam,
+  removePlayer,
 } from "@/lib/sessions.functions";
-import { updateGame } from "@/lib/games.functions";
+import { updateGame, bootstrapStudio } from "@/lib/games.functions";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
@@ -58,7 +74,7 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
-import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
+import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
@@ -84,8 +100,131 @@ interface HostState {
   finalAnswers: FinalAnswer[];
 }
 
+export interface HostActions {
+  reveal: () => void;
+  judgeCorrect: () => void;
+  judgeWrong: () => void;
+  passToNext: () => void;
+  restartTimer: () => void;
+  closeTile: () => void;
+}
+
+/* ------------------------------ Confirmation ------------------------------ */
+
+function ConfirmDialog({
+  title,
+  body,
+  confirmLabel,
+  onConfirm,
+  onClose,
+}: {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-modal
+      aria-label={title}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/40 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-[32px] bg-card p-6 elev-2"
+      >
+        <h2 className="font-display text-xl font-black">{title}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="min-h-12 rounded-full border border-foreground/25 px-5 text-sm font-bold transition-colors hover:bg-foreground/5"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            className="min-h-12 rounded-full bg-danger px-5 text-sm font-black text-danger-ink elev-1"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+/* --------------------------- Shortcut reference --------------------------- */
+
+const SHORTCUTS: [string, string][] = [
+  ["Space", "Reveal the answer"],
+  ["C", "Judge correct"],
+  ["X", "Judge wrong"],
+  ["N", "Pass to next player"],
+  ["R", "Restart the timer"],
+  ["Esc", "Close the open tile"],
+  ["1 – 9", "Trigger soundboard clip"],
+  ["?", "Show this reference"],
+];
+
+function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-modal
+      aria-label="Keyboard shortcuts"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/40 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-[32px] bg-card p-6 elev-2"
+      >
+        <h2 className="mb-4 font-display text-xl font-black">Keyboard shortcuts</h2>
+        <ul className="space-y-2">
+          {SHORTCUTS.map(([k, label]) => (
+            <li key={k} className="flex items-center justify-between gap-4 text-sm">
+              <span className="text-muted-foreground">{label}</span>
+              <kbd className="rounded-md border border-foreground/25 px-2 py-1 font-mono text-xs font-bold">{k}</kbd>
+            </li>
+          ))}
+        </ul>
+        <button
+          onClick={onClose}
+          className="mt-5 min-h-12 w-full rounded-full border border-foreground/25 text-sm font-bold transition-colors hover:bg-foreground/5"
+        >
+          Close
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
+/** True while a text field or a dialog owns focus — shortcuts stay off then. */
+function typingOrDialogFocused() {
+  const el = document.activeElement as HTMLElement | null;
+  if (!el) return false;
+  if (el.isContentEditable) return true;
+  if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) return true;
+  return Boolean(el.closest('[role="dialog"]'));
+}
+
+/* --------------------------------- Page ---------------------------------- */
+
 function HostPage() {
   const { sessionId } = Route.useParams();
+  const navigate = useNavigate();
   const fetchState = useServerFn(getHostState);
   const { data } = useQuery({
     queryKey: ["host", sessionId],
@@ -94,20 +233,39 @@ function HostPage() {
   });
   useSessionRealtime(sessionId, [["host", sessionId]]);
 
+  const bootstrap = useServerFn(bootstrapStudio);
+  const { data: account } = useQuery({
+    queryKey: ["studio"],
+    queryFn: () => bootstrap(),
+    staleTime: 60_000,
+    retry: false,
+  });
+  const profile = (account as { profile?: { username?: string; avatar_url?: string | null } } | undefined)?.profile;
+
   const queryClient = useQueryClient();
   const state = data as unknown as HostState | undefined;
   const [ddOpen, setDdOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [finalOpen, setFinalOpen] = useState(false);
-  const setHostState = (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
-    queryClient.setQueryData(["host", sessionId], (old: unknown) => {
-      const prev = old as HostState | undefined;
-      if (!prev) return old;
-      const { session: sessionPatch, ...rest } = patch;
-      return { ...prev, ...rest, session: { ...prev.session, ...(sessionPatch ?? {}) } };
-    });
-  };
-  const setHostSession = (patch: Partial<Session>) => setHostState({ session: patch });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [confirm, setConfirm] = useState<null | "reset" | "end">(null);
+
+  const setHostState = useCallback(
+    (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
+      queryClient.setQueryData(["host", sessionId], (old: unknown) => {
+        const prev = old as HostState | undefined;
+        if (!prev) return old;
+        const { session: sessionPatch, ...rest } = patch;
+        return { ...prev, ...rest, session: { ...prev.session, ...(sessionPatch ?? {}) } };
+      });
+    },
+    [queryClient, sessionId],
+  );
+  const setHostSession = useCallback(
+    (patch: Partial<Session>) => setHostState({ session: patch }),
+    [setHostState],
+  );
 
   // ---- SFX triggers on state transitions --------------------------------
   const prevActive = useRef<string | null>(null);
@@ -130,7 +288,88 @@ function HostPage() {
 
   const isDark = useThemeMode() === "dark";
 
-  if (!state) {
+  const session = state?.session;
+  const currentTileId = session?.current_tile_id ?? null;
+  const activePlayerId = session?.active_player_id ?? null;
+
+  // ---- Game-loop actions, shared by the panel and the keyboard ----------
+  const actions: HostActions = useMemo(
+    () => ({
+      reveal: () => {
+        if (!currentTileId) return;
+        setHostSession({ phase: "reveal", timer_ends_at: null });
+        void revealAnswer({ data: { sessionId } });
+      },
+      judgeCorrect: () => {
+        if (!activePlayerId) return;
+        sfx.ding();
+        void judgeAnswer({ data: { sessionId, correct: true } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
+      judgeWrong: () => {
+        if (!activePlayerId) return;
+        sfx.wrong();
+        void judgeAnswer({ data: { sessionId, correct: false } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
+      passToNext: () => {
+        if (!currentTileId) return;
+        void passToNext({ data: { sessionId } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
+      restartTimer: () => {
+        if (!activePlayerId) return;
+        void restartTimer({ data: { sessionId } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
+      closeTile: () => {
+        if (!currentTileId) return;
+        setHostSession({
+          phase: "idle",
+          current_tile_id: null,
+          active_player_id: null,
+          timer_ends_at: null,
+          dd_wager: null,
+        });
+        void closeTile({ data: { sessionId } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
+    }),
+    [activePlayerId, currentTileId, queryClient, sessionId, setHostSession],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (typingOrDialogFocused() || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "?") {
+        e.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
+      const map: Record<string, () => void> = {
+        " ": actions.reveal,
+        c: actions.judgeCorrect,
+        x: actions.judgeWrong,
+        n: actions.passToNext,
+        r: actions.restartTimer,
+        Escape: actions.closeTile,
+      };
+      const fn = map[e.key === " " ? " " : e.key.length === 1 ? e.key.toLowerCase() : e.key];
+      if (fn) {
+        e.preventDefault();
+        fn();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [actions]);
+
+  if (!state || !session) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
@@ -138,116 +377,187 @@ function HostPage() {
     );
   }
 
-  const { session, game, categories, tiles, players, queue, finalAnswers } = state;
+  const { game, categories, tiles, players, queue, finalAnswers } = state;
   const theme = darkBoardColors(themeOf(game), isDark) as ReturnType<typeof themeOf>;
   const usedSet = new Set(session.used_tile_ids);
-  const remaining = tiles.length - usedSet.size;
+  const played = usedSet.size;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
-  const currentCategory = currentTile
-    ? categories.find((c) => c.id === currentTile.category_id)
-    : null;
+  const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
+
+  const bumpScore = (team: Team, delta: number) => {
+    setHostSession(
+      team === "alpha" ? { score_alpha: session.score_alpha + delta } : { score_bravo: session.score_bravo + delta },
+    );
+    void adjustScore({ data: { sessionId, team, delta } });
+  };
+
+  const leaveSession = () => {
+    void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+  };
 
   return (
     <div className="min-h-screen text-foreground">
-      <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
-        {/* Header */}
-        <div className="mb-5 flex flex-col gap-3 rounded-[32px] bg-card/80 p-4 elev-1 lg:grid lg:grid-cols-[280px_minmax(0,1fr)_300px] lg:items-center lg:gap-4">
-          <div className="flex items-center gap-3">
-            {/* Visible exit pill — confirms first while a game is live */}
-            <Link
-              to="/edit/$gameId"
-              params={{ gameId: game.id }}
-              onClick={(e) => {
-                if (
-                  session.status === "live" &&
-                  !window.confirm("Leave the live game? Players stay connected and you can rejoin from Studio.")
-                ) {
-                  e.preventDefault();
-                }
-              }}
-              className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-card px-4 text-sm font-bold text-foreground elev-1 transition-transform hover:scale-105"
-              aria-label="Close game and back to editor"
-            >
-              <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
-            </Link>
-            <div className="min-w-0">
-              <h1 className="truncate font-display text-lg font-black leading-tight sm:text-xl">{game.title}</h1>
-              <p className="text-xs text-muted-foreground">
-                Code <span className="font-mono font-bold text-ink-gold">{game.join_code}</span> ·{" "}
-                {session.status === "lobby" ? "Waiting in lobby" : `${Math.max(0, remaining)} questions remain`}
-              </p>
-            </div>
+      {/* TOP APP BAR — navigation, status and score only. Nothing filled. */}
+      <header className="sticky top-0 z-50 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2 sm:px-6">
+          <button
+            onClick={() => {
+              if (
+                session.status === "live" &&
+                !window.confirm("Leave the live game? Players stay connected and you can rejoin from Studio.")
+              )
+                return;
+              leaveSession();
+            }}
+            className="flex min-h-12 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5"
+            aria-label="Close session and back to editor"
+          >
+            <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
+          </button>
+
+          <div className="min-w-0">
+            <h1 className="truncate font-display text-lg font-semibold leading-tight">{game.title}</h1>
+            <p className="truncate text-xs text-muted-foreground">
+              Code <span className="font-mono font-bold">{game.join_code}</span>
+            </p>
           </div>
-          <div className="flex w-full items-center">
+
+          <span
+            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${
+              players.length > 0
+                ? "border-success-ink/40 text-success-ink"
+                : "border-foreground/20 text-muted-foreground"
+            }`}
+          >
+            {players.length > 0 ? `Live · ${players.length} player${players.length === 1 ? "" : "s"}` : "In lobby"}
+          </span>
+
+          <span className="hidden shrink-0 text-xs font-semibold text-muted-foreground md:inline">
+            {played} of {tiles.length} tiles played
+          </span>
+
+          <div className="order-last flex w-full items-center lg:order-none lg:w-auto lg:flex-1">
             <div className="flex min-w-0 flex-1 justify-end">
-              <ScorePill team="alpha" side="left" name={teamName(theme, "alpha")} score={session.score_alpha} players={players} />
+              <ScorePill
+                team="alpha"
+                side="left"
+                name={teamName(theme, "alpha")}
+                score={session.score_alpha}
+                players={players}
+                onAdjust={(d) => bumpScore("alpha", d)}
+              />
             </div>
             <div className="w-4 shrink-0" aria-hidden />
             <div className="flex min-w-0 flex-1 justify-start">
-              <ScorePill team="bravo" side="right" name={teamName(theme, "bravo")} score={session.score_bravo} players={players} />
+              <ScorePill
+                team="bravo"
+                side="right"
+                name={teamName(theme, "bravo")}
+                score={session.score_bravo}
+                players={players}
+                onAdjust={(d) => bumpScore("bravo", d)}
+              />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2">
-            <ThemeToggle />
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <button
-              onClick={async () => {
-                setHostSession({
-                  status: "live",
-                  phase: "idle",
-                  current_tile_id: null,
-                  active_player_id: null,
-                  timer_ends_at: null,
-                  score_alpha: 0,
-                  score_bravo: 0,
-                  used_tile_ids: [],
-                  dd_wager: null,
-                  final_question: null,
-                  final_answer: null,
-                });
-                await resetBoard({ data: { sessionId } });
-                toast.success("Board reset — new Daily Doubles picked");
-              }}
-              className="flex items-center gap-1.5 rounded-full bg-blush px-5 py-2.5 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
+              onClick={() => setShortcutsOpen(true)}
+              aria-label="Keyboard shortcuts"
+              title="Keyboard shortcuts (?)"
+              className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
             >
-              <RotateCcw className="h-3.5 w-3.5" /> Reset Board
+              <Keyboard className="h-5 w-5" />
             </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  aria-label="Session options"
+                  className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-[24px] p-2">
+                <DropdownMenuItem
+                  className="rounded-full px-3 py-2.5 text-sm font-semibold"
+                  onSelect={() => setDdOpen(true)}
+                >
+                  Daily Double tiles
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="rounded-full px-3 py-2.5 text-sm font-semibold text-danger-ink"
+                  onSelect={() => setConfirm("reset")}
+                >
+                  Reset board
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AccountMenu
+              displayName={profile?.username ?? "Host"}
+              avatarUrl={profile?.avatar_url ?? null}
+              onOpenSettings={() => setSettingsOpen(true)}
+            />
           </div>
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
-          {/* LEFT: preview + soundboard + tools */}
+      <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
+          {/* LEFT: join, roster, OBS, soundboard, tools */}
           <div className="order-2 space-y-4 lg:order-1">
-            <JoinCard joinCode={game.join_code} />
-            <AnswerPreview tile={currentTile} phase={session.phase} />
+            <JoinCard joinCode={game.join_code} playerCount={players.length} />
+            <PlayerRoster
+              players={players}
+              onSwitchTeam={(playerId) => {
+                setHostState({
+                  players: players.map((p) =>
+                    p.id === playerId ? { ...p, team: (p.team === "alpha" ? "bravo" : "alpha") as Team } : p,
+                  ),
+                });
+                void switchPlayerTeam({ data: { sessionId, playerId } });
+              }}
+              onRemove={(playerId) => {
+                setHostState({ players: players.filter((p) => p.id !== playerId) });
+                void removePlayer({ data: { sessionId, playerId } });
+              }}
+            />
             <Soundboard gameId={game.id} hostId={game.host_id} />
             <ObsLinksPanel joinCode={game.join_code} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
-              <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Tools
-              </h3>
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Tools</h3>
               <div className="flex flex-col gap-2">
                 <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
-                <ToolButton icon={BarChart3} label="Analytics" onClick={() => setAnalyticsOpen(true)} />
-                <ToolButton icon={Flag} label="Final Jeopardy" onClick={() => setFinalOpen(true)} />
+                <ToolButton
+                  icon={BarChart3}
+                  label="Analytics"
+                  variant="outlined"
+                  onClick={() => setAnalyticsOpen(true)}
+                />
+                <ToolButton icon={Flag} label="Final Jeopardy" variant="outlined" onClick={() => setFinalOpen(true)} />
+                <div className="my-1 border-t border-foreground/10" />
                 <ToolButton
                   icon={Crown}
                   label="End game & podium"
-                  onClick={async () => {
-                    await finishSession({ data: { sessionId } });
-                  }}
+                  variant="error"
+                  onClick={() => setConfirm("end")}
                 />
               </div>
             </div>
           </div>
 
-          {/* CENTER: board + overlay */}
+          {/* CENTER: board + clue container transform */}
           <div className="relative order-1 lg:order-2">
             <div
-              className="mx-auto w-full max-w-[1100px] p-2.5 elev-2 sm:p-5"
-              style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
+              className="mx-auto flex w-full max-w-[1100px] flex-col p-2.5 elev-2 sm:p-5"
+              style={{
+                backgroundColor: theme.bg,
+                borderRadius: theme.radius + 8,
+                minHeight: "calc(100vh - 8rem)",
+              }}
             >
-              <div className="grid grid-cols-5 gap-1 sm:gap-2.5">
+              <div className="grid flex-1 grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-1 sm:gap-2.5">
                 {categories.map((cat) => (
                   <div
                     key={cat.id}
@@ -279,7 +589,7 @@ function HostPage() {
                           });
                           void openTile({ data: { sessionId, tileId: tile.id } });
                         }}
-                        className="flex aspect-square items-center justify-center font-display text-base font-black tracking-tight transition-all sm:aspect-[4/3] sm:text-3xl"
+                        className="flex min-h-12 items-center justify-center font-display text-base font-black tracking-tight transition-all sm:text-3xl"
                         style={{
                           backgroundColor: used ? "transparent" : theme.card,
                           borderRadius: theme.radius,
@@ -318,9 +628,16 @@ function HostPage() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT: queue + controls */}
+          {/* RIGHT: the single live control panel */}
           <div className="order-3 space-y-4">
-            <QueuePanel session={session} players={players} queue={queue} />
+            <LiveControlPanel
+              session={session}
+              tile={currentTile}
+              category={currentCategory}
+              players={players}
+              queue={queue}
+              actions={actions}
+            />
             {session.status === "final" && (
               <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
             )}
@@ -333,12 +650,50 @@ function HostPage() {
         {analyticsOpen && <AnalyticsDialog state={state} onClose={() => setAnalyticsOpen(false)} />}
       </AnimatePresence>
       <AnimatePresence>{finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>{shortcutsOpen && <ShortcutsOverlay onClose={() => setShortcutsOpen(false)} />}</AnimatePresence>
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      <AnimatePresence>
+        {confirm === "reset" && (
+          <ConfirmDialog
+            title="Reset the board?"
+            body="Scores go back to zero, every tile reopens and new Daily Doubles are picked."
+            confirmLabel="Reset board"
+            onClose={() => setConfirm(null)}
+            onConfirm={() => {
+              setHostSession({
+                status: "live",
+                phase: "idle",
+                current_tile_id: null,
+                active_player_id: null,
+                timer_ends_at: null,
+                score_alpha: 0,
+                score_bravo: 0,
+                used_tile_ids: [],
+                dd_wager: null,
+                final_question: null,
+                final_answer: null,
+              });
+              void resetBoard({ data: { sessionId } }).then(() => toast.success("Board reset"));
+            }}
+          />
+        )}
+        {confirm === "end" && (
+          <ConfirmDialog
+            title="End the game?"
+            body="This closes the session and shows the podium. It cannot be undone."
+            confirmLabel="End game"
+            onClose={() => setConfirm(null)}
+            onConfirm={() => void finishSession({ data: { sessionId } })}
+          />
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {session.status === "finished" && <Podium session={session} players={players} theme={theme} />}
       </AnimatePresence>
     </div>
   );
 }
+
 
 /* ------------------------------- Score pill ------------------------------- */
 

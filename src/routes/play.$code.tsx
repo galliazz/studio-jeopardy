@@ -107,7 +107,9 @@ function PlayerLobby({
   const [identity, setIdentity] = useState<StoredIdentity | null>(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      return raw ? (JSON.parse(raw) as StoredIdentity) : null;
+      const parsed = raw ? (JSON.parse(raw) as Partial<StoredIdentity>) : null;
+      // Identities saved before per-player tokens existed must re-join.
+      return parsed?.playerId && parsed.token ? (parsed as StoredIdentity) : null;
     } catch {
       return null;
     }

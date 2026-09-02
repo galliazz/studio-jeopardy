@@ -694,7 +694,7 @@ function HostPage() {
           <div
             className={`order-3 min-h-0 space-y-6 overflow-y-auto pr-1 min-[1200px]:block ${
               panelOpen
-                ? "fixed inset-y-0 right-0 z-40 w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:elev-0"
+                ? "fixed inset-y-0 right-0 z-40 w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
                 : "hidden"
             }`}
           >

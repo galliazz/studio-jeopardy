@@ -563,8 +563,8 @@ function HostPage() {
             <ObsLinksPanel gameId={game.id} overlayToken={game.overlay_token} />
             <div className="rounded-[32px] bg-card p-5 elev-1">
               <h3 className="mb-3 text-sm font-semibold text-muted-foreground">Tools</h3>
-              <div className="flex flex-col gap-2">
-                <ToolButton icon={Sparkles} label="Daily Double tiles" onClick={() => setDdOpen(true)} />
+              <div className="grid grid-cols-2 gap-2">
+                <ToolButton icon={Sparkles} label="Daily Double" onClick={() => setDdOpen(true)} />
                 <ToolButton
                   icon={BarChart3}
                   label="Analytics"
@@ -572,14 +572,14 @@ function HostPage() {
                   onClick={() => setAnalyticsOpen(true)}
                 />
                 <ToolButton icon={Flag} label="Final Jeopardy" variant="outlined" onClick={() => setFinalOpen(true)} />
-                <div className="my-1 border-t border-foreground/10" />
                 <ToolButton
                   icon={Crown}
-                  label="End game & podium"
+                  label="End game"
                   variant="error"
                   onClick={() => setConfirm("end")}
                 />
               </div>
+
             </div>
           </div>
 

@@ -76,12 +76,18 @@ export const updateClip = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      name?: string;
+      trim_start_ms?: number;
+      trim_end_ms?: number;
+      gain?: number;
+    } = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.trimStartMs !== undefined) patch.trim_start_ms = data.trimStartMs;
     if (data.trimEndMs !== undefined) patch.trim_end_ms = data.trimEndMs;
     if (data.gain !== undefined) patch.gain = data.gain;
     const { error } = await context.supabase.from("soundboard_clips").update(patch).eq("id", data.clipId);
+
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -1809,6 +1809,7 @@ function QueueList({
         );
       })}
     </ol>
+    </div>
   );
 }
 

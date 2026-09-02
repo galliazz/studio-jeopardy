@@ -68,7 +68,7 @@ function CombinedOverlay() {
           overflow: "hidden",
         }}
       >
-        <OverlayQueue state={state} />
+        <OverlayQueue state={state} align="left" />
       </div>
     </OverlayCanvas>
   );

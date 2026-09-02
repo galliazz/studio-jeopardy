@@ -208,7 +208,11 @@ function StudioPage() {
             Welcome back, {displayName}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isLoading ? "Loading boards…" : `${boardCount} board${boardCount === 1 ? "" : "s"}`}
+            {isLoading
+              ? "Loading boards…"
+              : error
+                ? "Sign in to load your boards"
+                : `${boardCount} board${boardCount === 1 ? "" : "s"}`}
           </p>
         </header>
 

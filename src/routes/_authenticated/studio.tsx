@@ -89,14 +89,14 @@ function StudioPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string[]>([]);
   const importRef = useRef<HTMLInputElement>(null);
 
   const games = useMemo(() => {
-    const all = (data?.games ?? []) as unknown as Game[];
+    const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));
     if (!search.trim()) return all;
     return all.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()));
-  }, [data, search]);
+  }, [data, search, pendingDelete]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["studio"] });
 
@@ -119,7 +119,6 @@ function StudioPage() {
   };
 
   const handleDuplicate = async (gameId: string) => {
-    setOpenMenu(null);
     try {
       await duplicateGame({ data: { gameId } });
       toast.success("Board duplicated");
@@ -160,7 +159,6 @@ function StudioPage() {
   };
 
   const handleExport = async (gameId: string) => {
-    setOpenMenu(null);
     try {
       const payload = await exportGame({ data: { gameId } });
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -177,7 +175,6 @@ function StudioPage() {
   };
 
   const handleExportXlsx = async (gameId: string) => {
-    setOpenMenu(null);
     try {
       const payload = await exportGame({ data: { gameId } });
       const XLSX = await import("xlsx");
@@ -210,7 +207,6 @@ function StudioPage() {
   };
 
   const handleRename = async (gameId: string, title: string) => {
-    setOpenMenu(null);
     try {
       await updateGame({ data: { gameId, title } });
       toast.success("Board renamed");
@@ -421,7 +417,7 @@ function GameCard({
 }: {
   game: Game;
   index: number;
-  stats?: BoardStats;
+  stats?: BoardStats | undefined;
   onPlay: () => void;
   onRename: (title: string) => void;
   onDuplicate: () => void;

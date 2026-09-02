@@ -477,64 +477,150 @@ function ScorePill({
 }
 
 
-/* -------------------------------- Join card ------------------------------- */
+/* ------------------------------- Join card -------------------------------- */
 
-function JoinCard({ joinCode }: { joinCode: string }) {
+/**
+ * Phase aware: expanded with the QR code while the lobby is empty, collapsing
+ * to a compact code + copy row as soon as the first player connects.
+ */
+function JoinCard({ joinCode, playerCount }: { joinCode: string; playerCount: number }) {
   const origin = useOrigin();
   const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
-  const [open, setOpen] = useState(true);
+  const [manual, setManual] = useState<boolean | null>(null);
+  const open = manual ?? playerCount === 0;
+
+  const copy = (text: string, label: string) => {
+    void navigator.clipboard.writeText(text);
+    toast.success(label);
+  };
+
+  if (!open) {
+    return (
+      <div className="flex min-h-12 items-center justify-between gap-2 rounded-full border border-foreground/15 px-4 py-2">
+        <button
+          onClick={() => setManual(true)}
+          className="flex min-h-11 min-w-0 items-center gap-2 text-left"
+          aria-expanded={false}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Join</span>
+          <span className="font-display text-lg font-black tracking-[0.15em] text-ink-gold">{joinCode}</span>
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        </button>
+        <button
+          onClick={() => copy(joinUrl || joinCode, "Join link copied")}
+          aria-label="Copy join link"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
+        >
+          <Copy className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-[32px] bg-mint text-center elev-1">
       <button
         onClick={() => {
           sfx.pop();
-          setOpen((v) => !v);
+          setManual(false);
         }}
-        className="flex w-full items-center justify-center gap-2 px-5 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground"
-        aria-expanded={open}
+        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+        aria-expanded
       >
         Players join anytime
-        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className="h-4 w-4 rotate-180" />
       </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 280, damping: 28 }}
-          >
-            <div className="px-5 pb-5">
-              <div className="mx-auto mb-3 w-fit rounded-[22px] bg-card p-2.5">
-                {joinUrl ? <QRCodeSVG value={joinUrl} size={128} /> : <div className="h-32 w-32" />}
-              </div>
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(joinCode);
-                  toast.success("Join code copied");
-                }}
-                className="mx-auto flex items-center gap-2 rounded-full px-2 py-1 font-display text-2xl font-black tracking-[0.2em] text-ink-gold transition-transform hover:scale-105"
-                title="Copy join code"
-              >
-                {joinCode} <Copy className="h-4 w-4 opacity-60" />
-              </button>
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(joinUrl);
-                  toast.success("Join link copied");
-                }}
-                className="mx-auto mt-3 flex items-center gap-2 rounded-full bg-card px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
-              >
-                <Copy className="h-3.5 w-3.5" /> Copy link
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="px-5 pb-5">
+        <div className="mx-auto mb-3 w-fit rounded-[22px] bg-card p-2.5">
+          {joinUrl ? <QRCodeSVG value={joinUrl} size={128} /> : <div className="h-32 w-32" />}
+        </div>
+        <button
+          onClick={() => copy(joinCode, "Join code copied")}
+          className="mx-auto flex min-h-12 items-center gap-2 rounded-full px-2 font-display text-2xl font-black tracking-[0.2em] text-ink-gold"
+          title="Copy join code"
+        >
+          {joinCode} <Copy className="h-4 w-4 opacity-60" />
+        </button>
+        <button
+          onClick={() => copy(joinUrl, "Join link copied")}
+          className="mx-auto mt-2 flex min-h-12 items-center gap-2 rounded-full border border-foreground/20 px-4 text-xs font-bold text-foreground"
+        >
+          <Copy className="h-3.5 w-3.5" /> Copy link
+        </button>
+      </div>
     </div>
   );
 }
+
+/* ------------------------------ Player roster ----------------------------- */
+
+function PlayerRoster({
+  players,
+  onSwitchTeam,
+  onRemove,
+}: {
+  players: Player[];
+  onSwitchTeam: (playerId: string) => void;
+  onRemove: (playerId: string) => void;
+}) {
+  return (
+    <div className="rounded-[32px] bg-card p-5 elev-1">
+      <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        Players · {players.length}
+      </h3>
+      {players.length === 0 ? (
+        <p className="py-3 text-center text-sm text-muted-foreground">Nobody has joined yet.</p>
+      ) : (
+        <ul className="space-y-1">
+          {players.map((p) => {
+            const connected = !p.locked_out;
+            return (
+              <li
+                key={p.id}
+                className={`flex min-h-12 items-center gap-2.5 rounded-full px-2 ${connected ? "" : "opacity-45"}`}
+              >
+                <span
+                  className={`h-2.5 w-2.5 shrink-0 rounded-full ${p.team === "alpha" ? "bg-team-alpha-ink" : "bg-team-bravo-ink"}`}
+                  aria-hidden
+                />
+                <span className="shrink-0 text-base">{p.avatar}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-bold">{p.name}</span>
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {connected ? "Live" : "Locked"}
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label={`Options for ${p.name}`}
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52 rounded-[24px] p-2">
+                    <DropdownMenuItem
+                      className="rounded-full px-3 py-2.5 text-sm font-semibold"
+                      onSelect={() => onSwitchTeam(p.id)}
+                    >
+                      Switch team
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-full px-3 py-2.5 text-sm font-semibold text-danger-ink"
+                      onSelect={() => onRemove(p.id)}
+                    >
+                      Remove player
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
 /* ------------------------------ OBS overlays ------------------------------ */
 

@@ -20,6 +20,7 @@ import { Route as PlayCodeRouteImport } from './routes/play.$code'
 import { Route as AuthenticatedEditGameIdRouteImport } from './routes/_authenticated/edit.$gameId'
 import { Route as AuthenticatedHostSessionIdRouteImport } from './routes/_authenticated/host.$sessionId'
 import { Route as OverlayBoardOverlayTokenRouteImport } from './routes/overlay/board.$overlayToken'
+import { Route as OverlayCombinedOverlayTokenRouteImport } from './routes/overlay/combined.$overlayToken'
 import { Route as OverlayQueueOverlayTokenRouteImport } from './routes/overlay/queue.$overlayToken'
 
 const IndexRoute = IndexRouteImport.update({
@@ -78,6 +79,12 @@ const OverlayBoardOverlayTokenRoute =
     path: '/overlay/board/$overlayToken',
     getParentRoute: () => rootRouteImport,
   } as any)
+const OverlayCombinedOverlayTokenRoute =
+  OverlayCombinedOverlayTokenRouteImport.update({
+    id: '/overlay/combined/$overlayToken',
+    path: '/overlay/combined/$overlayToken',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const OverlayQueueOverlayTokenRoute =
   OverlayQueueOverlayTokenRouteImport.update({
     id: '/overlay/queue/$overlayToken',
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
   '/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
   '/overlay/board/$overlayToken': typeof OverlayBoardOverlayTokenRoute
+  '/overlay/combined/$overlayToken': typeof OverlayCombinedOverlayTokenRoute
   '/overlay/queue/$overlayToken': typeof OverlayQueueOverlayTokenRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +117,7 @@ export interface FileRoutesByTo {
   '/edit/$gameId': typeof AuthenticatedEditGameIdRoute
   '/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
   '/overlay/board/$overlayToken': typeof OverlayBoardOverlayTokenRoute
+  '/overlay/combined/$overlayToken': typeof OverlayCombinedOverlayTokenRoute
   '/overlay/queue/$overlayToken': typeof OverlayQueueOverlayTokenRoute
 }
 export interface FileRoutesById {
@@ -124,6 +133,7 @@ export interface FileRoutesById {
   '/_authenticated/edit/$gameId': typeof AuthenticatedEditGameIdRoute
   '/_authenticated/host/$sessionId': typeof AuthenticatedHostSessionIdRoute
   '/overlay/board/$overlayToken': typeof OverlayBoardOverlayTokenRoute
+  '/overlay/combined/$overlayToken': typeof OverlayCombinedOverlayTokenRoute
   '/overlay/queue/$overlayToken': typeof OverlayQueueOverlayTokenRoute
 }
 export interface FileRouteTypes {
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/edit/$gameId'
     | '/host/$sessionId'
     | '/overlay/board/$overlayToken'
+    | '/overlay/combined/$overlayToken'
     | '/overlay/queue/$overlayToken'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/edit/$gameId'
     | '/host/$sessionId'
     | '/overlay/board/$overlayToken'
+    | '/overlay/combined/$overlayToken'
     | '/overlay/queue/$overlayToken'
   id:
     | '__root__'
@@ -166,6 +178,7 @@ export interface FileRouteTypes {
     | '/_authenticated/edit/$gameId'
     | '/_authenticated/host/$sessionId'
     | '/overlay/board/$overlayToken'
+    | '/overlay/combined/$overlayToken'
     | '/overlay/queue/$overlayToken'
   fileRoutesById: FileRoutesById
 }
@@ -178,6 +191,7 @@ export interface RootRouteChildren {
   ObsQueueRoute: typeof ObsQueueRoute
   PlayCodeRoute: typeof PlayCodeRoute
   OverlayBoardOverlayTokenRoute: typeof OverlayBoardOverlayTokenRoute
+  OverlayCombinedOverlayTokenRoute: typeof OverlayCombinedOverlayTokenRoute
   OverlayQueueOverlayTokenRoute: typeof OverlayQueueOverlayTokenRoute
 }
 
@@ -260,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OverlayBoardOverlayTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/overlay/combined/$overlayToken': {
+      id: '/overlay/combined/$overlayToken'
+      path: '/overlay/combined/$overlayToken'
+      fullPath: '/overlay/combined/$overlayToken'
+      preLoaderRoute: typeof OverlayCombinedOverlayTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/overlay/queue/$overlayToken': {
       id: '/overlay/queue/$overlayToken'
       path: '/overlay/queue/$overlayToken'
@@ -294,6 +315,7 @@ const rootRouteChildren: RootRouteChildren = {
   ObsQueueRoute: ObsQueueRoute,
   PlayCodeRoute: PlayCodeRoute,
   OverlayBoardOverlayTokenRoute: OverlayBoardOverlayTokenRoute,
+  OverlayCombinedOverlayTokenRoute: OverlayCombinedOverlayTokenRoute,
   OverlayQueueOverlayTokenRoute: OverlayQueueOverlayTokenRoute,
 }
 export const routeTree = rootRouteImport

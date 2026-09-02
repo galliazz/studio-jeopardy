@@ -326,3 +326,26 @@ html[data-graphics="low"] [data-bg-fx] {
 html[data-graphics="low"] * {
   box-shadow: none !important;
 }
+
+/* OBS browser sources: fully transparent, no chrome, no pointer affordances. */
+html.overlay-mode,
+html.overlay-mode body {
+  background: transparent !important;
+  margin: 0;
+  overflow: hidden;
+  cursor: none;
+  user-select: none;
+}
+html.overlay-mode *,
+html.overlay-mode *::before,
+html.overlay-mode *::after {
+  cursor: none !important;
+  user-select: none !important;
+}
+html.overlay-mode *:focus,
+html.overlay-mode *:focus-visible {
+  outline: none !important;
+}
+html.overlay-mode ::-webkit-scrollbar {
+  display: none;
+}

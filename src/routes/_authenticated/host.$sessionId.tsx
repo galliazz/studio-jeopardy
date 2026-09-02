@@ -984,22 +984,25 @@ function JoinCard({ joinCode, playerCount }: { joinCode: string; playerCount: nu
   }
 
   return (
-    <div className="overflow-hidden rounded-[32px] bg-mint text-center elev-1">
+    <div className="overflow-hidden rounded-[32px] bg-card text-center elev-1">
       <button
         onClick={() => {
           sfx.pop();
           setManual(false);
         }}
-        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-sm font-semibold text-muted-foreground"
         aria-expanded
       >
+        {/* A small dot carries the "accepting players" state instead of a filled card. */}
+        <span className="h-2 w-2 shrink-0 rounded-full bg-success-ink" aria-hidden />
         Players join anytime
         <ChevronDown className="h-4 w-4 rotate-180" />
       </button>
       <div className="px-5 pb-5">
-        <div className="mx-auto mb-3 w-fit rounded-[22px] bg-card p-2.5">
-          {joinUrl ? <QRCodeSVG value={joinUrl} size={128} /> : <div className="h-32 w-32" />}
+        <div className="mx-auto mb-3 w-fit rounded-[22px] border border-foreground/10 bg-background p-2">
+          {joinUrl ? <QRCodeSVG value={joinUrl} size={104} /> : <div className="h-[104px] w-[104px]" />}
         </div>
+
         <button
           onClick={() => copy(joinCode, "Join code copied")}
           className="mx-auto flex min-h-12 items-center gap-2 rounded-full px-2 font-display text-2xl font-black tracking-[0.2em] text-ink-gold"

@@ -233,9 +233,25 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           {/* 1. Account */}
           <Section title="Account">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac font-display text-lg font-black text-foreground">
-                {initial}
-              </div>
+              <button
+                ref={avatarBtnRef}
+                type="button"
+                onClick={() => setAvatarOpen(true)}
+                aria-label="Change avatar"
+                title="Change avatar"
+                className="relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <AccountAvatar
+                  value={avatarValue}
+                  initial={initial}
+                  className="h-12 w-12 text-lg"
+                  iconClassName="h-6 w-6"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card text-foreground elev-1">
+                  <Pencil className="h-3 w-3" />
+                </span>
+              </button>
+
               <div className="min-w-0 flex-1">
                 <label htmlFor="display-name" className="text-xs font-semibold text-muted-foreground">
                   Display name

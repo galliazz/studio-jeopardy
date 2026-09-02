@@ -339,11 +339,11 @@ function LivePlayer({
       };
     });
     try {
-      const res = await buzz({ data: { playerId: identity.playerId } });
+      const res = await buzz({ data: { playerId: identity.playerId, token: identity.token } });
       if (!res.ok) {
         void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
         if (res.reason === "closed") toast.error("Buzzers are closed");
-        else toast.error(res.message ?? "Buzz rejected");
+        else toast.error("Buzz rejected");
       }
     } catch {
       void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });

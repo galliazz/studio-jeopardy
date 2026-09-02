@@ -431,87 +431,58 @@ function HostPage() {
             <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
           </button>
 
-          {/* Title block: one truncating line, then chips that never wrap. */}
-          <div className="min-w-[220px] max-w-[420px] flex-1">
+          {/* Title block: one truncating line, then the join-code chip. */}
+          <div className="min-w-[200px] max-w-[360px] flex-1">
             <h1 className="truncate font-display text-lg font-semibold leading-tight" title={game.title}>
               {game.title}
             </h1>
-            <div className="mt-0.5 flex flex-nowrap items-center gap-2 overflow-hidden">
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(game.join_code);
-                  toast.success("Join code copied");
-                }}
-                title="Copy join code"
-                aria-label={`Copy join code ${game.join_code}`}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/20 px-2.5 py-0.5 text-[11px] font-bold transition-colors hover:bg-foreground/5"
-              >
-                <span className="font-mono">{game.join_code}</span>
-                <Copy className="h-3 w-3 opacity-70" />
-              </button>
-              <span
-                className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                  players.length > 0
-                    ? "border-success-ink/40 text-success-ink"
-                    : "border-foreground/20 text-muted-foreground"
-                }`}
-              >
-                {players.length > 0 ? `Live · ${players.length}` : "In lobby"} · {tiles.length - played} left
-              </span>
-            </div>
+            <button
+              onClick={() => {
+                void navigator.clipboard.writeText(game.join_code);
+                toast.success("Join code copied");
+              }}
+              title="Copy join code"
+              aria-label={`Copy join code ${game.join_code}`}
+              className="mt-0.5 flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/20 px-2.5 py-0.5 text-[11px] font-bold transition-colors hover:bg-foreground/5"
+            >
+              <span className="font-mono">{game.join_code}</span>
+              <Copy className="h-3 w-3 opacity-70" />
+            </button>
           </div>
 
+          {/* Status group: connection state and remaining tiles, kept together. */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1">
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                players.length > 0 ? "bg-success-ink" : "bg-foreground/30"
+              }`}
+              aria-hidden
+            />
+            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
+              {players.length > 0 ? `Live · ${players.length}` : "In lobby"}
+            </span>
+            <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
+            <span className="whitespace-nowrap text-[11px] font-bold text-muted-foreground">
+              {tiles.length - played}/{tiles.length} left
+            </span>
+          </div>
 
-
-
-          <div className="ml-auto flex shrink-0 items-center gap-1">
-            <button
-              onClick={() => setPanelOpen((v) => !v)}
-              aria-label="Toggle live control panel"
-              title="Live control panel"
-              aria-pressed={panelOpen}
-              className="flex h-12 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5 min-[1200px]:hidden"
-            >
-              <PanelRight className="h-5 w-5" />
-            </button>
-            <button
-              onClick={() => setShortcutsOpen(true)}
-              aria-label="Keyboard shortcuts"
-              title="Keyboard shortcuts (?)"
-              className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
-            >
-              <Keyboard className="h-5 w-5" />
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-
-                <button
-                  aria-label="Session options"
-                  className="flex h-12 w-12 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-[24px] p-2">
-                <DropdownMenuItem
-                  className="rounded-full px-3 py-2.5 text-sm font-semibold"
-                  onSelect={() => setDdOpen(true)}
-                >
-                  Daily Double tiles
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="rounded-full px-3 py-2.5 text-sm font-semibold text-danger-ink"
-                  onSelect={() => setConfirm("reset")}
-                >
-                  Reset board
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="ml-auto flex shrink-0 items-center">
             <AccountMenu
               displayName={profile?.username ?? "Host"}
               avatarUrl={profile?.avatar_url ?? null}
               onOpenSettings={() => setSettingsOpen(true)}
+              items={[
+                { icon: Keyboard, label: "Keyboard shortcuts", onSelect: () => setShortcutsOpen(true) },
+                { icon: Sparkles, label: "Daily Double tiles", onSelect: () => setDdOpen(true) },
+                {
+                  icon: PanelRight,
+                  label: "Live control panel",
+                  onSelect: () => setPanelOpen((v) => !v),
+                  className: "min-[1200px]:hidden",
+                },
+              ]}
+              dangerItem={{ icon: RotateCcw, label: "Reset board", onSelect: () => setConfirm("reset") }}
             />
           </div>
         </div>
@@ -532,7 +503,10 @@ function HostPage() {
                   name={teamName(theme, "alpha")}
                   score={session.score_alpha}
                   players={players}
+                  step={currentTile ? (session.dd_wager ?? currentTile.points) : 100}
+                  quickValues={pointValues}
                   onAdjust={(d) => bumpScore("alpha", d)}
+                  onSet={(v) => bumpScore("alpha", v - session.score_alpha)}
                 />
               </div>
               <div className="w-4 shrink-0" aria-hidden />
@@ -543,7 +517,10 @@ function HostPage() {
                   name={teamName(theme, "bravo")}
                   score={session.score_bravo}
                   players={players}
+                  step={currentTile ? (session.dd_wager ?? currentTile.points) : 100}
+                  quickValues={pointValues}
                   onAdjust={(d) => bumpScore("bravo", d)}
+                  onSet={(v) => bumpScore("bravo", v - session.score_bravo)}
                 />
               </div>
             </div>
@@ -551,6 +528,7 @@ function HostPage() {
           </div>
         </div>
       </header>
+
 
 
       {/* Body fills the remaining viewport: only the side columns scroll. */}

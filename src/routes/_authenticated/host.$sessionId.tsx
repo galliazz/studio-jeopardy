@@ -399,6 +399,10 @@ function HostPage() {
   const played = usedSet.size;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
   const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
+  /** The board's distinct point values, used as quick picks in the custom-score popover. */
+  const pointValues = Array.from(new Set(tiles.map((t) => t.points))).sort((a, b) => a - b);
+
+
 
   const bumpScore = (team: Team, delta: number) => {
     setHostSession(

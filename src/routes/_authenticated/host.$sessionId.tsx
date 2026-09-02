@@ -520,9 +520,10 @@ function HostPage() {
          * Score row. It shares the main content grid so the centre gap between
          * the two chips sits exactly on the board column's horizontal centre.
          */}
-        <div className="mx-auto max-w-[1600px] px-3 pb-2 sm:px-6">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
-            <div className="hidden lg:block" aria-hidden />
+        <div className="mx-auto max-w-[1600px] px-6 pb-2">
+          <div className="grid grid-cols-1 gap-6 min-[840px]:grid-cols-[320px_minmax(0,1fr)] min-[1200px]:grid-cols-[320px_minmax(0,1fr)_380px]">
+            <div className="hidden min-[840px]:block" aria-hidden />
+
             <div className="flex items-center">
               <div className="flex min-w-0 flex-1 justify-end">
                 <ScorePill

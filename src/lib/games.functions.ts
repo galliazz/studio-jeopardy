@@ -30,7 +30,39 @@ export const bootstrapStudio = createServerFn({ method: "GET" })
       await seedDemoGame(supabase, userId);
     }
     const { data: games } = await supabase.from("games").select("*").order("updated_at", { ascending: false });
-    return { profile, games: games ?? [] };
+    const list = games ?? [];
+
+    // Per-board completeness used by the Studio cards (counts + a 5x5 ready map).
+    const { data: cats } = list.length
+      ? await supabase
+          .from("categories")
+          .select("id, game_id, position")
+          .in("game_id", list.map((g) => g.id))
+      : { data: [] };
+    const catList = cats ?? [];
+    const { data: tiles } = catList.length
+      ? await supabase
+          .from("tiles")
+          .select("category_id, row_index, question, answer")
+          .in("category_id", catList.map((c) => c.id))
+      : { data: [] };
+    const catMeta = new Map(catList.map((c) => [c.id, { gameId: c.game_id, position: c.position }]));
+    const stats: Record<string, { total: number; ready: number; grid: boolean[][] }> = {};
+    for (const g of list) {
+      stats[g.id] = { total: 0, ready: 0, grid: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => false)) };
+    }
+    for (const t of tiles ?? []) {
+      const meta = catMeta.get(t.category_id);
+      if (!meta) continue;
+      const s = stats[meta.gameId];
+      if (!s) continue;
+      const ok = Boolean(t.question?.trim()) && Boolean(t.answer?.trim());
+      s.total += 1;
+      if (ok) s.ready += 1;
+      const col = s.grid[meta.position];
+      if (col && t.row_index >= 0 && t.row_index < 5) col[t.row_index] = ok;
+    }
+    return { profile, games: list, stats };
   });
 
 export const createGame = createServerFn({ method: "POST" })

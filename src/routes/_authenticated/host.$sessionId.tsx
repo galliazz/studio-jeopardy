@@ -617,7 +617,7 @@ function QuestionOverlay({
   category,
   players,
   queue,
-  accent,
+  theme,
   onHostStatePatch,
 }: {
   session: Session;
@@ -625,7 +625,7 @@ function QuestionOverlay({
   category: Category | null | undefined;
   players: Player[];
   queue: QueueEntry[];
-  accent: string;
+  theme: ThemeSettings;
   onHostStatePatch: (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => void;
 }) {
   const imageUrl = useSignedUrl("game-media", tile.image_url);

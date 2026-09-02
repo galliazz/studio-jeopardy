@@ -3,7 +3,7 @@
  * opens. Shared verbatim by the Host Console and the OBS overlays; the overlay
  * passes readOnly so the judging controls and host chrome are not rendered.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { useCountdown } from "@/hooks/use-countdown";
@@ -297,6 +297,7 @@ export function QuestionOverlay({
               )}
             </div>
           </div>
+          )}
         </>
       )}
       </motion.div>

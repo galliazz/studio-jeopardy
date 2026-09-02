@@ -34,6 +34,8 @@ export const Route = createFileRoute("/play/$code")({
 
 interface StoredIdentity {
   playerId: string;
+  /** Private per-player token issued at join time; proves ownership on buzz/final submit. */
+  token: string;
   name: string;
   avatar: string;
   team: Team;
@@ -105,7 +107,9 @@ function PlayerLobby({
   const [identity, setIdentity] = useState<StoredIdentity | null>(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      return raw ? (JSON.parse(raw) as StoredIdentity) : null;
+      const parsed = raw ? (JSON.parse(raw) as Partial<StoredIdentity>) : null;
+      // Identities saved before per-player tokens existed must re-join.
+      return parsed?.playerId && parsed.token ? (parsed as StoredIdentity) : null;
     } catch {
       return null;
     }
@@ -157,6 +161,7 @@ function JoinForm({
       vibrate(30);
       onJoined({
         playerId: res.player.id,
+        token: res.token,
         name: res.player.name,
         avatar: res.player.avatar,
         team: res.player.team as Team,
@@ -339,11 +344,11 @@ function LivePlayer({
       };
     });
     try {
-      const res = await buzz({ data: { playerId: identity.playerId } });
+      const res = await buzz({ data: { playerId: identity.playerId, token: identity.token } });
       if (!res.ok) {
         void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
         if (res.reason === "closed") toast.error("Buzzers are closed");
-        else toast.error(res.message ?? "Buzz rejected");
+        else toast.error("Buzz rejected");
       }
     } catch {
       void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
@@ -541,7 +546,9 @@ function FinalForm({
         whileTap={{ scale: 0.96 }}
         disabled={session.phase === "final_answer" && !answer.trim()}
         onClick={async () => {
-          const res = await submitFinalAnswer({ data: { playerId: identity.playerId, wager, answer: answer.trim() } });
+          const res = await submitFinalAnswer({
+            data: { playerId: identity.playerId, token: identity.token, wager, answer: answer.trim() },
+          });
           if (res.ok) {
             vibrate([40, 40, 40]);
             setSent(true);

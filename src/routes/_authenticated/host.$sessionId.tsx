@@ -1500,12 +1500,14 @@ function ToolButton({
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-12 items-center gap-2.5 rounded-full px-5 text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${styles}`}
+      className={`flex aspect-square min-h-12 flex-col items-center justify-center gap-2 rounded-full px-3 text-center text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${styles}`}
     >
-      <Icon className="h-4 w-4" /> {label}
+      <Icon className="h-5 w-5" />
+      <span className="leading-tight">{label}</span>
     </button>
   );
 }
+
 
 
 /* ---------------------------- Question overlay ---------------------------- */

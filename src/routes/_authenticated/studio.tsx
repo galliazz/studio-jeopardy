@@ -18,6 +18,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   bootstrapStudio,
@@ -83,6 +84,10 @@ function StudioPage() {
     // Swallow the "no authorization header" rejection so a signed-out preview
     // renders the studio shell instead of crashing into the error overlay.
     queryFn: async () => {
+      // No session (signed-out preview): skip the RPC entirely so the auth
+      // middleware never throws an unhandled "no authorization header" error.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) return null;
       try {
         return await bootstrap();
       } catch (err) {

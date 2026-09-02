@@ -325,6 +325,16 @@ function StudioPage() {
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
           </div>
+        ) : error ? (
+          <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
+            <p className="mb-4">You need to be signed in to load and create boards.</p>
+            <button
+              onClick={() => void navigate({ to: "/auth" })}
+              className="rounded-full bg-coral px-7 py-3 text-sm font-bold text-foreground elev-1"
+            >
+              Sign in
+            </button>
+          </div>
         ) : games.length === 0 ? (
           <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
             No boards yet — create your first one!

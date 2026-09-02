@@ -615,7 +615,13 @@ function HostPage() {
                   <div
                     key={cat.id}
                     className="flex min-h-10 items-center justify-center overflow-hidden p-1 text-center text-[8px] font-bold uppercase leading-tight tracking-wide sm:min-h-16 sm:p-1.5 sm:text-xs"
-                    style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.6, color: theme.accent }}
+                    style={{
+                      /* Headers are the board colour shifted toward the accent so
+                         they separate from the tiles by ~6% luminance. */
+                      backgroundColor: `color-mix(in srgb, ${theme.card} 88%, ${theme.accent} 12%)`,
+                      borderRadius: theme.radius * 0.6,
+                      color: theme.accent,
+                    }}
                   >
                     <span className="line-clamp-2 w-full break-words">{cat.title}</span>
                   </div>

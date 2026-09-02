@@ -122,6 +122,7 @@ function StudioPage() {
     document.addEventListener("mousedown", handleDown, true);
     return () => document.removeEventListener("mousedown", handleDown, true);
   }, [searchOpen, search]);
+  const games = useMemo(() => {
     const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));
     if (!search.trim()) return all;
     return all.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()));

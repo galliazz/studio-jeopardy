@@ -407,10 +407,10 @@ function HostPage() {
   };
 
   return (
-    <div className="min-h-screen text-foreground">
+    <div data-host-console className="flex h-screen flex-col overflow-hidden text-foreground">
       {/* TOP APP BAR — navigation, status and score only. Nothing filled. */}
-      <header className="sticky top-0 z-50 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center gap-3 px-4 py-2 sm:px-6">
+      <header className="z-50 shrink-0 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex min-h-16 max-w-[1600px] flex-wrap items-center gap-3 px-6 py-2">
           <button
             onClick={() => {
               if (
@@ -426,26 +426,36 @@ function HostPage() {
             <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
           </button>
 
-          <div className="min-w-0">
-            <h1 className="truncate font-display text-lg font-semibold leading-tight">{game.title}</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              Code <span className="font-mono font-bold">{game.join_code}</span>
-            </p>
+          {/* Title block: one truncating line, then chips that never wrap. */}
+          <div className="min-w-[220px] max-w-[420px] flex-1">
+            <h1 className="truncate font-display text-lg font-semibold leading-tight" title={game.title}>
+              {game.title}
+            </h1>
+            <div className="mt-0.5 flex flex-nowrap items-center gap-2 overflow-hidden">
+              <button
+                onClick={() => {
+                  void navigator.clipboard.writeText(game.join_code);
+                  toast.success("Join code copied");
+                }}
+                title="Copy join code"
+                aria-label={`Copy join code ${game.join_code}`}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-foreground/20 px-2.5 py-0.5 text-[11px] font-bold transition-colors hover:bg-foreground/5"
+              >
+                <span className="font-mono">{game.join_code}</span>
+                <Copy className="h-3 w-3 opacity-70" />
+              </button>
+              <span
+                className={`shrink-0 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                  players.length > 0
+                    ? "border-success-ink/40 text-success-ink"
+                    : "border-foreground/20 text-muted-foreground"
+                }`}
+              >
+                {players.length > 0 ? `Live · ${players.length}` : "In lobby"} · {tiles.length - played} left
+              </span>
+            </div>
           </div>
 
-          <span
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold ${
-              players.length > 0
-                ? "border-success-ink/40 text-success-ink"
-                : "border-foreground/20 text-muted-foreground"
-            }`}
-          >
-            {players.length > 0 ? `Live · ${players.length} player${players.length === 1 ? "" : "s"}` : "In lobby"}
-          </span>
-
-          <span className="hidden shrink-0 text-xs font-semibold text-muted-foreground md:inline">
-            {played} of {tiles.length} tiles played
-          </span>
 
 
 

@@ -1,36 +1,33 @@
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  Settings as SettingsIcon,
-  User,
-  Volume2,
-  VolumeX,
-  Users,
-  Timer,
-  Smartphone,
-  Download,
-  Trash2,
-  LogOut,
-} from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Settings as SettingsIcon, X, Volume2 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { bootstrapStudio, exportGame, updateProfile } from "@/lib/games.functions";
-import { getSettings, resetSettings, setSettings, useSettings } from "@/lib/settings";
-import { PLAYER_AVATARS, type Game } from "@/lib/types";
+import { bootstrapStudio, updateProfile } from "@/lib/games.functions";
+import {
+  getSettings,
+  setSettings,
+  syncablePreferences,
+  useSettings,
+  type GraphicsQuality,
+  type StudioSettings,
+} from "@/lib/settings";
+import {
+  getThemePreference,
+  setThemePreference,
+  subscribeThemeMode,
+  type ThemePreference,
+} from "@/lib/theme-mode";
 import { sfx } from "@/lib/sfx";
-import { ThemeToggle } from "@/components/ThemeToggle";
-
-
-type Tab = "profile" | "audio" | "teams" | "gameplay" | "data";
-
-const TABS: { id: Tab; label: string; icon: typeof User }[] = [
-  { id: "profile", label: "Profile", icon: User },
-  { id: "audio", label: "Audio", icon: Volume2 },
-  { id: "teams", label: "Teams", icon: Users },
-  { id: "gameplay", label: "Gameplay", icon: Timer },
-  { id: "data", label: "Data", icon: Download },
-];
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 
 /** Low-emphasis gear pill available on every screen. */
 export function SettingsButton({ className = "" }: { className?: string }) {
@@ -53,28 +50,119 @@ export function SettingsButton({ className = "" }: { className?: string }) {
   );
 }
 
+/* ---------------- building blocks ---------------- */
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="border-t border-border pt-4">
+      <h3 className="mb-3 text-sm font-bold tracking-wide text-muted-foreground">{title}</h3>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function Row({
+  label,
+  hint,
+  children,
+  disabled,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center justify-between gap-4 ${disabled ? "pointer-events-none opacity-40" : ""}`}
+    >
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-foreground">{label}</p>
+        {hint && <p className="truncate text-xs text-muted-foreground">{hint}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">{children}</div>
+    </div>
+  );
+}
+
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  ariaLabel: string;
+}) {
+  return (
+    <div role="radiogroup" aria-label={ariaLabel} className="flex rounded-full bg-muted p-1">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            role="radio"
+            aria-checked={active}
+            onClick={() => onChange(o.value)}
+            className={`h-8 rounded-full px-3 text-xs font-bold transition-colors ${
+              active
+                ? "bg-card text-foreground elev-1"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------------- dialog ---------------- */
+
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const settings = useSettings();
-  const [tab, setTab] = useState<Tab>("profile");
+  const queryClient = useQueryClient();
+
+  const [theme, setTheme] = useState<ThemePreference>(() => getThemePreference());
   const [username, setUsername] = useState("");
-  const [avatar, setAvatar] = useState<string>(PLAYER_AVATARS[0] ?? "🎩");
+  const [savedName, setSavedName] = useState("");
+  const [email, setEmail] = useState("");
   const [signedIn, setSignedIn] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const unsub = subscribeThemeMode(() => setTheme(getThemePreference()));
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
     void (async () => {
       const { data } = await supabase.auth.getSession();
-      if (!alive) return;
-      if (!data.session) return;
+      if (!alive || !data.session) return;
       setSignedIn(true);
+      setEmail(data.session.user.email ?? "");
       try {
-        const boot = await bootstrapStudio();
+        const boot = (await bootstrapStudio()) as {
+          profile?: { username?: string; preferences?: Partial<StudioSettings> | null };
+        };
         if (!alive) return;
-        const profile = (boot as { profile?: { username?: string; avatar_url?: string | null } }).profile;
-        if (profile?.username) setUsername(profile.username);
-        if (profile?.avatar_url) setAvatar(profile.avatar_url);
+        if (boot.profile?.username) {
+          setUsername(boot.profile.username);
+          setSavedName(boot.profile.username);
+        }
+        const remote = boot.profile?.preferences;
+        if (remote && typeof remote === "object" && Object.keys(remote).length) {
+          setSettings(remote);
+        }
       } catch {
-        /* profile stays blank */
+        /* profile stays blank in preview / signed-out */
       }
     })();
     return () => {
@@ -82,260 +170,198 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  const saveProfile = async () => {
-    const v = username.trim();
-    if (v.length < 2) return;
-    await updateProfile({ data: { username: v, avatar_url: avatar } });
-    toast.success("Profile updated");
+  /** Persist presentation preferences to the host profile (debounced). */
+  const syncPrefs = (patch: Partial<StudioSettings>) => {
+    setSettings(patch);
+    if (!signedIn) return;
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => {
+      void updateProfile({ data: { preferences: syncablePreferences(getSettings()) } }).catch(() => {
+        /* offline — localStorage still holds the value */
+      });
+    }, 600);
   };
 
-  const exportAll = async () => {
+  const saveName = async () => {
+    const v = username.trim();
+    // Never scold an untouched, still-loading field (e.g. signed-out preview).
+    if (!v && !savedName) return;
+    if (v.length < 2 || v.length > 24) {
+      setNameError("Use 2 to 24 characters");
+      return;
+    }
+    setNameError(null);
+    if (v === savedName) return;
     try {
-      const boot = (await bootstrapStudio()) as unknown as { games: Game[] };
-      const payloads = [];
-      for (const g of boot.games ?? []) payloads.push(await exportGame({ data: { gameId: g.id } }));
-      const blob = new Blob([JSON.stringify({ games: payloads }, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "jeopardestiny-backup.json";
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(`Exported ${payloads.length} board${payloads.length === 1 ? "" : "s"}`);
+      await updateProfile({ data: { username: v } });
+      setSavedName(v);
+      // Studio header + avatar initial refresh without a reload.
+      void queryClient.invalidateQueries({ queryKey: ["studio"] });
+      toast.success("Display name updated");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed");
+      toast.error(err instanceof Error ? err.message : "Could not save name");
     }
   };
 
+  const initial = (username || savedName || email || "H").trim().charAt(0).toUpperCase();
+
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm">
-      <button aria-label="Close settings" onClick={onClose} className="absolute inset-0 cursor-default" />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.94, y: 14 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="relative flex max-h-[88svh] w-full max-w-lg flex-col overflow-hidden rounded-[32px] bg-card p-6 elev-3"
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        className="max-h-svh w-full max-w-none gap-0 overflow-y-auto rounded-none border-0 p-0 sm:max-h-[88svh] sm:max-w-[560px] sm:rounded-[32px] sm:border"
       >
-        <h2 className="font-display text-2xl font-black text-foreground">Settings</h2>
-        <p className="mb-4 text-sm text-muted-foreground">Studio preferences for this device</p>
-
-        <div className="mb-4 flex flex-wrap gap-1.5">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex h-10 items-center gap-1.5 rounded-full px-4 text-xs font-bold transition-colors ${
-                tab === t.id ? "bg-mint text-foreground elev-1" : "bg-muted text-muted-foreground"
-              }`}
-            >
-              <t.icon className="h-3.5 w-3.5" /> {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="min-h-52 flex-1 overflow-y-auto pr-1">
-          {tab === "profile" && (
-            <div>
-              {/* Appearance — Day/Night switch lives here now */}
-              <Label>Appearance</Label>
-              <div className="mb-4 flex items-center gap-3">
-                <ThemeToggle />
-                <span className="text-xs text-muted-foreground">Switch the whole app between day and night.</span>
-              </div>
-              {signedIn ? (
-
-                <>
-                  <Label>Host display name</Label>
-                  <input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    maxLength={24}
-                    className="mb-4 h-11 w-full rounded-full bg-muted px-4 text-sm font-semibold outline-none ring-2 ring-transparent focus:ring-ink-accent"
-                  />
-                  <Label>Avatar</Label>
-                  <div className="mb-4 flex flex-wrap gap-1.5">
-                    {PLAYER_AVATARS.map((a) => (
-                      <button
-                        key={a}
-                        onClick={() => setAvatar(a)}
-                        className={`flex h-10 w-10 items-center justify-center text-lg scallop ${
-                          avatar === a ? "bg-coral" : "bg-muted"
-                        }`}
-                      >
-                        {a}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => void saveProfile()}
-                      className="rounded-full bg-coral px-6 py-3 text-sm font-black text-foreground elev-1"
-                    >
-                      Save profile
-                    </button>
-                    <button
-                      onClick={() => void supabase.auth.signOut().then(() => (window.location.href = "/auth"))}
-                      className="flex items-center gap-2 rounded-full bg-blush px-5 py-3 text-sm font-semibold text-foreground elev-1"
-                    >
-                      <LogOut className="h-4 w-4" /> Sign out
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">Sign in as a host to edit your profile.</p>
-              )}
-            </div>
-          )}
-
-          {tab === "audio" && (
-            <div>
-              <Label>Master FX volume — {Math.round(settings.volume * 100)}%</Label>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={Math.round(settings.volume * 100)}
-                onChange={(e) => setSettings({ volume: Number(e.target.value) / 100 })}
-                onMouseUp={() => sfx.click()}
-                className="mb-5 w-full accent-[var(--ink-accent)]"
-              />
-              <Toggle
-                label="Mute all audio"
-                icon={settings.muted ? VolumeX : Volume2}
-                on={settings.muted}
-                onChange={(v) => setSettings({ muted: v })}
-              />
-              <button
-                onClick={() => sfx.victory()}
-                className="mt-4 rounded-full bg-mint px-5 py-3 text-sm font-bold text-foreground elev-1"
-              >
-                Test sound
-              </button>
-            </div>
-          )}
-
-          {tab === "teams" && (
-            <div>
-              <Label>Default Team A name</Label>
-              <input
-                value={settings.teamAlpha}
-                onChange={(e) => setSettings({ teamAlpha: e.target.value })}
-                maxLength={24}
-                className="mb-4 h-11 w-full rounded-full bg-muted px-4 text-sm font-semibold outline-none ring-2 ring-transparent focus:ring-ink-accent"
-              />
-              <Label>Default Team B name</Label>
-              <input
-                value={settings.teamBravo}
-                onChange={(e) => setSettings({ teamBravo: e.target.value })}
-                maxLength={24}
-                className="h-11 w-full rounded-full bg-muted px-4 text-sm font-semibold outline-none ring-2 ring-transparent focus:ring-ink-accent"
-              />
-              <p className="mt-3 text-xs text-muted-foreground">
-                Used as the starting names for new boards. Per-board names stay editable in the editor.
-              </p>
-            </div>
-          )}
-
-          {tab === "gameplay" && (
-            <div>
-              <Label>Default timer duration</Label>
-              <div className="mb-5 flex gap-2">
-                {[10, 15, 30].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSettings({ timerSeconds: s })}
-                    className={`h-11 rounded-full px-5 text-sm font-bold ${
-                      settings.timerSeconds === s ? "bg-coral text-foreground elev-1" : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {s}s
-                  </button>
-                ))}
-              </div>
-              <Toggle
-                label="Mobile haptic feedback"
-                icon={Smartphone}
-                on={settings.haptics}
-                onChange={(v) => setSettings({ haptics: v })}
-              />
-            </div>
-          )}
-
-          {tab === "data" && (
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => void exportAll()}
-                disabled={!signedIn}
-                className="flex items-center justify-center gap-2 rounded-full bg-mint px-5 py-3.5 text-sm font-bold text-foreground elev-1 disabled:opacity-40"
-              >
-                <Download className="h-4 w-4" /> Export all games (backup JSON)
-              </button>
-              <button
-                onClick={() => {
-                  if (!window.confirm("Reset all local studio preferences on this device?")) return;
-                  resetSettings();
-                  toast.success("Local studio data reset");
-                }}
-                className="flex items-center justify-center gap-2 rounded-full bg-blush px-5 py-3.5 text-sm font-bold text-danger-ink elev-1"
-              >
-                <Trash2 className="h-4 w-4" /> Clear local storage / reset studio data
-              </button>
-              <p className="text-xs text-muted-foreground">
-                Boards live in your account — resetting only clears preferences stored in this browser.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-5 flex justify-end">
-          <button onClick={onClose} className="rounded-full bg-muted px-6 py-3 text-sm font-bold text-foreground">
-            Done
+        {/* Compact top app bar (full-screen phone layout) */}
+        <div className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border bg-card px-4 sm:hidden">
+          <button
+            onClick={onClose}
+            aria-label="Close settings"
+            className="flex h-12 w-12 items-center justify-center rounded-full text-foreground hover:bg-muted"
+          >
+            <X className="h-5 w-5" />
           </button>
+          <DialogTitle className="font-display text-xl font-black">Settings</DialogTitle>
         </div>
-      </motion.div>
-    </div>
-  );
-}
 
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-muted-foreground">{children}</p>
-  );
-}
+        <div className="space-y-5 p-5 sm:p-6">
+          <div className="hidden sm:block">
+            <DialogTitle className="font-display text-2xl font-black text-foreground">Settings</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Changes apply immediately.
+            </DialogDescription>
+          </div>
 
-function Toggle({
-  label,
-  icon: Icon,
-  on,
-  onChange,
-}: {
-  label: string;
-  icon: typeof User;
-  on: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <button
-      onClick={() => onChange(!on)}
-      aria-pressed={on}
-      className="flex w-full items-center justify-between rounded-full bg-muted px-5 py-3"
-    >
-      <span className="flex items-center gap-2 text-sm font-bold text-foreground">
-        <Icon className="h-4 w-4" /> {label}
-      </span>
-      <span className={`relative h-7 w-12 rounded-full transition-colors ${on ? "bg-coral" : "bg-card"}`}>
-        <motion.span
-          layout
-          transition={{ type: "spring", stiffness: 500, damping: 30 }}
-          className="absolute top-1 h-5 w-5 rounded-full bg-card elev-1"
-          style={{ left: on ? 26 : 4, backgroundColor: on ? "var(--foreground)" : "var(--muted-foreground)" }}
-        />
-      </span>
-    </button>
-  );
-}
+          {/* 1. Account */}
+          <Section title="Account">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac font-display text-lg font-black text-foreground">
+                {initial}
+              </div>
+              <div className="min-w-0 flex-1">
+                <label htmlFor="display-name" className="text-xs font-semibold text-muted-foreground">
+                  Display name
+                </label>
+                <input
+                  id="display-name"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  onBlur={() => void saveName()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") void saveName();
+                  }}
+                  maxLength={24}
+                  className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
+                />
+                {nameError && <p className="mt-1 text-xs text-destructive">{nameError}</p>}
+              </div>
+              <button
+                onClick={() => void saveName()}
+                className="mt-4 h-11 shrink-0 rounded-full bg-muted px-4 text-sm font-bold text-foreground"
+              >
+                Save
+              </button>
+            </div>
+            <Row label="Email">
+              <span className="max-w-[240px] truncate text-sm text-muted-foreground">
+                {email || "Not signed in"}
+              </span>
+            </Row>
+          </Section>
 
-/** Read the local preference at call time — used by the mobile buzzer. */
-export function hapticsEnabled(): boolean {
-  return getSettings().haptics;
+          {/* 2. Appearance */}
+          <Section title="Appearance">
+            <Row label="Theme">
+              <Segmented
+                ariaLabel="Theme"
+                value={theme}
+                onChange={(v) => setThemePreference(v)}
+                options={[
+                  { value: "system", label: "System" },
+                  { value: "light", label: "Day" },
+                  { value: "dark", label: "Night" },
+                ]}
+              />
+            </Row>
+            <Row label="Reduce motion" hint="Disables non-essential animations">
+              <Switch
+                checked={settings.reduceMotion}
+                onCheckedChange={(v) => syncPrefs({ reduceMotion: v })}
+              />
+            </Row>
+          </Section>
+
+          {/* 3. Audio */}
+          <Section title="Audio">
+            <Row label="Master volume" disabled={settings.muted}>
+              <div className="flex w-40 items-center gap-2">
+                <Slider
+                  value={[Math.round(settings.masterVolume * 100)]}
+                  onValueChange={([v]) => syncPrefs({ masterVolume: (v ?? 0) / 100 })}
+                  max={100}
+                  step={1}
+                />
+                <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
+                  {Math.round(settings.masterVolume * 100)}
+                </span>
+              </div>
+            </Row>
+            <Row label="Sound effects" disabled={settings.muted}>
+              <div className="flex w-40 items-center gap-2">
+                <Slider
+                  value={[Math.round(settings.volume * 100)]}
+                  onValueChange={([v]) => syncPrefs({ volume: (v ?? 0) / 100 })}
+                  max={100}
+                  step={1}
+                />
+                <span className="w-8 text-right text-xs tabular-nums text-muted-foreground">
+                  {Math.round(settings.volume * 100)}
+                </span>
+              </div>
+            </Row>
+            <Row label="Mute all">
+              <Switch checked={settings.muted} onCheckedChange={(v) => syncPrefs({ muted: v })} />
+            </Row>
+            <Row label="Test sound">
+              <button
+                onClick={() => sfx.ding()}
+                className="flex h-10 items-center gap-2 rounded-full bg-muted px-4 text-sm font-bold text-foreground"
+              >
+                <Volume2 className="h-4 w-4" /> Play
+              </button>
+            </Row>
+          </Section>
+
+          {/* 4. Performance */}
+          <Section title="Performance">
+            <Row label="Graphics quality" hint="Blur, gradients and heavy animations">
+              <Segmented<GraphicsQuality>
+                ariaLabel="Graphics quality"
+                value={settings.graphics}
+                onChange={(v) => syncPrefs({ graphics: v })}
+                options={[
+                  { value: "high", label: "High" },
+                  { value: "medium", label: "Medium" },
+                  { value: "low", label: "Low" },
+                ]}
+              />
+            </Row>
+            <Row label="Background effects" hint="Ambient colored blobs">
+              <Switch
+                checked={settings.backgroundEffects}
+                onCheckedChange={(v) => syncPrefs({ backgroundEffects: v })}
+              />
+            </Row>
+          </Section>
+
+          <div className="flex justify-end border-t border-border pt-4">
+            <button
+              onClick={onClose}
+              className="h-12 rounded-full bg-coral px-8 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-105"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }

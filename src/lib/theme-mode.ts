@@ -4,10 +4,18 @@
  * No game logic, state or data depends on this.
  */
 export type ThemeMode = "light" | "dark";
+/** What the user picked; "system" follows prefers-color-scheme. */
+export type ThemePreference = ThemeMode | "system";
 
 const KEY = "jeopardestiny:mode";
 let mode: ThemeMode = "light";
+let preference: ThemePreference = "system";
 const listeners = new Set<() => void>();
+
+function systemMode(): ThemeMode {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 function apply(next: ThemeMode) {
   if (typeof document === "undefined") return;
@@ -18,13 +26,16 @@ function apply(next: ThemeMode) {
 export function initThemeMode() {
   if (typeof window === "undefined") return;
   const stored = window.localStorage.getItem(KEY);
-  mode =
-    stored === "dark" || stored === "light"
-      ? stored
-      : window.matchMedia?.("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+  preference = stored === "dark" || stored === "light" || stored === "system" ? stored : "system";
+  mode = preference === "system" ? systemMode() : preference;
   apply(mode);
+  // Keep following the OS while the preference is "system".
+  window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener?.("change", () => {
+    if (preference !== "system") return;
+    mode = systemMode();
+    apply(mode);
+    listeners.forEach((l) => l());
+  });
   listeners.forEach((l) => l());
 }
 
@@ -32,15 +43,24 @@ export function getThemeMode(): ThemeMode {
   return mode;
 }
 
-export function setThemeMode(next: ThemeMode) {
-  mode = next;
-  apply(next);
+export function getThemePreference(): ThemePreference {
+  return preference;
+}
+
+export function setThemePreference(next: ThemePreference) {
+  preference = next;
+  mode = next === "system" ? systemMode() : next;
+  apply(mode);
   try {
     window.localStorage.setItem(KEY, next);
   } catch {
     /* storage unavailable — mode still applies for this session */
   }
   listeners.forEach((l) => l());
+}
+
+export function setThemeMode(next: ThemeMode) {
+  setThemePreference(next);
 }
 
 export function toggleThemeMode() {

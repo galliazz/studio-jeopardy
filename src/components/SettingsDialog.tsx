@@ -19,6 +19,8 @@ import { bootstrapStudio, exportGame, updateProfile } from "@/lib/games.function
 import { getSettings, resetSettings, setSettings, useSettings } from "@/lib/settings";
 import { PLAYER_AVATARS, type Game } from "@/lib/types";
 import { sfx } from "@/lib/sfx";
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 
 type Tab = "profile" | "audio" | "teams" | "gameplay" | "data";
 

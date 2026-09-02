@@ -551,7 +551,7 @@ function HostPage() {
           {/* LEFT: join, roster, OBS, soundboard, tools */}
           <div className="order-2 min-h-0 space-y-6 overflow-y-auto pr-1 min-[840px]:order-1">
 
-            <JoinCard joinCode={game.join_code} playerCount={players.length} />
+            <JoinCard joinCode={game.join_code} playerCount={connectedCount} />
             <PlayerRoster
               players={players}
               onSwitchTeam={(playerId) => {

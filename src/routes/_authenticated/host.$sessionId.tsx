@@ -39,6 +39,8 @@ import {
   getHostState,
   openTile,
   closeTile,
+  clearQueue,
+
   resetBoard,
   judgeAnswer,
   revealAnswer,

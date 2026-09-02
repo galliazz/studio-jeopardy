@@ -12,7 +12,6 @@ import {
   FileSpreadsheet,
   Trash2,
   Upload,
-  Zap,
   Play,
   Pencil,
   QrCode,
@@ -36,7 +35,6 @@ import { darkBoardColors } from "@/lib/theme-mode";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { StudioTopBar } from "@/components/StudioTopBar";
 
-import { sfx } from "@/lib/sfx";
 import { getSettings } from "@/lib/settings";
 
 export const Route = createFileRoute("/_authenticated/studio")({

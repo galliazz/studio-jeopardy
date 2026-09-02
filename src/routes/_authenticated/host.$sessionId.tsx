@@ -1103,22 +1103,23 @@ function JoinCard({ joinCode, playerCount }: { joinCode: string; playerCount: nu
           sfx.pop();
           setManual(false);
         }}
-        className="flex min-h-12 w-full items-center justify-center gap-2 px-5 text-sm font-semibold text-muted-foreground"
+        className="flex min-h-12 w-full items-center gap-2 px-5 text-sm font-semibold text-muted-foreground"
         aria-expanded
       >
         {/* A small dot carries the "accepting players" state instead of a filled card. */}
         <span className="h-2 w-2 shrink-0 rounded-full bg-success-ink" aria-hidden />
-        Players join anytime
-        <ChevronDown className="h-4 w-4 rotate-180" />
+        Join
+        <ChevronDown className="ml-auto h-4 w-4 rotate-180" />
       </button>
       <div className="px-5 pb-5">
-        <div className="mx-auto mb-3 w-fit rounded-[22px] border border-foreground/10 p-2 text-foreground">
+        <div className="mx-auto mb-3 w-fit rounded-[18px] border border-foreground/10 p-2 text-foreground">
           {joinUrl ? (
-            <QRCodeSVG value={joinUrl} size={104} bgColor="transparent" fgColor="currentColor" />
+            <QRCodeSVG value={joinUrl} size={80} bgColor="transparent" fgColor="currentColor" />
           ) : (
-            <div className="h-[104px] w-[104px]" />
+            <div className="h-20 w-20" />
           )}
         </div>
+
 
         <button
           onClick={() => copy(joinCode, "Join code copied")}

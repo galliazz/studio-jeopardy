@@ -174,7 +174,7 @@ function TopContextBar() {
   // OBS browser-source overlays render with no chrome at all.
   if (path.startsWith("/obs/") || path.startsWith("/overlay/")) return null;
   // Studio and the Host console render their own app bars instead of this pill.
-  if (path === "/studio" || path.startsWith("/host/")) return null;
+  if (path === "/studio" || path.startsWith("/host/") || path.startsWith("/play/")) return null;
 
 
   const label = screenLabel(path);

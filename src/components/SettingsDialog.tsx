@@ -32,7 +32,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
 /** Low-emphasis gear pill available on every screen. */
-export function SettingsButton({ className = "" }: { className?: string }) {
+export function SettingsButton({ className = "", variant = "full" }: { className?: string; variant?: "full" | "guest" }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -47,7 +47,7 @@ export function SettingsButton({ className = "" }: { className?: string }) {
       >
         <SettingsIcon className="h-4 w-4" />
       </button>
-      {open && <SettingsDialog onClose={() => setOpen(false)} />}
+      {open && <SettingsDialog variant={variant} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -124,7 +124,9 @@ function Segmented<T extends string>({
 
 /* ---------------- dialog ---------------- */
 
-export function SettingsDialog({ onClose }: { onClose: () => void }) {
+/** `guest` drops Account and Performance: a phone player has no profile to edit. */
+export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => void; variant?: "full" | "guest" }) {
+  const guest = variant === "guest";
   const settings = useSettings();
   const queryClient = useQueryClient();
 
@@ -241,7 +243,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* 1. Account */}
-          <Section title="Account">
+          {!guest && <Section title="Account">
             <div className="flex items-center gap-3">
               <button
                 ref={avatarBtnRef}
@@ -291,7 +293,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 {email || "Not signed in"}
               </span>
             </Row>
-          </Section>
+          </Section>}
 
           {/* 2. Appearance */}
           <Section title="Appearance">
@@ -357,7 +359,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </Section>
 
           {/* 4. Performance */}
-          <Section title="Performance">
+          {!guest && <Section title="Performance">
             <Row label="Graphics quality" hint="Blur, gradients and heavy animations">
               <Segmented<GraphicsQuality>
                 ariaLabel="Graphics quality"

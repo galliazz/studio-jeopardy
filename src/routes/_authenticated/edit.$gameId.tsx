@@ -16,6 +16,7 @@ import {
   Copy,
   ExternalLink,
   ChevronDown,
+  Type,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";

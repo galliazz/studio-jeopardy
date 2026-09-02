@@ -964,9 +964,17 @@ function DailyDoubleWager({ session, players }: { session: Session; players: Pla
   );
 }
 
-/* ------------------------------- Queue panel ------------------------------ */
+/* ------------------------------- Queue list ------------------------------- */
 
-function QueuePanel({ session, players, queue }: { session: Session; players: Player[]; queue: QueueEntry[] }) {
+function QueueList({
+  session,
+  players,
+  queue,
+}: {
+  session: Session;
+  players: Player[];
+  queue: QueueEntry[];
+}) {
   const tileQueue = useMemo(() => {
     if (!session.current_tile_id) return [];
     return queue
@@ -975,69 +983,54 @@ function QueuePanel({ session, players, queue }: { session: Session; players: Pl
   }, [queue, session.current_tile_id]);
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
 
+  if (tileQueue.length === 0) return null;
+
   return (
-    <div className="relative rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">Buzzer Queue</h3>
-      <button
-        onClick={() => void clearQueue({ data: { sessionId: session.id } })}
-        disabled={!session.current_tile_id}
-        aria-label="Clear queue"
-        title="Clear queue"
-        className="absolute right-4 top-[10px] flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-danger hover:text-danger-ink disabled:opacity-40"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
-      {tileQueue.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">
-          {session.current_tile_id ? "Buzzers are live — waiting…" : "Open a tile to arm the buzzers"}
-        </p>
-      ) : (
-        <ol className="space-y-2">
-          {tileQueue.map((entry, i) => {
-            const player = players.find((p) => p.id === entry.player_id);
-            if (!player) return null;
-            const delta = new Date(entry.created_at).getTime() - firstAt;
-            const isActive = entry.status === "active";
-            return (
-              <motion.li
-                key={entry.id}
-                layout
-                initial={{ opacity: 0, x: 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ type: "spring", stiffness: 320, damping: 24 }}
-                className={`flex items-center gap-3 rounded-[26px] px-3 py-3 ${
-                  isActive ? "bg-butter elev-1" : "bg-muted"
-                }`}
-              >
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center font-display text-xs font-black text-foreground scallop ${
-                    isActive ? "bg-peach" : "bg-card"
-                  }`}
-                >
-                  #{i + 1}
-                </span>
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center text-base scallop ${
-                    player.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
-                  }`}
-                >
-                  {player.avatar}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{player.name}</p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {i === 0 ? "first in" : formatDelta(delta)} · {player.team}
-                  </p>
-                </div>
-                {isActive && <span className="h-3 w-3 animate-pulse rounded-full bg-ink-gold" />}
-              </motion.li>
-            );
-          })}
-        </ol>
-      )}
-    </div>
+    <ol className="space-y-2">
+      {tileQueue.map((entry, i) => {
+        const player = players.find((p) => p.id === entry.player_id);
+        if (!player) return null;
+        const delta = new Date(entry.created_at).getTime() - firstAt;
+        const isActive = entry.status === "active";
+        return (
+          <motion.li
+            key={entry.id}
+            layout
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 24 }}
+            className={`flex items-center gap-3 rounded-[26px] px-3 py-2.5 ${
+              isActive ? "bg-butter elev-1" : "border border-foreground/10 bg-transparent"
+            }`}
+          >
+            <span
+              className={`flex h-9 w-9 shrink-0 items-center justify-center font-display text-xs font-black text-foreground scallop ${
+                isActive ? "bg-peach" : "bg-muted"
+              }`}
+            >
+              #{i + 1}
+            </span>
+            <span
+              className={`flex h-9 w-9 shrink-0 items-center justify-center text-base scallop ${
+                player.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
+              }`}
+            >
+              {player.avatar}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold">{player.name}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {i === 0 ? "first in" : formatDelta(delta)} · {player.team}
+              </p>
+            </div>
+            {isActive && <span className="h-3 w-3 animate-pulse rounded-full bg-ink-gold" />}
+          </motion.li>
+        );
+      })}
+    </ol>
   );
 }
+
 
 /* ------------------------- Daily Double tiles dialog ----------------------- */
 

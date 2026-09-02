@@ -2,6 +2,29 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createPublicClient } from "@/lib/public-client.server";
 
+/** Columns of `sessions` that are safe to hand to a guest device. */
+const SESSION_PUBLIC_COLS =
+  "id, game_id, host_id, status, phase, current_tile_id, active_player_id, timer_ends_at, score_alpha, score_bravo, used_tile_ids, dd_wager, created_at, updated_at";
+/** Columns of `players` that are safe to hand to a guest device (never player_token). */
+const PLAYER_PUBLIC_COLS = "id, session_id, name, avatar, team, locked_out, created_at";
+
+async function admin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
+
+/** Resolves a player only when the caller proves ownership with the token issued at join time. */
+async function authenticatePlayer(playerId: string, token: string) {
+  const db = await admin();
+  const { data } = await db
+    .from("players")
+    .select("id, session_id, team, locked_out")
+    .eq("id", playerId)
+    .eq("player_token", token)
+    .maybeSingle();
+  return data ?? null;
+}
+
 /** Public: look up an active session by the game's join code. */
 export const lookupSession = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ code: z.string().trim().min(4).max(10) }).parse(data))
@@ -16,7 +39,7 @@ export const lookupSession = createServerFn({ method: "GET" })
     if (!game) return { error: "not_found" as const };
     const { data: session } = await client
       .from("sessions")
-      .select("*")
+      .select(SESSION_PUBLIC_COLS)
       .eq("game_id", game.id)
       .in("status", ["lobby", "live", "final"])
       .order("created_at", { ascending: false })
@@ -26,7 +49,7 @@ export const lookupSession = createServerFn({ method: "GET" })
     return { game, session };
   });
 
-/** Public: join a live session as a contestant. */
+/** Public: join a live session as a contestant. Returns a private token bound to the new player. */
 export const joinGame = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
@@ -49,21 +72,26 @@ export const joinGame = createServerFn({ method: "POST" })
     if (!game) return { error: "not_found" as const };
     const { data: session } = await client
       .from("sessions")
-      .select("*")
+      .select(SESSION_PUBLIC_COLS)
       .eq("game_id", game.id)
       .in("status", ["lobby", "live", "final"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!session) return { error: "not_started" as const };
+    if (session.status !== "lobby" && session.status !== "live") {
+      return { error: "not_started" as const };
+    }
 
-    const { data: player, error } = await client
+    const db = await admin();
+    const { data: player, error } = await db
       .from("players")
       .insert({ session_id: session.id, name: data.name, avatar: data.avatar, team: data.team })
-      .select()
+      .select("id, session_id, name, avatar, team, locked_out, created_at, player_token")
       .single();
-    if (error) return { error: "join_failed" as const, message: error.message };
-    return { player, session, gameTitle: game.title };
+    if (error || !player) return { error: "join_failed" as const, message: error?.message ?? "join failed" };
+    const { player_token, ...safe } = player;
+    return { player: safe, token: player_token, session, gameTitle: game.title };
   });
 
 /**
@@ -84,7 +112,7 @@ export const getObsState = createServerFn({ method: "GET" })
     if (!game) return { error: "not_found" as const };
     const { data: session } = await client
       .from("sessions")
-      .select("*")
+      .select(SESSION_PUBLIC_COLS)
       .eq("game_id", game.id)
       .in("status", ["lobby", "live", "final"])
       .order("created_at", { ascending: false })
@@ -96,11 +124,15 @@ export const getObsState = createServerFn({ method: "GET" })
       .select("id, game_id, title, position")
       .eq("game_id", game.id)
       .order("position");
-    // Security-definer RPC: returns points/positions only, never question/answer/hint text.
-    const { data: tiles } = await client.rpc("get_public_tile_points", { p_join_code: code });
+    // Points/positions only — never question/answer/hint text.
+    const db = await admin();
+    const catIds = (categories ?? []).map((c) => c.id);
+    const { data: tiles } = catIds.length
+      ? await db.from("tiles").select("id, category_id, row_index, points").in("category_id", catIds)
+      : { data: [] };
     const { data: players } = await client
       .from("players")
-      .select("*")
+      .select(PLAYER_PUBLIC_COLS)
       .eq("session_id", session.id)
       .order("created_at");
     const { data: queue } = await client
@@ -123,11 +155,15 @@ export const getPlayerState = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const { data: session } = await client.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session } = await client
+      .from("sessions")
+      .select(SESSION_PUBLIC_COLS)
+      .eq("id", data.sessionId)
+      .maybeSingle();
     if (!session) return { error: "not_found" as const };
     const { data: players } = await client
       .from("players")
-      .select("*")
+      .select(PLAYER_PUBLIC_COLS)
       .eq("session_id", data.sessionId)
       .order("created_at");
     const { data: queue } = await client
@@ -138,14 +174,17 @@ export const getPlayerState = createServerFn({ method: "GET" })
     return { session, players: players ?? [], queue: queue ?? [] };
   });
 
-/** Public: slam the buzzer. The DB trigger promotes the first buzzer instantly. */
+/** Public: slam the buzzer. Requires the player's private token; the DB trigger promotes the first buzzer. */
 export const buzz = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ playerId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z.object({ playerId: z.string().uuid(), token: z.string().uuid() }).parse(data),
+  )
   .handler(async ({ data }) => {
-    const client = createPublicClient();
-    const { data: player } = await client.from("players").select("*").eq("id", data.playerId).maybeSingle();
+    const player = await authenticatePlayer(data.playerId, data.token);
     if (!player) return { ok: false as const, reason: "no_player" as const };
-    const { data: session } = await client.from("sessions").select("*").eq("id", player.session_id).single();
+    if (player.locked_out) return { ok: false as const, reason: "closed" as const };
+    const db = await admin();
+    const { data: session } = await db.from("sessions").select("*").eq("id", player.session_id).maybeSingle();
     if (!session) return { ok: false as const, reason: "no_session" as const };
     if (session.status !== "live" || !session.current_tile_id) {
       return { ok: false as const, reason: "closed" as const };
@@ -155,16 +194,16 @@ export const buzz = createServerFn({ method: "POST" })
     }
     const tileId = session.current_tile_id;
 
-    const { error } = await client.from("buzzer_queue").insert({
+    const { error } = await db.from("buzzer_queue").insert({
       session_id: session.id,
       tile_id: tileId,
       player_id: player.id,
     });
     if (error && error.code !== "23505") {
-      return { ok: false as const, reason: "rejected" as const, message: error.message };
+      return { ok: false as const, reason: "rejected" as const };
     }
 
-    const { data: rows } = await client
+    const { data: rows } = await db
       .from("buzzer_queue")
       .select("*")
       .eq("session_id", session.id)
@@ -179,32 +218,34 @@ export const buzz = createServerFn({ method: "POST" })
     };
   });
 
-/** Public: submit a Final Jeopardy wager / answer for the player's team. */
+/** Public: submit a Final Jeopardy wager / answer for the authenticated player's own team. */
 export const submitFinalAnswer = createServerFn({ method: "POST" })
   .inputValidator((data) =>
     z
       .object({
         playerId: z.string().uuid(),
+        token: z.string().uuid(),
         wager: z.number().int().min(0).max(100000),
         answer: z.string().max(2000),
       })
       .parse(data),
   )
   .handler(async ({ data }) => {
-    const client = createPublicClient();
-    const { data: player } = await client.from("players").select("*").eq("id", data.playerId).maybeSingle();
+    const player = await authenticatePlayer(data.playerId, data.token);
     if (!player) return { ok: false as const, reason: "no_player" as const };
-    const { data: session } = await client.from("sessions").select("*").eq("id", player.session_id).single();
+    const db = await admin();
+    const { data: session } = await db.from("sessions").select("*").eq("id", player.session_id).maybeSingle();
     if (!session || session.status !== "final") return { ok: false as const, reason: "closed" as const };
     if (session.phase !== "final_wager" && session.phase !== "final_answer") {
       return { ok: false as const, reason: "closed" as const };
     }
-    const { error } = await client
+    // Team is taken from the verified player row — never from client input.
+    const { error } = await db
       .from("final_answers")
       .upsert(
         { session_id: session.id, team: player.team, wager: data.wager, answer: data.answer },
         { onConflict: "session_id,team" },
       );
-    if (error) return { ok: false as const, reason: "rejected" as const, message: error.message };
+    if (error) return { ok: false as const, reason: "rejected" as const };
     return { ok: true as const };
   });

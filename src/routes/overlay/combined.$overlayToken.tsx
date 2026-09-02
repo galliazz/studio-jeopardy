@@ -29,22 +29,25 @@ function CombinedOverlay() {
         <OverlayScores state={state} />
       </div>
 
+      {/* Board: centre of the canvas and the dominant block. */}
       <div
         style={{
           position: "absolute",
-          top: 250,
-          left: SAFE,
-          width: 760,
-          height: 760,
+          top: 260,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 700,
+          height: 700,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <OverlayBoard state={state} size={760} />
+        <OverlayBoard state={state} size={700} />
       </div>
 
-      <div style={{ position: "absolute", top: 300, right: SAFE, width: 540 }}>
+      {/* Queue: right side, clear of the board so a crop isolates it. */}
+      <div style={{ position: "absolute", top: 320, right: SAFE, width: 480 }}>
         <OverlayQueue state={state} />
       </div>
     </OverlayCanvas>

@@ -75,6 +75,8 @@ export interface Game {
   host_id: string;
   title: string;
   join_code: string;
+  /** Private key that authorises the read-only OBS overlay mirrors. */
+  overlay_token: string;
   theme: ThemeSettings;
   created_at: string;
   updated_at: string;

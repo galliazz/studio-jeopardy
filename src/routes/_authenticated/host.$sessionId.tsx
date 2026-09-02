@@ -342,7 +342,13 @@ function HostPage() {
           queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
         );
       },
+      clearQueue: () => {
+        void clearQueue({ data: { sessionId } }).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
+        );
+      },
     }),
+
     [activePlayerId, currentTileId, queryClient, sessionId, setHostSession],
   );
 

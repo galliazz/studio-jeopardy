@@ -120,13 +120,14 @@ export function OverlayBoard({
 export function OverlayScores({ state }: { state: OverlayState }) {
   const theme = useOverlayTheme(state);
   return (
+    /* Console-sized chips scaled up so every glyph clears 28px at 1080p.
+       The scale lives on a static wrapper: motion owns the inner transform. */
+    <div style={{ transform: "scale(2.6)", transformOrigin: "top center" }}>
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={FADE}
       className={`flex items-center gap-10 ${SCRIM}`}
-      /* Console-sized chips scaled up so every glyph clears 28px at 1080p. */
-      style={{ transform: "scale(2.6)", transformOrigin: "top center" }}
     >
       <ScorePill
         team="alpha"
@@ -147,6 +148,7 @@ export function OverlayScores({ state }: { state: OverlayState }) {
         quickValues={[]}
       />
     </motion.div>
+    </div>
   );
 }
 
@@ -154,14 +156,15 @@ export function OverlayScores({ state }: { state: OverlayState }) {
 
 export function OverlayQueue({ state, align = "right" }: { state: OverlayState; align?: "left" | "right" }) {
   return (
+    <div style={{ transform: "scale(1.9)", transformOrigin: `top ${align}`, width: 440 }}>
     <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
       transition={FADE}
       className={`text-foreground ${SCRIM}`}
-      style={{ transform: "scale(1.9)", transformOrigin: `top ${align}`, width: 440 }}
     >
       <QueueList session={state.session} players={state.players} queue={state.queue} />
     </motion.div>
+    </div>
   );
 }

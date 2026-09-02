@@ -34,6 +34,8 @@ export const Route = createFileRoute("/play/$code")({
 
 interface StoredIdentity {
   playerId: string;
+  /** Private per-player token issued at join time; proves ownership on buzz/final submit. */
+  token: string;
   name: string;
   avatar: string;
   team: Team;

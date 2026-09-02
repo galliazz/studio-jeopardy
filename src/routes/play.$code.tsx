@@ -133,6 +133,9 @@ function PlayerLobby({
 
 /* -------------------------------- Join form ------------------------------- */
 
+const NAME_MIN = 2;
+const NAME_MAX = 25;
+
 function JoinForm({
   code,
   gameTitle,
@@ -145,17 +148,35 @@ function JoinForm({
   onJoined: (id: StoredIdentity) => void;
 }) {
   const [name, setName] = useState("");
-  const [avatar, setAvatar] = useState(PLAYER_AVATARS[0]!);
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [team, setTeam] = useState<Team>("alpha");
   const [busy, setBusy] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  const trimmed = name.trim();
+  const nameOk = trimmed.length >= NAME_MIN && trimmed.length <= NAME_MAX;
+  const canJoin = nameOk && !!avatar && !busy;
 
   const join = async () => {
-    if (!name.trim() || busy) return;
+    if (!avatar || busy) return;
+    if (!nameOk) {
+      setNameError(`Use ${NAME_MIN} to ${NAME_MAX} characters`);
+      return;
+    }
+    setNameError(null);
+    setJoinError(null);
     setBusy(true);
     try {
-      const res = await joinGame({ data: { code, name: name.trim(), avatar, team } });
+      const res = await joinGame({ data: { code, name: trimmed, avatar, team } });
       if ("error" in res) {
-        toast.error(res.error === "not_started" ? "The host hasn't started yet" : "Could not join");
+        setJoinError(
+          res.error === "not_started"
+            ? "This game isn't accepting players right now."
+            : res.error === "not_found"
+              ? "That game has finished or no longer exists."
+              : "The game is full or closed — ask the host.",
+        );
         return;
       }
       vibrate(30);
@@ -167,7 +188,7 @@ function JoinForm({
         team: res.player.team as Team,
       });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not join");
+      setJoinError(err instanceof Error ? err.message : "Could not join — try again.");
     } finally {
       setBusy(false);
     }
@@ -181,22 +202,57 @@ function JoinForm({
         transition={{ type: "spring", stiffness: 160, damping: 20 }}
         className="w-full"
       >
-        <p className="mb-1 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          Guest Player Setup
-        </p>
         <h1 className="mb-1 text-center font-display text-2xl font-black">{gameTitle}</h1>
-        <p className="mb-6 text-center text-xs text-muted-foreground">
-          No account needed — just pick a name, avatar and team.
+        <p className="mb-6 text-center text-sm text-muted-foreground">
+          No account needed — pick a name, avatar and team.
         </p>
 
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">Pick your avatar</p>
-        <div className="mb-4 grid grid-cols-8 gap-1.5">
+        {/* Name */}
+        <div className="mb-5">
+          <label htmlFor="player-name" className="mb-1.5 block text-sm font-semibold text-muted-foreground">
+            Your name
+          </label>
+          <input
+            id="player-name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (nameError) setNameError(null);
+            }}
+            onBlur={() => {
+              const v = name.trim();
+              setNameError(v && !nameOk ? `Use ${NAME_MIN} to ${NAME_MAX} characters` : null);
+            }}
+            onKeyDown={(e) => e.key === "Enter" && void join()}
+            maxLength={NAME_MAX}
+            autoComplete="off"
+            aria-invalid={!!nameError}
+            className={`h-14 w-full rounded-2xl border bg-background px-4 text-base font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${
+              nameError ? "border-destructive" : "border-border"
+            }`}
+          />
+          <div className="mt-1 flex min-h-4 items-center justify-between gap-3">
+            <span className="text-xs text-destructive">{nameError}</span>
+            {name.length > 20 && (
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                {name.length}/{NAME_MAX}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Avatar */}
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">Your avatar</p>
+        <div className="mb-5 grid grid-cols-6 gap-2 sm:grid-cols-8">
           {PLAYER_AVATARS.map((a) => (
             <button
               key={a}
+              type="button"
+              aria-label={`Avatar ${a}`}
+              aria-pressed={avatar === a}
               onClick={() => setAvatar(a)}
-              className={`flex aspect-square items-center justify-center text-xl transition-all scallop ${
-                avatar === a ? "scale-110 bg-butter" : "bg-muted"
+              className={`flex aspect-square min-h-12 min-w-12 items-center justify-center rounded-full bg-muted text-2xl outline-none transition-transform active:scale-95 ${
+                avatar === a ? "ring-2 ring-ring ring-offset-2 ring-offset-background" : ""
               }`}
             >
               {a}
@@ -204,42 +260,50 @@ function JoinForm({
           ))}
         </div>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void join()}
-          placeholder="Your name"
-          maxLength={20}
-          className="mb-4 h-14 w-full rounded-full bg-muted px-5 text-center text-lg font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
-        />
-
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">Choose your team</p>
-        <div className="mb-6 grid grid-cols-2 gap-2">
-          {(["alpha", "bravo"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTeam(t)}
-              className={`rounded-full py-4 font-display text-sm font-black uppercase tracking-wider text-foreground transition-all ${
-                t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
-              } ${team === t ? "elev-2 ring-4 ring-ink-accent" : "opacity-50"}`}
-            >
-              {teamName(theme, t)}
-            </button>
-          ))}
+        {/* Team */}
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">Your team</p>
+        <div className="mb-6 grid grid-cols-2 gap-3">
+          {(["alpha", "bravo"] as const).map((t) => {
+            const selected = team === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setTeam(t)}
+                className={`min-h-12 rounded-full px-3 py-3 font-display text-sm font-black uppercase tracking-wider outline-none transition-colors ${
+                  selected
+                    ? `text-foreground elev-2 ${t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`
+                    : "border-2 border-border bg-transparent text-muted-foreground"
+                }`}
+              >
+                {teamName(theme, t)}
+              </button>
+            );
+          })}
         </div>
 
+        {joinError && (
+          <p role="alert" className="mb-3 text-center text-sm font-semibold text-destructive">
+            {joinError}
+          </p>
+        )}
+
+        {/* Primary action, kept in thumb reach at the bottom of the content block */}
         <motion.button
-          whileTap={{ scale: 0.96 }}
-          disabled={!name.trim() || busy}
+          whileTap={{ scale: canJoin ? 0.96 : 1 }}
+          disabled={!canJoin}
           onClick={() => void join()}
-          className="h-14 w-full rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
+          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
         >
-          {busy ? "Joining…" : "Join Game"}
+          {busy && <Loader2 className="h-5 w-5 animate-spin" />}
+          {busy ? "Joining…" : "Join game"}
         </motion.button>
       </motion.div>
     </Shell>
   );
 }
+
 
 /* ------------------------------- Live player ------------------------------ */
 

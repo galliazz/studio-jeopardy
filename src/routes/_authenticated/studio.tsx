@@ -347,15 +347,13 @@ function StudioPage() {
                 key={game.id}
                 game={game}
                 index={i}
-                menuOpen={openMenu === game.id}
-                onToggleMenu={() => setOpenMenu(openMenu === game.id ? null : game.id)}
-                onCloseMenu={() => setOpenMenu(null)}
+                stats={data?.stats?.[game.id]}
                 onPlay={() => void handlePlay(game.id)}
                 onRename={(title) => void handleRename(game.id, title)}
                 onDuplicate={() => void handleDuplicate(game.id)}
                 onExport={() => void handleExport(game.id)}
                 onExportXlsx={() => void handleExportXlsx(game.id)}
-                onDelete={() => void handleDelete(game.id)}
+                onDelete={() => handleDelete(game.id, game.title)}
               />
             ))}
           </div>

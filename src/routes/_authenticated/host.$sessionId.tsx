@@ -1369,7 +1369,7 @@ function LiveControlPanel({
   const phase = session.phase;
 
   return (
-    <div className="rounded-[32px] bg-card p-5 elev-2">
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (

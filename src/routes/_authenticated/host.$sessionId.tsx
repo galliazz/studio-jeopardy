@@ -152,7 +152,7 @@ function HostPage() {
     <div className="min-h-screen text-foreground">
       <div className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">
         {/* Header */}
-        <div className="mb-5 flex flex-col gap-3 rounded-[32px] bg-card/80 p-4 pr-14 elev-1 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-4">
+        <div className="mb-5 flex flex-col gap-3 rounded-[32px] bg-card/80 p-4 elev-1 lg:grid lg:grid-cols-[280px_minmax(0,1fr)_300px] lg:items-center lg:gap-4">
           <div className="flex items-center gap-3">
             {/* Visible exit pill — confirms first while a game is live */}
             <Link

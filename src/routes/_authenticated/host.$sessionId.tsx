@@ -37,7 +37,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import {
   getHostState,
@@ -60,13 +59,11 @@ import {
   switchPlayerTeam,
   removePlayer,
 } from "@/lib/sessions.functions";
-import { updateGame, bootstrapStudio, regenerateOverlayToken } from "@/lib/games.functions";
+import { bootstrapStudio, regenerateOverlayToken } from "@/lib/games.functions";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
-import { sanitizeHtml } from "@/lib/sanitize";
-import { useSignedUrl } from "@/lib/media";
 import {
   themeOf,
   teamName,
@@ -308,6 +305,29 @@ function HostPage() {
   const currentTileId = session?.current_tile_id ?? null;
   const activePlayerId = session?.active_player_id ?? null;
 
+  /*
+   * Un solo giudizio per volta, sempre riferito al giocatore che l'host aveva
+   * davanti. Dopo un "Wrong" il server promuove subito il successivo in coda:
+   * un secondo click — o una seconda pressione di "x" — penalizzerebbe lui.
+   * Il server rifiuta se il bersaglio è cambiato; qui si ricarica lo stato vero
+   * e si avvisa, invece di lasciare l'interfaccia a raccontare una bugia.
+   */
+  const judging = useRef(false);
+  const runJudge = useCallback(
+    async (correct: boolean, judgedPlayerId: string) => {
+      judging.current = true;
+      try {
+        await judgeAnswer({ data: { sessionId, correct, expectedPlayerId: judgedPlayerId } });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Nothing was judged");
+      } finally {
+        judging.current = false;
+        void queryClient.invalidateQueries({ queryKey: ["host", sessionId] });
+      }
+    },
+    [queryClient, sessionId],
+  );
+
   // ---- Game-loop actions, shared by the panel and the keyboard ----------
   const actions: HostActions = useMemo(
     () => ({
@@ -317,18 +337,14 @@ function HostPage() {
         void revealAnswer({ data: { sessionId } });
       },
       judgeCorrect: () => {
-        if (!activePlayerId) return;
+        if (!activePlayerId || judging.current) return;
         sfx.ding();
-        void judgeAnswer({ data: { sessionId, correct: true } }).then(() =>
-          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
-        );
+        void runJudge(true, activePlayerId);
       },
       judgeWrong: () => {
-        if (!activePlayerId) return;
+        if (!activePlayerId || judging.current) return;
         sfx.wrong();
-        void judgeAnswer({ data: { sessionId, correct: false } }).then(() =>
-          queryClient.invalidateQueries({ queryKey: ["host", sessionId] }),
-        );
+        void runJudge(false, activePlayerId);
       },
       passToNext: () => {
         if (!currentTileId) return;
@@ -362,7 +378,7 @@ function HostPage() {
       },
     }),
 
-    [activePlayerId, currentTileId, queryClient, sessionId, setHostSession],
+    [activePlayerId, currentTileId, queryClient, runJudge, sessionId, setHostSession],
   );
 
   useEffect(() => {
@@ -1453,6 +1469,9 @@ function FinalPanel({
 /* --------------------------------- Podium --------------------------------- */
 
 function Podium({ session, players, theme }: { session: Session; players: Player[]; theme: ThemeSettings }) {
+  // A parità di punteggio non c'è un vincitore: il `>=` proclamava sempre
+  // Alpha, con l'altra squadra elencata sotto con lo stesso identico numero.
+  const tie = session.score_alpha === session.score_bravo;
   const winner: Team = session.score_alpha >= session.score_bravo ? "alpha" : "bravo";
   const loser: Team = winner === "alpha" ? "bravo" : "alpha";
   const winScore = winner === "alpha" ? session.score_alpha : session.score_bravo;
@@ -1474,7 +1493,7 @@ function Podium({ session, players, theme }: { session: Session; players: Player
       >
         <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop"><Crown className="h-10 w-10 text-ink-gold" /></span>
         <h2 className="font-display text-3xl font-black text-ink-gold text-glow-gold">
-          {teamName(theme, winner)} wins!
+          {tie ? "It's a tie!" : `${teamName(theme, winner)} wins!`}
         </h2>
         <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">

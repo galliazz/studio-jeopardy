@@ -207,7 +207,9 @@ export function QuestionOverlay({
                         ),
                       });
                     }
-                    void judgeAnswer({ data: { sessionId: session.id, correct: true } });
+                    void judgeAnswer({
+                      data: { sessionId: session.id, correct: true, expectedPlayerId: activePlayer.id },
+                    });
                   }}
                   className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
                 >
@@ -288,7 +290,9 @@ export function QuestionOverlay({
                         ),
                       });
                     }
-                    void judgeAnswer({ data: { sessionId: session.id, correct: false } });
+                    void judgeAnswer({
+                      data: { sessionId: session.id, correct: false, expectedPlayerId: activePlayer.id },
+                    });
                   }}
                   className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
                 >

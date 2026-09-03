@@ -157,13 +157,28 @@ export const startDailyDouble = createServerFn({ method: "POST" })
 export const judgeAnswer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ sessionId: z.string().uuid(), correct: z.boolean() }).parse(data),
+    z
+      .object({
+        sessionId: z.string().uuid(),
+        correct: z.boolean(),
+        /**
+         * Giocatore che l'host aveva davanti quando ha premuto. Obbligatorio:
+         * dopo un "Wrong" il server promuove subito il successivo in coda, e
+         * senza questo controllo un secondo click — istintivo se l'app sembra
+         * lenta — penalizzerebbe lui, che non ha nemmeno aperto bocca.
+         */
+        expectedPlayerId: z.string().uuid(),
+      })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
     if (error) throw new Error(error.message);
     if (!session.current_tile_id || !session.active_player_id) throw new Error("No active answer to judge");
+    if (session.active_player_id !== data.expectedPlayerId) {
+      throw new Error("The active player changed — nothing was judged");
+    }
 
     const { data: tile } = await supabase.from("tiles").select("*").eq("id", session.current_tile_id).single();
     const { data: player } = await supabase.from("players").select("*").eq("id", session.active_player_id).single();
@@ -319,16 +334,27 @@ export const clearQueue = createServerFn({ method: "POST" })
     const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
     if (error) throw new Error(error.message);
     if (session.current_tile_id) {
+      /*
+       * Le righe vanno CANCELLATE, non marcate. Il vincolo
+       * `unique (session_id, tile_id, player_id)` impedisce altrimenti a chi ha
+       * già premuto di rientrare: la casella resta ingiocabile proprio per chi
+       * era stato più veloce. Si cancella tutto, comprese le righe già
+       * giudicate, che altrimenti bloccherebbero allo stesso modo.
+       */
       await supabase
         .from("buzzer_queue")
-        .update({ status: "cleared", judged_at: new Date().toISOString() })
+        .delete()
         .eq("session_id", data.sessionId)
-        .eq("tile_id", session.current_tile_id)
-        .in("status", ["queued", "active"]);
+        .eq("tile_id", session.current_tile_id);
     }
+    // Riaprire i buzzer senza sbloccare chi era stato giudicato male non li
+    // riapre davvero: quei giocatori resterebbero esclusi dalla casella.
+    await supabase.from("players").update({ locked_out: false }).eq("session_id", data.sessionId);
     const { error: uErr } = await supabase
       .from("sessions")
-      .update({ phase: "question_open", active_player_id: null, timer_ends_at: null })
+      // `dd_wager` va azzerato: se resta impostato, la casella è un Daily
+      // Double a cui nessuno può più rispondere.
+      .update({ phase: "question_open", active_player_id: null, timer_ends_at: null, dd_wager: null })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
     return { ok: true };
@@ -444,11 +470,27 @@ export const judgeFinal = createServerFn({ method: "POST" })
       .eq("session_id", data.sessionId)
       .eq("team", data.team)
       .maybeSingle();
-    const wager = entry?.wager ?? 0;
-    const delta = data.correct ? wager : -wager;
-    if (entry) {
-      await supabase.from("final_answers").update({ judged: data.correct }).eq("id", entry.id);
+    if (!entry) throw new Error("This team has no final answer to judge");
+    if (entry.judged !== null) return { ok: true, finished: false, alreadyJudged: true };
+
+    /*
+     * Aggiornamento condizionale: di due click ravvicinati solo il primo trova
+     * la riga ancora da giudicare. Senza, il secondo accreditava la puntata una
+     * seconda volta — con una puntata da 800 la squadra guadagnava 800 punti
+     * inesistenti, e questo decide chi vince.
+     */
+    const { data: claimed } = await supabase
+      .from("final_answers")
+      .update({ judged: data.correct })
+      .eq("id", entry.id)
+      .is("judged", null)
+      .select("id");
+    if (!claimed || claimed.length === 0) {
+      return { ok: true, finished: false, alreadyJudged: true };
     }
+
+    const wager = entry.wager ?? 0;
+    const delta = data.correct ? wager : -wager;
     const newScore = (data.team === "alpha" ? session.score_alpha : session.score_bravo) + delta;
     const { data: others } = await supabase
       .from("final_answers")

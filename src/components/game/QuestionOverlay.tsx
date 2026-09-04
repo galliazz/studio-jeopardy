@@ -117,7 +117,12 @@ export function QuestionOverlay({
           {countdown.seconds != null && session.phase !== "reveal" && (
             <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full rounded-full transition-[width] duration-100 ${countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"}`}
+                /* Niente transizione sulla larghezza: il valore viene già
+                   ricalcolato a ogni frame dallo stesso rAF che muove il
+                   numero. Una transizione di 100ms ne fa partire una nuova a
+                   ogni frame, così la barra insegue il numero con un ritardo
+                   costante e non lo raggiunge mai. */
+                className={`h-full rounded-full ${countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"}`}
                 style={{ width: `${countdown.fraction * 100}%` }}
               />
             </div>
@@ -206,10 +211,14 @@ export function QuestionOverlay({
                               : q,
                         ),
                       });
+                      // La chiamata sta DENTRO la guardia: fuori, `activePlayer.id`
+                      // dipenderebbe dal restringimento di tipo operato dal JSX, che
+                      // regge solo perché la variabile è `const`. Meglio non farlo
+                      // dipendere da una sottigliezza del compilatore.
+                      void judgeAnswer({
+                        data: { sessionId: session.id, correct: true, expectedPlayerId: activePlayer.id },
+                      });
                     }
-                    void judgeAnswer({
-                      data: { sessionId: session.id, correct: true, expectedPlayerId: activePlayer.id },
-                    });
                   }}
                   className="flex items-center gap-2 rounded-full bg-success px-9 py-3.5 font-display text-base font-black text-success-ink elev-2"
                 >
@@ -289,10 +298,10 @@ export function QuestionOverlay({
                               : q,
                         ),
                       });
+                      void judgeAnswer({
+                        data: { sessionId: session.id, correct: false, expectedPlayerId: activePlayer.id },
+                      });
                     }
-                    void judgeAnswer({
-                      data: { sessionId: session.id, correct: false, expectedPlayerId: activePlayer.id },
-                    });
                   }}
                   className="flex items-center gap-2 rounded-full bg-danger px-9 py-3.5 font-display text-base font-black text-danger-ink elev-2"
                 >

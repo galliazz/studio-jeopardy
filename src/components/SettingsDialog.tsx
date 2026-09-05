@@ -20,6 +20,7 @@ import {
   type ThemePreference,
 } from "@/lib/theme-mode";
 import { sfx } from "@/lib/sfx";
+import { SHORTCUTS } from "@/lib/shortcuts";
 import { AccountAvatar, setAvatarValue, useAvatarValue } from "@/lib/avatar";
 import { ChooseAvatarDialog } from "@/components/ChooseAvatarDialog";
 import {
@@ -380,6 +381,24 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
             </Row>
           </Section>}
 
+          {/* 5. Keyboard shortcuts — reference only, host-side. */}
+          {!guest && (
+            <Section title="Keyboard shortcuts">
+              <ul className="space-y-1">
+                {SHORTCUTS.map(([k, label]) => (
+                  <li key={k} className="flex min-h-10 items-center justify-between gap-4">
+                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <kbd className="shrink-0 rounded-md border border-border px-2 py-1 font-mono text-xs font-bold text-foreground">
+                      {k}
+                    </kbd>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Shortcuts pause while a text field or a dialog has focus.
+              </p>
+            </Section>
+          )}
 
           <div className="flex justify-end border-t border-border pt-4">
             <button

@@ -152,7 +152,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
   // OBS browser sources are pure graphics: no app chrome, no toasts.
-  const overlay = location.pathname.startsWith("/overlay/") || location.pathname.startsWith("/obs/");
+  const overlay = location.pathname.startsWith("/overlay/");
 
   useEffect(() => {
     initThemeMode();
@@ -172,7 +172,7 @@ function TopContextBar() {
   const location = useLocation();
   const path = location.pathname;
   // OBS browser-source overlays render with no chrome at all.
-  if (path.startsWith("/obs/") || path.startsWith("/overlay/")) return null;
+  if (path.startsWith("/overlay/")) return null;
   // Studio and the Host console render their own app bars instead of this pill.
   if (path === "/studio" || path.startsWith("/host/") || path.startsWith("/play/")) return null;
 

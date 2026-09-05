@@ -5,6 +5,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 import { generateJoinCode } from "@/lib/join-code";
 import { createEmptyBoard, seedDemoGame } from "@/lib/games.server";
 import { DEFAULT_THEME } from "@/lib/types";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): Partial<T> {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
@@ -144,6 +145,10 @@ export const updateTile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { tileId, ...raw } = data;
+    // L'HTML si sanifica QUI, all'ingresso: il rendering non deve essere
+    // l'unica difesa, e questa funzione è raggiungibile anche da un client
+    // che non passa dall'editor.
+    if (raw.question !== undefined) raw.question = sanitizeHtml(raw.question);
     const patch = stripUndefined(raw) as Database["public"]["Tables"]["tiles"]["Update"];
     const { error } = await context.supabase.from("tiles").update(patch).eq("id", tileId);
     if (error) throw new Error(error.message);
@@ -328,7 +333,9 @@ export const importGame = createServerFn({ method: "POST" })
             category_id: newCat.id,
             row_index: t.row_index,
             points: t.points,
-            question: t.question,
+            // Il file JSON arriva da terzi: si sanifica all'ingresso, non solo
+            // al momento di mostrarlo.
+            question: sanitizeHtml(t.question),
             answer: t.answer,
             hint: t.hint ?? null,
           })),

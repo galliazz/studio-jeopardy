@@ -51,6 +51,12 @@ export function OverlayCanvas({ children }: { children: React.ReactNode }) {
       }}
     >
       <div
+        /* The size container for every mirrored piece: board and clue size
+           their type and spacing off the 1920x1080 canvas, not off their own
+           footprint, so a streamer's chosen board box cannot rescale them.
+           As a class rather than an inline style, so it does not depend on
+           `container-type` being present in the installed csstype. */
+        className="[container-type:size]"
         style={{
           width: CANVAS_W,
           height: CANVAS_H,
@@ -89,28 +95,41 @@ export function OverlayBoard({
       state.session.phase === "daily_double_wager");
 
   return (
-    <div className={SCRIM} style={{ position: "relative", width, height, display: "flex", justifyContent: "center" }}>
-      <BoardGrid
-        theme={theme}
-        categories={state.categories}
-        tiles={state.tiles}
-        usedIds={new Set(state.session.used_tile_ids)}
-        scale={height / 640}
-      />
-      <AnimatePresence>
-        {clueOpen && tile && (
-          <QuestionOverlay
-            key={tile.id + state.session.phase}
-            session={state.session}
-            tile={tile}
-            category={category}
-            players={state.players}
-            queue={state.queue}
-            theme={theme}
-            readOnly
-          />
-        )}
-      </AnimatePresence>
+    <div
+      className={SCRIM}
+      style={{ position: "relative", width, height, display: "flex", justifyContent: "center", alignItems: "center" }}
+    >
+      {/*
+       * Board and clue share ONE box, so the clue is a true container transform
+       * of the board's footprint instead of a differently-sized card that
+       * happens to sit on top of it.
+       */}
+      <div style={{ position: "relative", height: "100%", aspectRatio: "5 / 5.4" }}>
+        <BoardGrid
+          theme={theme}
+          categories={state.categories}
+          tiles={state.tiles}
+          usedIds={new Set(state.session.used_tile_ids)}
+          scale={height / 640}
+          fill
+          ownContainer={false}
+        />
+        <AnimatePresence>
+          {clueOpen && tile && (
+            <QuestionOverlay
+              key={tile.id + state.session.phase}
+              session={state.session}
+              tile={tile}
+              category={category}
+              players={state.players}
+              queue={state.queue}
+              theme={theme}
+              readOnly
+              ownContainer={false}
+            />
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

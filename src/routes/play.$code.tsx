@@ -580,7 +580,9 @@ function LivePlayer({
             >
               <Trophy className="mb-3 h-14 w-14 text-ink-gold" />
               <h2 className="font-display text-2xl font-black">
-                {teamName(theme, (session?.score_alpha ?? 0) >= (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!
+                {(session?.score_alpha ?? 0) === (session?.score_bravo ?? 0)
+                  ? "It's a tie!"
+                  : `${teamName(theme, (session?.score_alpha ?? 0) > (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!`}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your team scored <span className="font-bold text-ink-gold">{myScore ?? 0}</span>

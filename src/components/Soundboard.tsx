@@ -12,6 +12,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { AddSoundDialog, type NewClip } from "@/components/AddSoundDialog";
 import { addClip, listClips, removeClip, reorderClips, updateClip, MAX_CLIPS } from "@/lib/soundboard.functions";
+import { shortcutsSuppressed } from "@/lib/shortcuts";
 import {
   getBoardVolume,
   playClip,
@@ -56,9 +57,10 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
   // Number keys 1..9 fire the clip at that position.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const el = document.activeElement;
-      if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el as HTMLElement)?.isContentEditable) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Stessa guardia dell'host: un dialogo o un menu aperto deve zittire
+      // anche i tasti 1-9, altrimenti la clip parte mentre si sta digitando
+      // in una finestra o si naviga il menu dell'account.
+      if (shortcutsSuppressed() || e.metaKey || e.ctrlKey || e.altKey) return;
       const n = Number(e.key);
       if (!Number.isInteger(n) || n < 1 || n > 9) return;
       const clip = clips[n - 1];
@@ -104,7 +106,7 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
 
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+      <h3 className="mb-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-muted-foreground">
         <Volume2 className="h-4 w-4" /> Soundboard
       </h3>
 

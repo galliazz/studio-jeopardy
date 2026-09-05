@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Settings as SettingsIcon, LogOut, type LucideIcon } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -22,20 +22,31 @@ export interface AccountMenuItem {
 /**
  * Shared account avatar + dropdown used by every app bar (Studio, Host).
  * Emphasis: text-only menu items, no filled surfaces. Pages may inject their
- * own rows above Settings and one destructive row at the very bottom.
+ * own rows above Settings, richer blocks through `sections`, and destructive
+ * rows at the very bottom.
+ *
+ * The Host Console keeps everything that is not the board in here — join code,
+ * overlay links, tools — so `sections` carries real content, not only rows, and
+ * the panel scrolls once it outgrows the window.
  */
 export function AccountMenu({
   displayName,
   avatarUrl,
   onOpenSettings,
   items,
-  dangerItem,
+  sections,
+  dangerItems,
+  wide = false,
 }: {
   displayName: string;
   avatarUrl?: string | null | undefined;
   onOpenSettings: () => void;
   items?: AccountMenuItem[];
-  dangerItem?: AccountMenuItem | undefined;
+  /** Free-form blocks (already grouped and separated) shown above `items`. */
+  sections?: ReactNode;
+  dangerItems?: AccountMenuItem[] | undefined;
+  /** Widen the panel for content that needs more than a row of text. */
+  wide?: boolean;
 }) {
   const [email, setEmail] = useState("");
 
@@ -63,12 +74,21 @@ export function AccountMenu({
           <AccountAvatar value={avatarValue} initial={initial} className="h-10 w-10 text-base" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64 rounded-[24px] p-2">
+      <DropdownMenuContent
+        align="end"
+        /* Inline, because the shadcn base class sets `overflow: hidden` and the
+           panel has to scroll once the host folds its whole toolbox in here. */
+        style={{ overflowY: "auto", overflowX: "hidden" }}
+        className={`max-h-[min(80vh,44rem)] rounded-[24px] p-2 ${
+          wide ? "w-[min(22rem,calc(100vw_-_1.5rem))]" : "w-64"
+        }`}
+      >
         <div className="px-3 py-2">
           <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
           <p className="truncate text-xs text-muted-foreground">{email || "Signed in"}</p>
         </div>
         <DropdownMenuSeparator />
+        {sections}
         {items && items.length > 0 && (
           <>
             {items.map((it) => {
@@ -97,15 +117,21 @@ export function AccountMenu({
         >
           <LogOut className="mr-2 h-4 w-4" /> Sign out
         </DropdownMenuItem>
-        {dangerItem && (
+        {dangerItems && dangerItems.length > 0 && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className={`${rowClass} text-danger-ink focus:text-danger-ink`}
-              onSelect={dangerItem.onSelect}
-            >
-              <dangerItem.icon className="mr-2 h-4 w-4" /> {dangerItem.label}
-            </DropdownMenuItem>
+            {dangerItems.map((it) => {
+              const Icon = it.icon;
+              return (
+                <DropdownMenuItem
+                  key={it.label}
+                  className={`${rowClass} text-danger-ink focus:text-danger-ink ${it.className ?? ""}`}
+                  onSelect={it.onSelect}
+                >
+                  <Icon className="mr-2 h-4 w-4" /> {it.label}
+                </DropdownMenuItem>
+              );
+            })}
           </>
         )}
       </DropdownMenuContent>

@@ -94,62 +94,6 @@ export const joinGame = createServerFn({ method: "POST" })
     return { player: safe, token: player_token, session, gameTitle: game.title };
   });
 
-/**
- * Public: snapshot for OBS browser-source overlays (board/queue/combined).
- * Deliberately omits question/answer/hint text — overlays only ever render
- * points, categories, scores and the buzzer queue.
- */
-export const getObsState = createServerFn({ method: "GET" })
-  .inputValidator((data) => z.object({ code: z.string().trim().min(4).max(10) }).parse(data))
-  .handler(async ({ data }) => {
-    const client = createPublicClient();
-    const code = data.code.toUpperCase();
-    const { data: game } = await client
-      .from("games")
-      .select("id, title, join_code, theme")
-      .eq("join_code", code)
-      .maybeSingle();
-    if (!game) return { error: "not_found" as const };
-    const { data: session } = await client
-      .from("sessions")
-      .select(SESSION_PUBLIC_COLS)
-      .eq("game_id", game.id)
-      .in("status", ["lobby", "live", "final"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!session) return { error: "not_started" as const };
-    const { data: categories } = await client
-      .from("categories")
-      .select("id, game_id, title, position")
-      .eq("game_id", game.id)
-      .order("position");
-    // Points/positions only — never question/answer/hint text.
-    const db = await admin();
-    const catIds = (categories ?? []).map((c) => c.id);
-    const { data: tiles } = catIds.length
-      ? await db.from("tiles").select("id, category_id, row_index, points").in("category_id", catIds)
-      : { data: [] };
-    const { data: players } = await client
-      .from("players")
-      .select(PLAYER_PUBLIC_COLS)
-      .eq("session_id", session.id)
-      .order("created_at");
-    const { data: queue } = await client
-      .from("buzzer_queue")
-      .select("*")
-      .eq("session_id", session.id)
-      .order("created_at");
-    return {
-      game,
-      session,
-      categories: categories ?? [],
-      tiles: tiles ?? [],
-      players: players ?? [],
-      queue: queue ?? [],
-    };
-  });
-
 /** Public: snapshot for a player's view (initial load; realtime takes over after). */
 export const getPlayerState = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))

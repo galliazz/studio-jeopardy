@@ -175,9 +175,10 @@ export const judgeAnswer = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
     if (error) throw new Error(error.message);
-    if (!session.current_tile_id || !session.active_player_id) throw new Error("No active answer to judge");
+    // Corse dell'host (doppio click, stato già avanzato): niente errore, niente effetto.
+    if (!session.current_tile_id || !session.active_player_id) return { outcome: "noop" as const, delta: 0 };
     if (session.active_player_id !== data.expectedPlayerId) {
-      throw new Error("The active player changed — nothing was judged");
+      return { outcome: "noop" as const, delta: 0 };
     }
     // Fissati dopo la guardia: il restringimento di tipo su una proprietà non
     // sopravvive dentro una closure, e `markJudged` più sotto è una closure.

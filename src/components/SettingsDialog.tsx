@@ -197,6 +197,8 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
 
   const saveName = async () => {
     const v = username.trim();
+    // Guests have no account: the profile endpoint requires a session.
+    if (!signedIn) return;
     // Never scold an untouched, still-loading field (e.g. signed-out preview).
     if (!v && !savedName) return;
     if (v.length < 2 || v.length > 24) {

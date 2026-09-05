@@ -3,6 +3,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { shuffleIds, timerEnd } from "@/lib/sessions.server";
 
+/**
+ * Daily Double scelte a mano, lette dal tema del gioco. Stanno lì e non in una
+ * colonna propria perché il tema è già il posto dove la pagina di Edit salva
+ * le scelte dell'host, e non serviva una migrazione per una lista di id.
+ */
+function themeDailyDoubles(theme: unknown): string[] | null {
+  if (!theme || typeof theme !== "object") return null;
+  const value = (theme as { dailyDoubleTileIds?: unknown }).dailyDoubleTileIds;
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : null;
+}
+
 /** Starts a fresh live session for a game. Picks Daily Double tiles. */
 export const startSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -24,7 +35,16 @@ export const startSession = createServerFn({ method: "POST" })
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("id").in("category_id", catIds)
       : { data: [] };
-    const dailyDoubles = shuffleIds((tiles ?? []).map((t) => t.id)).slice(0, Math.min(2, tiles?.length ?? 0));
+    /*
+     * Le Daily Double scelte a mano nella pagina di Edit vivono sul gioco, non
+     * sulla sessione: la sessione nasce solo quando si preme Play. Qui si
+     * ereditano, e si sorteggiano soltanto se l'host non ne ha scelta nessuna.
+     */
+    const tileIds = new Set((tiles ?? []).map((t) => t.id));
+    const chosen = (themeDailyDoubles(game.theme) ?? []).filter((id) => tileIds.has(id));
+    const dailyDoubles = chosen.length
+      ? chosen.slice(0, 2)
+      : shuffleIds([...tileIds]).slice(0, Math.min(2, tileIds.size));
 
     const { data: session, error } = await supabase
       .from("sessions")
@@ -41,8 +61,6 @@ export const startSession = createServerFn({ method: "POST" })
         used_tile_ids: [],
         daily_double_tile_ids: dailyDoubles,
         dd_wager: null,
-        final_question: null,
-        final_answer: null,
       })
       .select()
       .single();
@@ -82,8 +100,24 @@ export const getHostState = createServerFn({ method: "GET" })
       .from("final_answers")
       .select("*")
       .eq("session_id", data.sessionId);
+    /*
+     * Domanda e risposta della Final Jeopardy vivono in una tabella a parte:
+     * su `sessions` rendevano impossibile dare agli ospiti il permesso di
+     * lettura sull'intera tabella, e senza quello Supabase Realtime non
+     * consegna niente ai telefoni e agli overlay. Qui vengono ricucite nella
+     * sessione, così il resto del codice dell'host non cambia.
+     */
+    const { data: secrets } = await supabase
+      .from("session_secrets")
+      .select("final_question, final_answer")
+      .eq("session_id", data.sessionId)
+      .maybeSingle();
     return {
-      session,
+      session: {
+        ...session,
+        final_question: secrets?.final_question ?? null,
+        final_answer: secrets?.final_answer ?? null,
+      },
       game,
       categories: categories ?? [],
       tiles: tiles ?? [],
@@ -93,7 +127,12 @@ export const getHostState = createServerFn({ method: "GET" })
     };
   });
 
-/** Opens a tile for play. Daily Double tiles enter the wager phase first. */
+/**
+ * Opens a tile for play. Una Daily Double si apre esattamente come le altre:
+ * niente scelta del concorrente, niente puntata. L'unica differenza è
+ * l'annuncio a schermo e il fatto che alla fine paga il doppio, in entrambe le
+ * direzioni.
+ */
 export const openTile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -110,49 +149,21 @@ export const openTile = createServerFn({ method: "POST" })
       .update({
         status: "live",
         current_tile_id: data.tileId,
-        phase: isDD ? "daily_double_wager" : "question_open",
+        phase: "question_open",
         active_player_id: null,
         timer_ends_at: null,
         dd_wager: null,
       })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
-    if (!isDD) {
-      await supabase.from("players").update({ locked_out: false }).eq("session_id", data.sessionId);
-    }
+    await supabase.from("players").update({ locked_out: false }).eq("session_id", data.sessionId);
     return { dailyDouble: isDD };
   });
 
-/** Locks in a Daily Double wager and hands the question to one player. */
-export const startDailyDouble = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z
-      .object({
-        sessionId: z.string().uuid(),
-        playerId: z.string().uuid(),
-        wager: z.number().int().min(1).max(100000),
-      })
-      .parse(data),
-  )
-  .handler(async ({ context, data }) => {
-    const { supabase } = context;
-    const { error } = await supabase
-      .from("sessions")
-      .update({
-        phase: "answering",
-        active_player_id: data.playerId,
-        dd_wager: data.wager,
-        timer_ends_at: timerEnd(),
-      })
-      .eq("id", data.sessionId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
 /**
- * Judges the active answer. Correct: +value, reveal. Wrong: -(value / 2)
- * (full wager on Daily Doubles), lock the player out, promote the next buzzer.
+ * Judges the active answer. Correct: +value, reveal. Wrong: -(value / 2), lock
+ * the player out, promote the next buzzer. Su una Daily Double entrambe le
+ * cifre raddoppiano.
  */
 export const judgeAnswer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -197,11 +208,18 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       .eq("player_id", session.active_player_id)
       .eq("status", "active")
       .maybeSingle();
-    if (!activeRow && session.dd_wager == null) throw new Error("Already judged");
+    if (!activeRow) throw new Error("Already judged");
 
-    const isDD = session.dd_wager != null;
-    const value = session.dd_wager ?? tile.points;
-    const delta = data.correct ? value : -(isDD ? value : Math.round(value / 2));
+    /*
+     * Una Daily Double raddoppia in entrambe le direzioni: una casella da 1000
+     * ne dà 2000 se giusta e ne toglie 1000 se sbagliata, contro i 1000 e i 500
+     * di una casella normale. Il moltiplicatore si legge dalla casella, non più
+     * da una puntata: la puntata non esiste più.
+     */
+    const isDD = (session.daily_double_tile_ids as string[]).includes(openTileId);
+    const multiplier = isDD ? 2 : 1;
+    const value = tile.points * multiplier;
+    const delta = data.correct ? value : -Math.round((tile.points / 2) * multiplier);
     const teamCol = player.team === "alpha" ? "score_alpha" : "score_bravo";
     const newScore = (teamCol === "score_alpha" ? session.score_alpha : session.score_bravo) + delta;
 
@@ -245,24 +263,6 @@ export const judgeAnswer = createServerFn({ method: "POST" })
         .eq("tile_id", session.current_tile_id)
         .eq("status", "queued");
       return { outcome: "correct" as const, delta };
-    }
-
-    // Daily Doubles have no queue to promote — straight to reveal.
-    if (isDD) {
-      const { error: sErr } = await supabase
-        .from("sessions")
-        .update({
-          phase: "reveal",
-          dd_wager: null,
-          timer_ends_at: null,
-          ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
-        })
-        .eq("id", data.sessionId);
-      if (sErr) throw new Error(sErr.message);
-
-      await markJudged();
-      await supabase.from("players").update({ locked_out: true }).eq("id", player.id);
-      return { outcome: "dd_wrong" as const, delta };
     }
 
     /*
@@ -421,7 +421,11 @@ export const resetBoard = createServerFn({ method: "POST" })
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("id").in("category_id", catIds)
       : { data: [] };
-    const dailyDoubles = shuffleIds((tiles ?? []).map((t) => t.id)).slice(0, Math.min(2, tiles?.length ?? 0));
+    // Anche qui si rispettano le Daily Double scelte a mano nella pagina di Edit.
+    const { data: game } = await supabase.from("games").select("theme").eq("id", session.game_id).single();
+    const tileIds = new Set((tiles ?? []).map((t) => t.id));
+    const chosen = (themeDailyDoubles(game?.theme) ?? []).filter((id) => tileIds.has(id));
+    const dailyDoubles = chosen.length ? chosen.slice(0, 2) : shuffleIds([...tileIds]).slice(0, Math.min(2, tileIds.size));
 
     // `sessions` per prima: l'host applica una modifica ottimistica enorme
     // (punteggi a zero, board vuota) e le ricariche innescate dalle altre
@@ -440,12 +444,11 @@ export const resetBoard = createServerFn({ method: "POST" })
         used_tile_ids: [],
         daily_double_tile_ids: dailyDoubles,
         dd_wager: null,
-        final_question: null,
-        final_answer: null,
       })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
 
+    await supabase.from("session_secrets").delete().eq("session_id", data.sessionId);
     await supabase.from("buzzer_queue").delete().eq("session_id", data.sessionId);
     await supabase.from("final_answers").delete().eq("session_id", data.sessionId);
     await supabase.from("players").update({ locked_out: false }).eq("session_id", data.sessionId);
@@ -476,13 +479,21 @@ export const startFinal = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
+    // Prima il segreto, poi la fase: se la fase passasse per prima, i telefoni
+    // aprirebbero la schermata della puntata su una domanda non ancora scritta.
+    const { error: sErr } = await context.supabase
+      .from("session_secrets")
+      .upsert(
+        { session_id: data.sessionId, final_question: data.question, final_answer: data.answer },
+        { onConflict: "session_id" },
+      );
+    if (sErr) throw new Error(sErr.message);
+
     const { error } = await context.supabase
       .from("sessions")
       .update({
         status: "final",
         phase: "final_wager",
-        final_question: data.question,
-        final_answer: data.answer,
         current_tile_id: null,
         active_player_id: null,
         timer_ends_at: null,
@@ -545,24 +556,47 @@ export const judgeFinal = createServerFn({ method: "POST" })
       return { ok: true, finished: false, alreadyJudged: true };
     }
 
-    const wager = entry.wager ?? 0;
-    const delta = data.correct ? wager : -wager;
-    const newScore = (data.team === "alpha" ? session.score_alpha : session.score_bravo) + delta;
     const { data: others } = await supabase
       .from("final_answers")
-      .select("judged")
+      .select("judged, wager")
       .eq("session_id", data.sessionId)
       .neq("team", data.team);
     const otherJudged = (others ?? []).every((o) => o.judged !== null) && (others ?? []).length > 0;
+
+    /*
+     * La finale è una scommessa fra le due squadre, non contro il banco.
+     * Chi risponde bene tiene la propria puntata e si prende quella avversaria;
+     * chi sbaglia perde la propria. Quindi una risposta giusta muove DUE
+     * punteggi, non uno: per questo si calcolano entrambi.
+     */
+    const ownWager = entry.wager ?? 0;
+    const rivalWager = (others ?? []).reduce((sum, o) => sum + (o.wager ?? 0), 0);
+    let scoreAlpha = session.score_alpha;
+    let scoreBravo = session.score_bravo;
+    if (data.correct) {
+      if (data.team === "alpha") {
+        scoreAlpha += rivalWager;
+        scoreBravo -= rivalWager;
+      } else {
+        scoreBravo += rivalWager;
+        scoreAlpha -= rivalWager;
+      }
+    } else if (data.team === "alpha") {
+      scoreAlpha -= ownWager;
+    } else {
+      scoreBravo -= ownWager;
+    }
+
     const { error: uErr } = await supabase
       .from("sessions")
       .update({
-        ...(data.team === "alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
+        score_alpha: scoreAlpha,
+        score_bravo: scoreBravo,
         ...(otherJudged ? { status: "finished" as const, phase: "idle" as const } : {}),
       })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
-    return { ok: true, finished: otherJudged };
+    return { ok: true, finished: otherJudged, delta: data.correct ? rivalWager : -ownWager };
   });
 
 /** End the session outright (skip Final Jeopardy). */

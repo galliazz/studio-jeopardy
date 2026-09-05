@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
+import type { ShortcutAction } from "@/lib/shortcuts";
 
 export type GraphicsQuality = "high" | "medium" | "low";
 
@@ -25,6 +26,8 @@ export interface StudioSettings {
   graphics: GraphicsQuality;
   /** Presentation-only: ambient colored background blobs. */
   backgroundEffects: boolean;
+  /** Tasti riassegnati dall'host. Viaggiano col profilo, non col computer. */
+  shortcuts: Partial<Record<ShortcutAction, string>>;
 }
 
 export const DEFAULT_SETTINGS: StudioSettings = {
@@ -38,6 +41,7 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   reduceMotion: false,
   graphics: "high",
   backgroundEffects: true,
+  shortcuts: {},
 };
 
 const KEY = "jd-studio-settings";
@@ -129,5 +133,6 @@ export function syncablePreferences(s: StudioSettings = getSettings()) {
     reduceMotion: s.reduceMotion,
     graphics: s.graphics,
     backgroundEffects: s.backgroundEffects,
+    shortcuts: s.shortcuts,
   };
 }

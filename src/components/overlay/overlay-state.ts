@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { getOverlayState } from "@/lib/play.functions";
-import { useSessionRealtime } from "@/hooks/use-session-realtime";
+import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { forceDarkMode, darkBoardColors } from "@/lib/theme-mode";
 import { themeOf, type Category, type Game, type Player, type QueueEntry, type Session, type ThemeSettings, type Tile } from "@/lib/types";
 
@@ -38,7 +38,7 @@ export function useOverlayState(token: string): OverlayState | null {
     retry: false,
   });
   const state = (data as unknown as OverlayState | null) ?? null;
-  useSessionRealtime(state?.session.id, [["overlay", token]]);
+  useSessionRealtime(state?.session.id, [["overlay", token]], GUEST_TABLES);
   return state;
 }
 

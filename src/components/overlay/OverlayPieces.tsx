@@ -91,8 +91,7 @@ export function OverlayBoard({
     !!tile &&
     (state.session.phase === "question_open" ||
       state.session.phase === "answering" ||
-      state.session.phase === "reveal" ||
-      state.session.phase === "daily_double_wager");
+      state.session.phase === "reveal");
 
   return (
     <div

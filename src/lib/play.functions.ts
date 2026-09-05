@@ -4,8 +4,8 @@ import { createPublicClient } from "@/lib/public-client.server";
 
 /** Columns of `sessions` that are safe to hand to a guest device. */
 const SESSION_PUBLIC_COLS =
-  "id, game_id, host_id, status, phase, current_tile_id, active_player_id, timer_ends_at, score_alpha, score_bravo, used_tile_ids, dd_wager, created_at, updated_at";
-/** Columns of `players` that are safe to hand to a guest device (never player_token). */
+  "id, game_id, host_id, status, phase, current_tile_id, active_player_id, timer_ends_at, score_alpha, score_bravo, used_tile_ids, daily_double_tile_ids, dd_wager, created_at, updated_at";
+/** Columns of `players` that are safe to hand to a guest device. */
 const PLAYER_PUBLIC_COLS = "id, session_id, name, avatar, team, locked_out, created_at";
 
 async function admin() {
@@ -13,14 +13,25 @@ async function admin() {
   return supabaseAdmin;
 }
 
-/** Resolves a player only when the caller proves ownership with the token issued at join time. */
+/**
+ * Resolves a player only when the caller proves ownership with the token issued
+ * at join time. Il token vive in `player_secrets`, non più su `players`: finché
+ * stava lì, gli ospiti potevano leggere la tabella solo a colonne scelte, e con
+ * un permesso parziale Supabase Realtime non consegna alcun evento.
+ */
 async function authenticatePlayer(playerId: string, token: string) {
   const db = await admin();
+  const { data: secret } = await db
+    .from("player_secrets")
+    .select("player_id")
+    .eq("player_id", playerId)
+    .eq("player_token", token)
+    .maybeSingle();
+  if (!secret) return null;
   const { data } = await db
     .from("players")
     .select("id, session_id, team, locked_out")
     .eq("id", playerId)
-    .eq("player_token", token)
     .maybeSingle();
   return data ?? null;
 }
@@ -87,11 +98,17 @@ export const joinGame = createServerFn({ method: "POST" })
     const { data: player, error } = await db
       .from("players")
       .insert({ session_id: session.id, name: data.name, avatar: data.avatar, team: data.team })
-      .select("id, session_id, name, avatar, team, locked_out, created_at, player_token")
+      .select(PLAYER_PUBLIC_COLS)
       .single();
     if (error || !player) return { error: "join_failed" as const, message: error?.message ?? "join failed" };
-    const { player_token, ...safe } = player;
-    return { player: safe, token: player_token, session, gameTitle: game.title };
+    // Il token lo emette un trigger sull'insert; qui si legge soltanto.
+    const { data: secret } = await db
+      .from("player_secrets")
+      .select("player_token")
+      .eq("player_id", player.id)
+      .maybeSingle();
+    if (!secret) return { error: "join_failed" as const, message: "token not issued" };
+    return { player, token: secret.player_token, session, gameTitle: game.title };
   });
 
 /** Public: snapshot for a player's view (initial load; realtime takes over after). */
@@ -115,7 +132,23 @@ export const getPlayerState = createServerFn({ method: "GET" })
       .select("*")
       .eq("session_id", data.sessionId)
       .order("created_at");
-    return { session, players: players ?? [], queue: queue ?? [] };
+    /*
+     * La domanda finale raggiunge i telefoni SOLO quando è ora di rispondere,
+     * e la risposta non li raggiunge mai. Vive in `session_secrets`, che il
+     * ruolo ospite non può leggere: qui la si preleva con la chiave di
+     * servizio e si consegna solo nella fase giusta.
+     */
+    let finalQuestion: string | null = null;
+    if (session.phase === "final_answer") {
+      const db = await admin();
+      const { data: secrets } = await db
+        .from("session_secrets")
+        .select("final_question")
+        .eq("session_id", data.sessionId)
+        .maybeSingle();
+      finalQuestion = secrets?.final_question ?? null;
+    }
+    return { session: { ...session, final_question: finalQuestion }, players: players ?? [], queue: queue ?? [] };
   });
 
 /** Public: slam the buzzer. Requires the player's private token; the DB trigger promotes the first buzzer. */

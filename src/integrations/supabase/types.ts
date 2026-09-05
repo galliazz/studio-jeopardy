@@ -184,7 +184,6 @@ export type Database = {
           id: string
           locked_out: boolean
           name: string
-          player_token: string
           session_id: string
           team: string
         }
@@ -194,7 +193,6 @@ export type Database = {
           id?: string
           locked_out?: boolean
           name: string
-          player_token?: string
           session_id: string
           team?: string
         }
@@ -204,7 +202,6 @@ export type Database = {
           id?: string
           locked_out?: boolean
           name?: string
-          player_token?: string
           session_id?: string
           team?: string
         }
@@ -245,6 +242,55 @@ export type Database = {
         }
         Relationships: []
       }
+      player_secrets: {
+        Row: {
+          player_id: string
+          player_token: string
+        }
+        Insert: {
+          player_id: string
+          player_token?: string
+        }
+        Update: {
+          player_id?: string
+          player_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_secrets_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_secrets: {
+        Row: {
+          final_answer: string | null
+          final_question: string | null
+          session_id: string
+        }
+        Insert: {
+          final_answer?: string | null
+          final_question?: string | null
+          session_id: string
+        }
+        Update: {
+          final_answer?: string | null
+          final_question?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_secrets_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           active_player_id: string | null
@@ -252,8 +298,6 @@ export type Database = {
           current_tile_id: string | null
           daily_double_tile_ids: string[]
           dd_wager: number | null
-          final_answer: string | null
-          final_question: string | null
           game_id: string
           host_id: string
           id: string
@@ -271,8 +315,6 @@ export type Database = {
           current_tile_id?: string | null
           daily_double_tile_ids?: string[]
           dd_wager?: number | null
-          final_answer?: string | null
-          final_question?: string | null
           game_id: string
           host_id: string
           id?: string
@@ -290,8 +332,6 @@ export type Database = {
           current_tile_id?: string | null
           daily_double_tile_ids?: string[]
           dd_wager?: number | null
-          final_answer?: string | null
-          final_question?: string | null
           game_id?: string
           host_id?: string
           id?: string

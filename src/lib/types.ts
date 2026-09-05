@@ -25,6 +25,12 @@ export interface ThemeSettings {
   teamBravo?: string;
   customSounds?: { name: string; path: string }[];
   textStyles?: Partial<Record<TextScope, TextStyle>>;
+  /**
+   * Caselle Daily Double scelte a mano nella pagina di Edit. Vivono sul gioco
+   * perché la sessione nasce solo quando si preme Play; ogni nuova partita le
+   * eredita, e se la lista è vuota il server ne sorteggia due.
+   */
+  dailyDoubleTileIds?: string[];
 }
 
 export const DEFAULT_THEME: ThemeSettings = {
@@ -63,6 +69,34 @@ export function textScopeCss(
   return css;
 }
 
+
+/**
+ * Board/clue typography, container-relative. La dimensione salvata in Edit è un
+ * MOLTIPLICATORE, non una misura fissa: qui moltiplica sia il termine che segue
+ * la board (`cqmin`) sia il tetto massimo, così la scelta dell'host resta una
+ * proporzione — la stessa a ogni dimensione di finestra — invece di un numero
+ * di pixel che a schermo piccolo diventa sproporzionato.
+ *
+ * `capRem` è la dimensione di riferimento a board grande, `cqmin` quanta parte
+ * della board occupa il carattere.
+ */
+export function boardTextCss(
+  theme: ThemeSettings,
+  scope: TextScope,
+  capRem: number,
+  cqmin: number,
+): CSSProperties {
+  const s = theme.textStyles?.[scope];
+  const m = s?.size ?? 1;
+  const css: CSSProperties = {
+    fontSize: `clamp(0.45rem, ${(cqmin * m).toFixed(3)}cqmin, ${(capRem * m).toFixed(3)}rem)`,
+  };
+  if (s?.font) css.fontFamily = s.font;
+  if (s?.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;
+  if (s?.italic) css.fontStyle = "italic";
+  if (s?.underline) css.textDecoration = "underline";
+  return css;
+}
 
 export interface Profile {
   id: string;

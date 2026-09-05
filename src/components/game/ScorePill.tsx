@@ -95,7 +95,7 @@ function ScoreControls({
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="center" className="w-64 rounded-[24px] p-4">
+        <PopoverContent align="center" className="w-[19rem] rounded-[24px] p-4">
           <p className="mb-2 text-sm font-semibold text-muted-foreground">Custom amount</p>
           <input
             type="number"
@@ -106,12 +106,14 @@ function ScoreControls({
             className="h-11 w-full rounded-full border border-foreground/20 bg-transparent px-4 text-sm font-bold outline-none focus-visible:ring-2 focus-visible:ring-ink-accent"
           />
           {quickValues.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
+            /* Una riga sola: il taglio da 1000 andava a capo da solo e la
+               scaletta sembrava avere due gruppi che non esistono. */
+            <div className="mt-2 flex items-center gap-1.5">
               {quickValues.map((v) => (
                 <button
                   key={v}
                   onClick={() => setCustom(String(v))}
-                  className="min-h-9 rounded-full border border-foreground/20 px-3 text-xs font-bold transition-colors hover:bg-foreground/5"
+                  className="min-h-9 flex-1 rounded-full border border-foreground/20 px-1 text-xs font-bold tabular-nums transition-colors hover:bg-foreground/5"
                 >
                   {v}
                 </button>

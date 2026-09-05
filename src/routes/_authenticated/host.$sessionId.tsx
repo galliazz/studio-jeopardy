@@ -532,14 +532,14 @@ function HostPage() {
        * columns scroll; below that the whole body scrolls, so nothing is ever
        * clipped by a short window.
        */}
-      <div className="mx-auto w-full max-w-[1600px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 min-[840px]:overflow-y-hidden">
-        <div className="grid grid-cols-1 gap-6 min-[840px]:h-full min-[840px]:min-h-0 min-[840px]:grid-cols-[340px_minmax(0,1fr)] min-[1200px]:grid-cols-[340px_minmax(0,1fr)_340px]">
+      <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 [container-type:size] sm:px-6 min-[840px]:overflow-y-hidden min-[840px]:py-0">
+        <div className="grid h-full grid-cols-1 gap-4 min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           {/*
            * SINISTRA: stato, giocatori, soundboard e — in fondo — i comandi
            * della domanda. Stavano a destra, lontani dalla board e a fianco
            * degli stessi pulsanti ripetuti nella casella centrale.
            */}
-          <div className="order-2 min-h-0 space-y-6 min-[840px]:order-1 min-[840px]:overflow-y-auto min-[840px]:pr-1">
+          <div className="order-2 min-h-0 w-full space-y-4 self-center min-[840px]:order-1 min-[840px]:max-h-full min-[840px]:max-w-[340px] min-[840px]:justify-self-end min-[840px]:overflow-y-auto min-[840px]:py-4 min-[840px]:pr-1">
             <SessionStatus
               connectedCount={connectedCount}
               remaining={tiles.length - played}
@@ -574,57 +574,58 @@ function HostPage() {
           </div>
 
           {/*
-           * CENTRE: one box holds the board and, when a tile opens, the clue —
-           * so the container transform occupies exactly the board's footprint.
-           * The box is the largest BOARD_RATIO rectangle that fits the column,
-           * measured from the column itself (container query units) rather than
-           * from the viewport: it can neither overflow nor be squashed, and the
-           * type inside scales with it.
+           * CENTRO: un solo riquadro tiene la board e, quando una casella si
+           * apre, la domanda — così la trasformazione occupa esattamente
+           * l'impronta della board.
+           *
+           * È alto quanto lo schermo e perfettamente quadrato: il lato è
+           * l'altezza disponibile, a meno che non ci sia abbastanza larghezza,
+           * nel qual caso si restringe lasciando alle colonne lo spazio che
+           * `--board-reserve` tiene da parte per loro. Le colonne si accostano
+           * ai suoi bordi invece di stare inchiodate a quelli della finestra.
            */}
-          <div className="relative order-1 h-[min(70vh,88vw)] min-h-0 min-w-0 [container-type:size] min-[840px]:order-2 min-[840px]:h-full">
-            <div
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-              style={{
-                width: `min(100cqw, calc(100cqh * ${BOARD_RATIO}))`,
-                height: `min(100cqh, calc(100cqw / ${BOARD_RATIO}))`,
+          <div
+            className="relative order-1 mx-auto [--board-reserve:0px] [container-type:size] min-[840px]:order-2 min-[840px]:[--board-reserve:23rem] min-[1200px]:[--board-reserve:46rem]"
+            style={{
+              width: `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) * ${BOARD_RATIO})))`,
+              height: `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))`,
+            }}
+          >
+            <BoardGrid
+              fill
+              theme={theme}
+              categories={categories}
+              tiles={tiles}
+              usedIds={usedSet}
+              disabled={session.status === "final" || session.status === "finished"}
+              onOpenTile={(tileId) => {
+                setHostSession({
+                  status: "live",
+                  current_tile_id: tileId,
+                  active_player_id: null,
+                  timer_ends_at: null,
+                  dd_wager: null,
+                  phase: "question_open",
+                });
+                settle(openTile({ data: { sessionId, tileId } }));
               }}
-            >
-              <BoardGrid
-                fill
-                theme={theme}
-                categories={categories}
-                tiles={tiles}
-                usedIds={usedSet}
-                disabled={session.status === "final" || session.status === "finished"}
-                onOpenTile={(tileId) => {
-                  setHostSession({
-                    status: "live",
-                    current_tile_id: tileId,
-                    active_player_id: null,
-                    timer_ends_at: null,
-                    dd_wager: null,
-                    phase: "question_open",
-                  });
-                  settle(openTile({ data: { sessionId, tileId } }));
-                }}
-              />
+            />
 
-              <AnimatePresence>
-                {(session.phase === "question_open" ||
-                  session.phase === "answering" ||
-                  session.phase === "reveal") &&
-                  currentTile && (
-                    <QuestionOverlay
-                      key={currentTile.id + session.phase}
-                      session={session}
-                      tile={currentTile}
-                      category={currentCategory}
-                      players={players}
-                      theme={theme}
-                    />
-                  )}
-              </AnimatePresence>
-            </div>
+            <AnimatePresence>
+              {(session.phase === "question_open" ||
+                session.phase === "answering" ||
+                session.phase === "reveal") &&
+                currentTile && (
+                  <QuestionOverlay
+                    key={currentTile.id + session.phase}
+                    session={session}
+                    tile={currentTile}
+                    category={currentCategory}
+                    players={players}
+                    theme={theme}
+                  />
+                )}
+            </AnimatePresence>
           </div>
 
           {/*
@@ -633,20 +634,13 @@ function HostPage() {
            * quello nella casella centrale era la stessa azione due volte.
            */}
           <div
-            className={`order-3 min-h-0 flex-col gap-6 overflow-y-auto min-[1200px]:flex ${
+            className={`order-3 min-h-0 w-full flex-col gap-4 self-center overflow-y-auto min-[1200px]:flex min-[1200px]:max-h-full min-[1200px]:max-w-[340px] min-[1200px]:justify-self-start min-[1200px]:py-4 ${
               panelOpen
                 ? "fixed inset-y-0 right-0 z-40 flex w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
                 : "hidden"
             }`}
           >
-            <div className="flex min-h-0 flex-1 flex-col">
-              <BuzzerPanel
-                session={session}
-                players={players}
-                queue={queue}
-                onClearQueue={actions.clearQueue}
-              />
-            </div>
+            <BuzzerPanel session={session} players={players} queue={queue} onClearQueue={actions.clearQueue} />
             {session.status === "final" && (
               <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
             )}
@@ -995,7 +989,10 @@ function LiveControlPanel({
   const phase = session.phase;
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
+    /* Una scheda, non una colonna: si alza quando compaiono i comandi e si
+       riabbassa quando la casella si chiude. Prima era alta quanto lo schermo
+       e quasi sempre vuota, e per arrivare in fondo bisognava scorrere. */
+    <div className="rounded-[32px] bg-card p-5 elev-2">
       <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
         <h3 className="text-center text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (
@@ -1006,7 +1003,7 @@ function LiveControlPanel({
       </div>
 
       {!tile || phase === "idle" ? (
-        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
+        <p className="py-2 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
       ) : phase === "reveal" ? (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-foreground/15 p-4">
@@ -1131,7 +1128,7 @@ function BuzzerPanel({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
+    <div className="rounded-[32px] bg-card p-5 elev-2">
       <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Buzzer</h3>
       <p
         className={`mb-4 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider ${
@@ -1145,7 +1142,7 @@ function BuzzerPanel({
         {armed ? "Buzzers armed" : "Buzzers closed"}
       </p>
       {waiting.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">
+        <p className="py-2 text-center text-sm text-muted-foreground">
           {armed ? "Nobody has buzzed yet" : "Open a tile to arm the buzzers"}
         </p>
       ) : (

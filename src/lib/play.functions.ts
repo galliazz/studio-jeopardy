@@ -8,6 +8,20 @@ const SESSION_PUBLIC_COLS =
 /** Columns of `players` that are safe to hand to a guest device. */
 const PLAYER_PUBLIC_COLS = "id, session_id, name, avatar, team, locked_out, created_at";
 
+/*
+ * Un errore del database non è "la partita non è ancora iniziata".
+ *
+ * Queste query scartavano l'errore e tenevano solo i dati: un permesso
+ * mancante su una colonna diventava `null`, e `null` diventava "l'host non ha
+ * ancora aperto la partita". Un messaggio tranquillo per un guasto grave, che
+ * ha mandato fuori strada per giorni. Ora l'errore si vede, e si distingue.
+ */
+function logDbError(where: string, error: { message: string; code?: string } | null) {
+  if (!error) return false;
+  console.error(`[play] ${where}: ${error.message}${error.code ? ` (${error.code})` : ""}`);
+  return true;
+}
+
 async function admin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -42,13 +56,14 @@ export const lookupSession = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const client = createPublicClient();
     const code = data.code.toUpperCase();
-    const { data: game } = await client
+    const { data: game, error: gErr } = await client
       .from("games")
       .select("id, title, join_code, theme")
       .eq("join_code", code)
       .maybeSingle();
+    if (logDbError("lookupSession/games", gErr)) return { error: "unavailable" as const };
     if (!game) return { error: "not_found" as const };
-    const { data: session } = await client
+    const { data: session, error: sErr } = await client
       .from("sessions")
       .select(SESSION_PUBLIC_COLS)
       .eq("game_id", game.id)
@@ -56,6 +71,7 @@ export const lookupSession = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (logDbError("lookupSession/sessions", sErr)) return { error: "unavailable" as const };
     if (!session) return { error: "not_started" as const };
     return { game, session };
   });
@@ -75,13 +91,14 @@ export const joinGame = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const client = createPublicClient();
     const code = data.code.toUpperCase();
-    const { data: game } = await client
+    const { data: game, error: gErr } = await client
       .from("games")
       .select("id, title")
       .eq("join_code", code)
       .maybeSingle();
+    if (logDbError("joinGame/games", gErr)) return { error: "unavailable" as const };
     if (!game) return { error: "not_found" as const };
-    const { data: session } = await client
+    const { data: session, error: sErr } = await client
       .from("sessions")
       .select(SESSION_PUBLIC_COLS)
       .eq("game_id", game.id)
@@ -89,6 +106,7 @@ export const joinGame = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (logDbError("joinGame/sessions", sErr)) return { error: "unavailable" as const };
     if (!session) return { error: "not_started" as const };
     if (session.status !== "lobby" && session.status !== "live") {
       return { error: "not_started" as const };
@@ -116,11 +134,12 @@ export const getPlayerState = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const { data: session } = await client
+    const { data: session, error: sErr } = await client
       .from("sessions")
       .select(SESSION_PUBLIC_COLS)
       .eq("id", data.sessionId)
       .maybeSingle();
+    if (logDbError("getPlayerState/sessions", sErr)) return { error: "unavailable" as const };
     if (!session) return { error: "not_found" as const };
     const { data: players } = await client
       .from("players")

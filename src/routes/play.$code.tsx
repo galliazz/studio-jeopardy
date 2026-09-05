@@ -68,12 +68,18 @@ function PlayerPage() {
         <div className="flex flex-col items-center gap-3 text-center">
           <Ban className="h-12 w-12 text-muted-foreground" />
           <h1 className="font-display text-xl font-bold">
-            {data && "error" in data && data.error === "not_started" ? "Game not started yet" : "Game not found"}
+            {data && "error" in data && data.error === "unavailable"
+              ? "Server error"
+              : data && "error" in data && data.error === "not_started"
+                ? "Game not started yet"
+                : "Game not found"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {data && "error" in data && data.error === "not_started"
-              ? "The host hasn't gone live with this board yet. Wait a moment and refresh."
-              : `No live game matches code “${code}”. Check the code and try again.`}
+            {data && "error" in data && data.error === "unavailable"
+              ? "The board is up but the server refused the request. This is not something you can fix from here — tell the host."
+              : data && "error" in data && data.error === "not_started"
+                ? "The host hasn't gone live with this board yet. Wait a moment and refresh."
+                : `No live game matches code “${code}”. Check the code and try again.`}
           </p>
         </div>
       </Shell>

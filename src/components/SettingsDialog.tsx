@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings as SettingsIcon, X, Volume2, Pencil } from "lucide-react";
+import { Settings as SettingsIcon, Volume2, Pencil, Keyboard, RotateCcw } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { bootstrapStudio, updateProfile } from "@/lib/games.functions";
@@ -20,7 +20,14 @@ import {
   type ThemePreference,
 } from "@/lib/theme-mode";
 import { sfx } from "@/lib/sfx";
-import { SHORTCUTS } from "@/lib/shortcuts";
+import {
+  FIXED_SHORTCUTS,
+  SHORTCUT_ACTIONS,
+  keyLabel,
+  normalizeKey,
+  resolveShortcuts,
+  type ShortcutAction,
+} from "@/lib/shortcuts";
 import { AccountAvatar, setAvatarValue, useAvatarValue } from "@/lib/avatar";
 import { ChooseAvatarDialog } from "@/components/ChooseAvatarDialog";
 import {
@@ -31,6 +38,85 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+
+/**
+ * Riassegnazione dei tasti. Si preme il tasto che si vuole: il precedente
+ * proprietario viene liberato, perché due azioni sullo stesso tasto vorrebbero
+ * dire che una delle due non parte mai.
+ */
+function ShortcutEditor({
+  value,
+  onChange,
+}: {
+  value: Partial<Record<ShortcutAction, string>>;
+  onChange: (next: Partial<Record<ShortcutAction, string>>) => void;
+}) {
+  const [listening, setListening] = useState<ShortcutAction | null>(null);
+  const resolved = resolveShortcuts(value);
+
+  useEffect(() => {
+    if (!listening) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (["Shift", "Control", "Alt", "Meta"].includes(e.key)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // Esc annulla, tranne quando è Esc che si sta proprio assegnando.
+      if (e.key === "Escape" && listening !== "closeTile") {
+        setListening(null);
+        return;
+      }
+      const key = normalizeKey(e.key);
+      const next: Partial<Record<ShortcutAction, string>> = { ...value };
+      for (const a of SHORTCUT_ACTIONS) {
+        if (normalizeKey(next[a.id] ?? a.fallback) === key) delete next[a.id];
+      }
+      next[listening] = key;
+      onChange(next);
+      setListening(null);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [listening, value, onChange]);
+
+  return (
+    <div className="mt-2 space-y-1">
+      {SHORTCUT_ACTIONS.map((a) => (
+        <div key={a.id} className="flex min-h-11 items-center justify-between gap-4">
+          <span className="text-sm text-muted-foreground">{a.label}</span>
+          <button
+            onClick={() => setListening(listening === a.id ? null : a.id)}
+            className={`min-w-16 shrink-0 rounded-md border px-2 py-1 font-mono text-xs font-bold transition-colors ${
+              listening === a.id
+                ? "animate-pulse border-ink-accent bg-lilac text-foreground"
+                : "border-border text-foreground hover:bg-muted"
+            }`}
+          >
+            {listening === a.id ? "press a key…" : keyLabel(resolved[a.id])}
+          </button>
+        </div>
+      ))}
+      <div className="flex items-center justify-between gap-4 pt-1">
+        <span className="text-xs text-muted-foreground">Shortcuts pause while a field, dialog or menu has focus.</span>
+        <button
+          onClick={() => onChange({})}
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-muted-foreground hover:bg-muted"
+        >
+          <RotateCcw className="h-3.5 w-3.5" /> Reset
+        </button>
+      </div>
+      <ul className="space-y-1 pt-2">
+        {FIXED_SHORTCUTS.map(([k, label]) => (
+          <li key={k} className="flex min-h-9 items-center justify-between gap-4">
+            <span className="text-sm text-muted-foreground">{label}</span>
+            <kbd className="shrink-0 rounded-md border border-border px-2 py-1 font-mono text-xs font-bold text-foreground">
+              {k}
+            </kbd>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 /** Low-emphasis gear pill available on every screen. */
 export function SettingsButton({ className = "", variant = "full" }: { className?: string; variant?: "full" | "guest" }) {
@@ -140,6 +226,7 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const avatarBtnRef = useRef<HTMLButtonElement>(null);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   const avatarValue = useAvatarValue();
 
   useEffect(() => {
@@ -220,23 +307,14 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent
-        className="max-h-svh w-full max-w-none gap-0 overflow-y-auto rounded-none border-0 p-0 sm:max-h-[88svh] sm:max-w-[560px] sm:rounded-[32px] sm:border"
-      >
-        {/* Compact top app bar (full-screen phone layout) */}
-        <div className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b border-border bg-card px-4 sm:hidden">
-          <button
-            onClick={onClose}
-            aria-label="Close settings"
-            className="flex h-12 w-12 items-center justify-center rounded-full text-foreground hover:bg-muted"
-          >
-            <X className="h-5 w-5" />
-          </button>
-          <DialogTitle className="font-display text-xl font-black">Settings</DialogTitle>
-        </div>
-
+      {/*
+       * Una finestra sola, uguale ovunque. Sul telefono era a tutto schermo con
+       * una barra sua e gli angoli vivi: sembrava un'altra applicazione. Qui
+       * resta la stessa scheda, semplicemente più stretta.
+       */}
+      <DialogContent className="max-h-[88svh] w-[calc(100vw-1.5rem)] max-w-[560px] gap-0 overflow-y-auto rounded-[32px] border p-0">
         <div className="space-y-5 p-5 sm:p-6">
-          <div className="hidden sm:block">
+          <div>
             <DialogTitle className="font-display text-2xl font-black text-foreground">Settings</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               Changes apply immediately.
@@ -381,22 +459,25 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
             </Row>
           </Section>}
 
-          {/* 5. Keyboard shortcuts — reference only, host-side. */}
+          {/* 5. Keyboard shortcuts — chiuse, e riassegnabili. */}
           {!guest && (
             <Section title="Keyboard shortcuts">
-              <ul className="space-y-1">
-                {SHORTCUTS.map(([k, label]) => (
-                  <li key={k} className="flex min-h-10 items-center justify-between gap-4">
-                    <span className="text-sm text-muted-foreground">{label}</span>
-                    <kbd className="shrink-0 rounded-md border border-border px-2 py-1 font-mono text-xs font-bold text-foreground">
-                      {k}
-                    </kbd>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Shortcuts pause while a text field or a dialog has focus.
-              </p>
+              <Row label="Custom keys" hint="Saved to your profile — same keys on any computer">
+                <button
+                  onClick={() => setKeysOpen((v) => !v)}
+                  aria-expanded={keysOpen}
+                  className="flex h-10 items-center gap-2 rounded-full bg-muted px-4 text-sm font-bold text-foreground"
+                >
+                  <Keyboard className="h-4 w-4" />
+                  {keysOpen ? "Hide" : "Customise"}
+                </button>
+              </Row>
+              {keysOpen && (
+                <ShortcutEditor
+                  value={settings.shortcuts}
+                  onChange={(next) => syncPrefs({ shortcuts: next })}
+                />
+              )}
             </Section>
           )}
 

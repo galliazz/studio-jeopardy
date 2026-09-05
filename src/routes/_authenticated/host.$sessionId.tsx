@@ -15,6 +15,7 @@ import {
   Flag,
   Copy,
   Radio,
+  QrCode,
   MoreHorizontal,
   ExternalLink,
   PanelRight,
@@ -29,7 +30,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -53,9 +53,16 @@ import {
   switchPlayerTeam,
   removePlayer,
 } from "@/lib/sessions.functions";
-import { bootstrapStudio, regenerateOverlayToken } from "@/lib/games.functions";
+import { bootstrapStudio, regenerateOverlayToken, updateGame } from "@/lib/games.functions";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
-import { shortcutsSuppressed } from "@/lib/shortcuts";
+import {
+  keyLabel,
+  normalizeKey,
+  resolveShortcuts,
+  shortcutLookup,
+  shortcutsSuppressed,
+} from "@/lib/shortcuts";
+import { useSettings } from "@/lib/settings";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
@@ -225,6 +232,8 @@ function HostPage() {
   const [finalOpen, setFinalOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | "reset" | "end" | "rotate">(null);
+  /** Join e overlay stanno nel menu come tastini, e si aprono in grande. */
+  const [menuPanel, setMenuPanel] = useState<null | "join" | "overlays">(null);
   /** Below 1200px the right column becomes a togglable slide-over panel. */
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -248,19 +257,27 @@ function HostPage() {
 
   // ---- SFX triggers on state transitions --------------------------------
   const prevActive = useRef<string | null>(null);
+  const prevTile = useRef<string | null>(null);
   const prevPhase = useRef<string | null>(null);
   const prevStatus = useRef<string | null>(null);
   useEffect(() => {
     if (!state) return;
     const s = state.session;
     if (s.active_player_id && s.active_player_id !== prevActive.current) sfx.buzz();
-    if (s.phase === "daily_double_wager" && prevPhase.current !== "daily_double_wager") sfx.dailyDouble();
+    if (
+      s.current_tile_id &&
+      s.current_tile_id !== prevTile.current &&
+      s.daily_double_tile_ids.includes(s.current_tile_id)
+    ) {
+      sfx.dailyDouble();
+    }
     if (s.status === "finished" && prevStatus.current !== "finished") {
       sfx.fanfare();
       void confetti({ particleCount: 160, spread: 90, origin: { y: 0.6 } });
       setTimeout(() => void confetti({ particleCount: 100, spread: 120, origin: { y: 0.4 } }), 500);
     }
     prevActive.current = s.active_player_id;
+    prevTile.current = s.current_tile_id;
     prevPhase.current = s.phase;
     prevStatus.current = s.status;
   }, [state]);
@@ -359,6 +376,16 @@ function HostPage() {
     [activePlayerId, currentTileId, runJudge, sessionId, setHostSession, settle],
   );
 
+  /*
+   * I tasti sono quelli che l'host si è scelto nelle impostazioni, e stanno nel
+   * suo profilo: la stessa mappa su qualunque computer si sieda.
+   */
+  const settings = useSettings();
+  const keyMap = useMemo(
+    () => shortcutLookup(resolveShortcuts(settings.shortcuts)),
+    [settings.shortcuts],
+  );
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (shortcutsSuppressed() || e.metaKey || e.ctrlKey || e.altKey) return;
@@ -367,23 +394,15 @@ function HostPage() {
         setSettingsOpen(true);
         return;
       }
-      const map: Record<string, () => void> = {
-        " ": actions.reveal,
-        c: actions.judgeCorrect,
-        x: actions.judgeWrong,
-        n: actions.passToNext,
-        r: actions.restartTimer,
-        Escape: actions.closeTile,
-      };
-      const fn = map[e.key === " " ? " " : e.key.length === 1 ? e.key.toLowerCase() : e.key];
-      if (fn) {
+      const action = keyMap[normalizeKey(e.key)];
+      if (action) {
         e.preventDefault();
-        fn();
+        actions[action]();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [actions]);
+  }, [actions, keyMap]);
 
   if (!state || !session) {
     return (
@@ -484,26 +503,12 @@ function HostPage() {
               displayName={profile?.username ?? "Host"}
               avatarUrl={profile?.avatar_url ?? null}
               onOpenSettings={() => setSettingsOpen(true)}
-              sections={
-                <>
-                  <MenuGroup title="Join">
-                    <MenuJoinBlock joinCode={game.join_code} />
-                  </MenuGroup>
-                  <DropdownMenuSeparator />
-                  <MenuGroup title="Broadcast overlays">
-                    <MenuObsLinks overlayToken={game.overlay_token} />
-                  </MenuGroup>
-                  <DropdownMenuSeparator />
-                  <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Tools
-                  </p>
-                </>
-              }
               items={[
+                { icon: QrCode, label: "Join code & QR", onSelect: () => setMenuPanel("join") },
+                { icon: Radio, label: "Broadcast overlays", onSelect: () => setMenuPanel("overlays") },
                 { icon: Sparkles, label: "Daily Double tiles", onSelect: () => setDdOpen(true) },
                 { icon: BarChart3, label: "Analytics", onSelect: () => setAnalyticsOpen(true) },
                 { icon: Flag, label: "Final Jeopardy", onSelect: () => setFinalOpen(true) },
-                { icon: Radio, label: "Regenerate overlay links", onSelect: () => setConfirm("rotate") },
                 {
                   icon: PanelRight,
                   label: "Live control panel",
@@ -528,17 +533,22 @@ function HostPage() {
        * clipped by a short window.
        */}
       <div className="mx-auto w-full max-w-[1600px] min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 min-[840px]:overflow-y-hidden">
-        <div className="grid grid-cols-1 gap-6 min-[840px]:h-full min-[840px]:min-h-0 min-[840px]:grid-cols-[320px_minmax(0,1fr)] min-[1200px]:grid-cols-[320px_minmax(0,1fr)_380px]">
-          {/* LEFT: session status, roster, soundboard. Everything else moved
-              into the account menu. */}
+        <div className="grid grid-cols-1 gap-6 min-[840px]:h-full min-[840px]:min-h-0 min-[840px]:grid-cols-[340px_minmax(0,1fr)] min-[1200px]:grid-cols-[340px_minmax(0,1fr)_340px]">
+          {/*
+           * SINISTRA: stato, giocatori, soundboard e — in fondo — i comandi
+           * della domanda. Stavano a destra, lontani dalla board e a fianco
+           * degli stessi pulsanti ripetuti nella casella centrale.
+           */}
           <div className="order-2 min-h-0 space-y-6 min-[840px]:order-1 min-[840px]:overflow-y-auto min-[840px]:pr-1">
             <SessionStatus
               connectedCount={connectedCount}
               remaining={tiles.length - played}
               total={tiles.length}
+              dailyDoublesLeft={session.daily_double_tile_ids.filter((id) => !usedSet.has(id)).length}
             />
             <PlayerRoster
               players={players}
+              connectedCount={connectedCount}
               onSwitchTeam={(playerId) => {
                 setHostState({
                   players: players.map((p) =>
@@ -553,6 +563,14 @@ function HostPage() {
               }}
             />
             <Soundboard gameId={game.id} hostId={game.host_id} />
+            <LiveControlPanel
+              session={session}
+              tile={currentTile}
+              category={currentCategory}
+              players={players}
+              queue={queue}
+              actions={actions}
+            />
           </div>
 
           {/*
@@ -579,14 +597,13 @@ function HostPage() {
                 usedIds={usedSet}
                 disabled={session.status === "final" || session.status === "finished"}
                 onOpenTile={(tileId) => {
-                  const isDD = session.daily_double_tile_ids.includes(tileId);
                   setHostSession({
                     status: "live",
                     current_tile_id: tileId,
                     active_player_id: null,
                     timer_ends_at: null,
                     dd_wager: null,
-                    phase: isDD ? "daily_double_wager" : "question_open",
+                    phase: "question_open",
                   });
                   settle(openTile({ data: { sessionId, tileId } }));
                 }}
@@ -595,8 +612,7 @@ function HostPage() {
               <AnimatePresence>
                 {(session.phase === "question_open" ||
                   session.phase === "answering" ||
-                  session.phase === "reveal" ||
-                  session.phase === "daily_double_wager") &&
+                  session.phase === "reveal") &&
                   currentTile && (
                     <QuestionOverlay
                       key={currentTile.id + session.phase}
@@ -604,13 +620,7 @@ function HostPage() {
                       tile={currentTile}
                       category={currentCategory}
                       players={players}
-                      queue={queue}
                       theme={theme}
-                      onHostStatePatch={setHostState}
-                      onActionSettled={(err) => {
-                        if (err) toast.error(err instanceof Error ? err.message : "The action did not go through");
-                        void queryClient.invalidateQueries({ queryKey: ["host", sessionId] });
-                      }}
                     />
                   )}
               </AnimatePresence>
@@ -618,8 +628,9 @@ function HostPage() {
           </div>
 
           {/*
-           * RIGHT: the single live control panel. Its own scroll at >=1200px,
-           * a togglable slide-over below that width.
+           * DESTRA: soltanto i buzzer e chi si è prenotato. Niente altro: era
+           * la colonna dove finiva tutto, e il "Reveal answer" qui accanto a
+           * quello nella casella centrale era la stessa azione due volte.
            */}
           <div
             className={`order-3 min-h-0 flex-col gap-6 overflow-y-auto min-[1200px]:flex ${
@@ -629,13 +640,11 @@ function HostPage() {
             }`}
           >
             <div className="flex min-h-0 flex-1 flex-col">
-              <LiveControlPanel
+              <BuzzerPanel
                 session={session}
-                tile={currentTile}
-                category={currentCategory}
                 players={players}
                 queue={queue}
-                actions={actions}
+                onClearQueue={actions.clearQueue}
               />
             </div>
             {session.status === "final" && (
@@ -647,6 +656,22 @@ function HostPage() {
       </div>
 
 
+      <AnimatePresence>
+        {menuPanel === "join" && (
+          <Dialog onClose={() => setMenuPanel(null)} title="Join" subtitle="Inquadra il codice o manda il link">
+            <MenuJoinBlock joinCode={game.join_code} />
+          </Dialog>
+        )}
+        {menuPanel === "overlays" && (
+          <Dialog
+            onClose={() => setMenuPanel(null)}
+            title="Broadcast overlays"
+            subtitle="Sorgenti browser per OBS, 1920×1080"
+          >
+            <MenuObsLinks overlayToken={game.overlay_token} onRegenerate={() => setConfirm("rotate")} />
+          </Dialog>
+        )}
+      </AnimatePresence>
       <AnimatePresence>{ddOpen && <DDTilesDialog state={state} onClose={() => setDdOpen(false)} />}</AnimatePresence>
       <AnimatePresence>
         {analyticsOpen && <AnalyticsDialog state={state} onClose={() => setAnalyticsOpen(false)} />}
@@ -704,7 +729,14 @@ function HostPage() {
         )}
       </AnimatePresence>
       <AnimatePresence>
-        {session.status === "finished" && <Podium session={session} players={players} theme={theme} />}
+        {session.status === "finished" && (
+          <Podium
+            session={session}
+            players={players}
+            theme={theme}
+            onExit={() => void navigate({ to: "/studio" })}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
@@ -714,58 +746,38 @@ function HostPage() {
 /* ----------------------------- Session status ----------------------------- */
 
 /**
- * Connection state and tiles remaining, at the top of the left column. It used
- * to sit in the app bar, which left the bar crowded and this reading — the one
- * the host actually watches during a lobby — competing with the title.
+ * Quanto resta da giocare, in cima alla colonna di sinistra. Lo stato "in
+ * diretta" non sta più qui: diceva lo stesso numero che il riquadro dei
+ * giocatori aveva due righe sotto, e ora vive lì.
  */
 function SessionStatus({
-  connectedCount,
   remaining,
   total,
+  dailyDoublesLeft,
 }: {
-  connectedCount: number;
   remaining: number;
   total: number;
+  dailyDoublesLeft: number;
 }) {
-  const live = connectedCount > 0;
   return (
     <div className="flex min-h-12 flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-foreground/15 px-4 py-2">
-      <span className="flex items-center gap-1.5">
-        <span
-          className={`h-2 w-2 shrink-0 rounded-full ${live ? "bg-success-ink" : "bg-foreground/30"}`}
-          aria-hidden
-        />
-        <span className={`text-xs font-bold ${live ? "text-success-ink" : "text-muted-foreground"}`}>
-          {live ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}` : "In lobby"}
-        </span>
-      </span>
-      <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
       <span className="text-xs font-bold text-muted-foreground">
         {remaining}/{total} left
       </span>
+      <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
+      <span className="flex items-center gap-1.5 text-xs font-bold text-ink-gold">
+        <Sparkles className="h-3.5 w-3.5" />
+        {dailyDoublesLeft} Daily Double
+      </span>
     </div>
   );
 }
 
-/* --------------------------- Account-menu blocks -------------------------- */
-
-/** A titled block inside the account menu, separated from its neighbours. */
-function MenuGroup({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="px-1 py-2">
-      <p className="px-2 pb-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
-      {children}
-    </div>
-  );
-}
+/* --------------------------- Account-menu panels -------------------------- */
 
 /**
  * QR, join code and the one link-copy control. There is deliberately a single
  * copy affordance: the separate "copy code" chip said the same thing twice.
- *
- * "Copy link" is a real DropdownMenuItem, not a plain button: Radix suppresses
- * Tab inside a `role="menu"` and only gives roving focus to its own items, so a
- * bare <button> in here would be reachable with the mouse alone.
  */
 function MenuJoinBlock({ joinCode }: { joinCode: string }) {
   const origin = useOrigin();
@@ -781,18 +793,16 @@ function MenuJoinBlock({ joinCode }: { joinCode: string }) {
         )}
       </div>
       <p className="font-display text-2xl font-black tracking-[0.2em] text-ink-gold">{joinCode}</p>
-      <DropdownMenuItem
+      <button
         disabled={!joinUrl}
-        onSelect={(e) => {
-          // Copiare non deve chiudere il menu: spesso si copia più di una cosa.
-          e.preventDefault();
+        onClick={() => {
           void navigator.clipboard.writeText(joinUrl);
           toast.success("Join link copied");
         }}
-        className="mx-auto mt-2 flex w-fit min-h-12 items-center justify-center gap-2 rounded-full border border-foreground/20 px-4 text-xs font-bold text-foreground"
+        className="mx-auto mt-3 flex min-h-12 items-center gap-2 rounded-full border border-foreground/20 px-5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
       >
-        <Copy className="h-3.5 w-3.5" /> Copy link
-      </DropdownMenuItem>
+        <Copy className="h-4 w-4" /> Copy link
+      </button>
     </div>
   );
 }
@@ -801,22 +811,31 @@ function MenuJoinBlock({ joinCode }: { joinCode: string }) {
 
 function PlayerRoster({
   players,
+  connectedCount,
   onSwitchTeam,
   onRemove,
 }: {
   players: Player[];
+  connectedCount: number;
   onSwitchTeam: (playerId: string) => void;
   onRemove: (playerId: string) => void;
 }) {
+  const live = connectedCount > 0;
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="text-center text-sm font-semibold text-muted-foreground">Players</h3>
-      {players.length === 0 ? (
+      {/* Un'intestazione sola: prima diceva "Players", poi "2 players
+          connected", poi la stessa cosa in verde nella pillola sopra. */}
+      <h3 className="mb-2 flex items-center justify-center gap-1.5 text-sm font-bold">
+        <span
+          className={`h-2 w-2 shrink-0 rounded-full ${live ? "bg-success-ink" : "bg-foreground/30"}`}
+          aria-hidden
+        />
+        <span className={live ? "text-success-ink" : "text-muted-foreground"}>
+          {live ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}` : "In lobby"}
+        </span>
+      </h3>
+      {players.length === 0 && (
         <p className="py-3 text-center text-sm text-muted-foreground">Nobody has joined yet.</p>
-      ) : (
-        <p className="mb-2 mt-0.5 text-center text-sm text-foreground">
-          {players.length} {players.length === 1 ? "player" : "players"} connected
-        </p>
       )}
       {players.length > 0 && (
 
@@ -880,13 +899,10 @@ const OBS_VIEWS: { path: string; label: string; hint: string }[] = [
 ];
 
 /**
- * The overlay links inside the account menu. Each row IS a menu item — Radix
- * gives keyboard focus only to its own items — and selecting it copies the link
- * without dismissing the panel, since a streamer usually copies more than one.
- * The trailing "open" icon stays an ordinary anchor: a secondary, mouse-only
- * shortcut for checking the source renders, layered on top of the copy.
+ * The overlay links. Ogni riga copia il proprio link; l'icona in coda apre
+ * l'anteprima in una scheda nuova, per controllare che la sorgente si veda.
  */
-function MenuObsLinks({ overlayToken }: { overlayToken: string }) {
+function MenuObsLinks({ overlayToken, onRegenerate }: { overlayToken: string; onRegenerate: () => void }) {
   const origin = useOrigin();
 
   return (
@@ -894,44 +910,46 @@ function MenuObsLinks({ overlayToken }: { overlayToken: string }) {
       {OBS_VIEWS.map((v) => {
         const url = origin ? `${origin}/overlay/${v.path}/${overlayToken}` : "";
         return (
-          <DropdownMenuItem
-            key={v.path}
-            disabled={!url}
-            aria-label={`Copy ${v.label} link`}
-            onSelect={(e) => {
-              e.preventDefault();
-              void navigator.clipboard.writeText(url);
-              toast.success("Link copied");
-            }}
-            className="flex items-center gap-1 rounded-[18px] bg-muted px-3 py-1.5"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-foreground">{v.label}</p>
-              <p className="truncate text-[10px] text-muted-foreground">{v.hint}</p>
-            </div>
-            <Copy className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <div key={v.path} className="flex items-center gap-1 rounded-[20px] bg-muted px-4 py-2">
+            <button
+              disabled={!url}
+              aria-label={`Copy ${v.label} link`}
+              onClick={() => {
+                void navigator.clipboard.writeText(url);
+                toast.success("Link copied");
+              }}
+              className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-40"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold text-foreground">{v.label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">{v.hint}</span>
+              </span>
+              <Copy className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
             <a
               href={url || undefined}
               target="_blank"
               rel="noreferrer"
-              /* Radix seleziona la voce anche sul pointerup, non solo sul
-                 click: senza fermare entrambi, aprire l'anteprima copierebbe
-                 pure il link e farebbe comparire un avviso di troppo. */
-              onPointerUp={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
               aria-label={`Open ${v.label} in a new tab`}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-card"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-card"
             >
               <ExternalLink className="h-4 w-4" />
             </a>
-          </DropdownMenuItem>
+          </div>
         );
       })}
-      <ul className="space-y-0.5 px-2 pt-1 text-[10px] text-muted-foreground">
+      <ul className="space-y-0.5 px-2 pt-1 text-[11px] text-muted-foreground">
         <li>· Add as a Browser Source</li>
         <li>· Width 1920, height 1080</li>
         <li>· Uncheck “Shutdown source when not visible”</li>
+        <li>· Uncheck “Refresh browser when scene becomes active”</li>
       </ul>
+      <button
+        onClick={onRegenerate}
+        className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-danger-ink/40 text-sm font-bold text-danger-ink transition-colors hover:bg-danger/20"
+      >
+        <Radio className="h-4 w-4" /> Regenerate links
+      </button>
     </div>
   );
 }
@@ -963,12 +981,17 @@ function LiveControlPanel({
   actions: HostActions;
 }) {
   const countdown = useCountdown(session.timer_ends_at);
+  // I suggerimenti devono dire il tasto VERO: se l'host se li è riassegnati,
+  // un'etichetta di fabbrica sarebbe una bugia stampata sul pulsante.
+  const keys = resolveShortcuts(useSettings().shortcuts);
   const activePlayer = players.find((p) => p.id === session.active_player_id) ?? null;
   const tileQueue = queue
     .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const hasNext = tileQueue.some((q) => q.status === "queued");
-  const value = session.dd_wager ?? tile?.points ?? 0;
+  const isDD = tile ? session.daily_double_tile_ids.includes(tile.id) : false;
+  /** Una Daily Double paga il doppio: il pulsante deve dire la cifra vera. */
+  const value = (tile?.points ?? 0) * (isDD ? 2 : 1);
   const phase = session.phase;
 
   return (
@@ -977,7 +1000,7 @@ function LiveControlPanel({
         <h3 className="text-center text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (
           <span className="truncate rounded-full border border-foreground/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {category?.title ?? "Clue"} · {value}
+            {category?.title ?? "Clue"} · {value}{isDD ? " · DD" : ""}
           </span>
         )}
       </div>
@@ -997,7 +1020,7 @@ function LiveControlPanel({
             onClick={actions.closeTile}
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-coral px-6 font-display text-base font-black text-foreground elev-2"
           >
-            Close tile <KeyHint k="Esc" />
+            Close tile <KeyHint k={keyLabel(keys.closeTile)} />
           </button>
         </div>
       ) : activePlayer ? (
@@ -1035,13 +1058,13 @@ function LiveControlPanel({
               onClick={actions.judgeCorrect}
               className="flex min-h-12 items-center justify-center rounded-full bg-success px-4 font-display text-base font-black text-success-ink elev-2"
             >
-              <Check className="mr-1.5 h-5 w-5" /> +{value} <KeyHint k="C" />
+              <Check className="mr-1.5 h-5 w-5" /> +{value} <KeyHint k={keyLabel(keys.judgeCorrect)} />
             </button>
             <button
               onClick={actions.judgeWrong}
               className="flex min-h-12 items-center justify-center rounded-full bg-danger px-4 font-display text-base font-black text-danger-ink elev-2"
             >
-              <X className="mr-1.5 h-5 w-5" /> Wrong <KeyHint k="X" />
+              <X className="mr-1.5 h-5 w-5" /> Wrong <KeyHint k={keyLabel(keys.judgeWrong)} />
             </button>
           </div>
 
@@ -1051,17 +1074,16 @@ function LiveControlPanel({
               disabled={!hasNext}
               className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
             >
-              Pass to next <KeyHint k="N" />
+              Pass to next <KeyHint k={keyLabel(keys.passToNext)} />
             </button>
             <button
               onClick={actions.restartTimer}
               className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
             >
-              <RotateCcw className="mr-1.5 h-4 w-4" /> Timer <KeyHint k="R" />
+              <RotateCcw className="mr-1.5 h-4 w-4" /> Timer <KeyHint k={keyLabel(keys.restartTimer)} />
             </button>
           </div>
 
-          <QueueList session={session} players={players} queue={queue} onClear={actions.clearQueue} />
         </div>
       ) : (
         <div className="space-y-3">
@@ -1073,17 +1095,61 @@ function LiveControlPanel({
             <p className="mt-1 font-display text-lg font-black text-ink-gold">{tile.answer || "—"}</p>
             {tile.hint && <p className="mt-1 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
           </div>
-          <p className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-ink-gold" /> Buzzers armed
-          </p>
           <button
             onClick={actions.reveal}
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-lilac px-6 font-display text-base font-black text-foreground"
           >
-            Reveal answer <KeyHint k="Space" />
+            Reveal answer <KeyHint k={keyLabel(keys.reveal)} />
           </button>
-          <QueueList session={session} players={players} queue={queue} onClear={actions.clearQueue} />
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------ Buzzer panel ------------------------------ */
+
+/**
+ * La colonna di destra, e nient'altro: se i buzzer sono aperti e chi si è
+ * prenotato, in ordine. Giudizio e rivelazione stanno a sinistra, dove l'host
+ * guarda mentre conduce.
+ */
+function BuzzerPanel({
+  session,
+  players,
+  queue,
+  onClearQueue,
+}: {
+  session: Session;
+  players: Player[];
+  queue: QueueEntry[];
+  onClearQueue: () => void;
+}) {
+  const armed = session.phase === "question_open" || session.phase === "answering";
+  const waiting = queue.filter(
+    (q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
+      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Buzzer</h3>
+      <p
+        className={`mb-4 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider ${
+          armed ? "text-ink-gold" : "text-muted-foreground"
+        }`}
+      >
+        <span
+          className={`h-2.5 w-2.5 rounded-full ${armed ? "animate-pulse bg-ink-gold" : "bg-foreground/25"}`}
+          aria-hidden
+        />
+        {armed ? "Buzzers armed" : "Buzzers closed"}
+      </p>
+      {waiting.length === 0 ? (
+        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">
+          {armed ? "Nobody has buzzed yet" : "Open a tile to arm the buzzers"}
+        </p>
+      ) : (
+        <QueueList session={session} players={players} queue={queue} onClear={onClearQueue} />
       )}
     </div>
   );
@@ -1138,7 +1204,12 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
       </div>
       <button
         onClick={async () => {
+          // Sulla sessione perché valga subito, e sul gioco perché la scelta
+          // sopravviva alla partita: le prossime la ereditano.
           await setDailyDoubles({ data: { sessionId: session.id, tileIds: selected } });
+          await updateGame({
+            data: { gameId: state.game.id, theme: { ...themeOf(state.game), dailyDoubleTileIds: selected } },
+          });
           toast.success("Daily Doubles updated");
           onClose();
         }}
@@ -1360,7 +1431,29 @@ function FinalPanel({
 
 /* --------------------------------- Podium --------------------------------- */
 
-function Podium({ session, players, theme }: { session: Session; players: Player[]; theme: ThemeSettings }) {
+function Podium({
+  session,
+  players,
+  theme,
+  onExit,
+}: {
+  session: Session;
+  players: Player[];
+  theme: ThemeSettings;
+  onExit: () => void;
+}) {
+  // Esc, spazio o un clic fuori: la partita è finita, non serve spiegare come
+  // uscire da una schermata che si chiude in tutti i modi in cui ci si prova.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" && e.key !== " ") return;
+      e.preventDefault();
+      onExit();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onExit]);
+
   // A parità di punteggio non c'è un vincitore: il `>=` proclamava sempre
   // Alpha, con l'altra squadra elencata sotto con lo stesso identico numero.
   const tie = session.score_alpha === session.score_bravo;
@@ -1375,12 +1468,17 @@ function Podium({ session, players, theme }: { session: Session; players: Player
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      role="dialog"
+      aria-modal
+      aria-label="Risultato finale"
+      onClick={onExit}
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/35 p-4 backdrop-blur-md"
     >
       <motion.div
         initial={{ scale: 0.8, y: 40 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 160, damping: 16 }}
+        onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-[36px] bg-card p-8 text-center elev-3"
       >
         <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop"><Crown className="h-10 w-10 text-ink-gold" /></span>
@@ -1407,7 +1505,6 @@ function Podium({ session, players, theme }: { session: Session; players: Player
             ))}
           </div>
         </div>
-        <p className="mt-6 text-xs text-muted-foreground">Close this tab or reset the board to play again.</p>
       </motion.div>
     </motion.div>
   );

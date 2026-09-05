@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Settings as SettingsIcon, LogOut, type LucideIcon } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +34,6 @@ export function AccountMenu({
   avatarUrl,
   onOpenSettings,
   items,
-  sections,
   dangerItems,
   wide = false,
 }: {
@@ -42,8 +41,6 @@ export function AccountMenu({
   avatarUrl?: string | null | undefined;
   onOpenSettings: () => void;
   items?: AccountMenuItem[];
-  /** Free-form blocks (already grouped and separated) shown above `items`. */
-  sections?: ReactNode;
   dangerItems?: AccountMenuItem[] | undefined;
   /** Widen the panel for content that needs more than a row of text. */
   wide?: boolean;
@@ -63,6 +60,12 @@ export function AccountMenu({
   const initial = (displayName.trim()[0] ?? "?").toUpperCase();
   const avatarValue = useAvatarValue(avatarUrl ?? null);
   const rowClass = "rounded-full px-3 py-2.5 text-sm font-semibold";
+  /*
+   * Un filo grigio da un pixel non separava niente: i gruppi — strumenti,
+   * account, azioni irreversibili — si leggevano come un elenco unico. Qui la
+   * riga è più marcata e i gruppi respirano.
+   */
+  const sepClass = "my-2.5 h-[2px] bg-foreground/15";
 
   return (
     <DropdownMenu>
@@ -87,8 +90,7 @@ export function AccountMenu({
           <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
           <p className="truncate text-xs text-muted-foreground">{email || "Signed in"}</p>
         </div>
-        <DropdownMenuSeparator />
-        {sections}
+        <DropdownMenuSeparator className={sepClass} />
         {items && items.length > 0 && (
           <>
             {items.map((it) => {
@@ -103,7 +105,7 @@ export function AccountMenu({
                 </DropdownMenuItem>
               );
             })}
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className={sepClass} />
           </>
         )}
         <DropdownMenuItem className={rowClass} onSelect={onOpenSettings}>
@@ -119,7 +121,7 @@ export function AccountMenu({
         </DropdownMenuItem>
         {dangerItems && dangerItems.length > 0 && (
           <>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className={sepClass} />
             {dangerItems.map((it) => {
               const Icon = it.icon;
               return (

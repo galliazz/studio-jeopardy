@@ -7,7 +7,7 @@ import { Zap, Clock, Ban, Trophy, Hourglass, Loader2, Settings as SettingsIcon }
 import { toast } from "sonner";
 import { lookupSession, joinGame, getPlayerState, buzz, submitFinalAnswer } from "@/lib/play.functions";
 import { SettingsDialog } from "@/components/SettingsDialog";
-import { useSessionRealtime } from "@/hooks/use-session-realtime";
+import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
 import {
@@ -345,7 +345,7 @@ function LivePlayer({
     queryFn: () => fetchState({ data: { sessionId } }),
     refetchOnWindowFocus: true,
   });
-  useSessionRealtime(sessionId, [["play", sessionId]]);
+  useSessionRealtime(sessionId, [["play", sessionId]], GUEST_TABLES);
 
   const state = data && !("error" in data) ? (data as unknown as PlayerState) : null;
   const session = state?.session ?? null;
@@ -496,12 +496,6 @@ function LivePlayer({
           {status === "live" && phase === "idle" && (
             <StatusCard key="idle" icon={<Clock className="h-10 w-10 text-muted-foreground" />} title="Get ready">
               Waiting for the next question.
-            </StatusCard>
-          )}
-
-          {status === "live" && phase === "daily_double_wager" && (
-            <StatusCard key="dd" icon={<Zap className="h-10 w-10 text-ink-gold" />} title="Daily Double!">
-              The host is setting a wager…
             </StatusCard>
           )}
 

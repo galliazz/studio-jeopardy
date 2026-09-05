@@ -10,7 +10,7 @@
  * short, because the board shrank and the type did not.
  */
 import { motion } from "framer-motion";
-import type { ThemeSettings } from "@/lib/types";
+import { boardTextCss, type ThemeSettings } from "@/lib/types";
 
 export interface BoardTile {
   id: string;
@@ -50,19 +50,15 @@ export function BoardGrid({
 }) {
   const readOnly = !onOpenTile;
 
-  /* An explicit scale wins; otherwise fill mode sizes type off the board. */
-  const headerFont =
-    scale !== 1
-      ? { fontSize: 20 * scale }
-      : fill
-        ? { fontSize: "clamp(0.5rem, 2.6cqmin, 0.95rem)" }
-        : null;
-  const tileFont =
-    scale !== 1
-      ? { fontSize: 44 * scale }
-      : fill
-        ? { fontSize: "clamp(0.7rem, 7.5cqmin, 3.25rem)" }
-        : null;
+  /*
+   * Font e proporzioni vengono da quanto l'host ha impostato nella pagina di
+   * Edit — finora quel pannello scriveva nel tema e nessuno lo leggeva. Uno
+   * `scale` esplicito (la tela 1080p) continua a vincere su tutto.
+   */
+  const headerStyle = boardTextCss(theme, "categories", 0.95, 2.6);
+  const tileStyle = boardTextCss(theme, "numbers", 3.25, 7.5);
+  const headerFont = scale !== 1 ? { ...headerStyle, fontSize: 20 * scale } : fill ? headerStyle : null;
+  const tileFont = scale !== 1 ? { ...tileStyle, fontSize: 44 * scale } : fill ? tileStyle : null;
 
   return (
     <div

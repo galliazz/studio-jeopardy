@@ -197,7 +197,8 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       .eq("player_id", session.active_player_id)
       .eq("status", "active")
       .maybeSingle();
-    if (!activeRow && session.dd_wager == null) throw new Error("Already judged");
+    // Doppio click dell'host: già giudicato, non è un errore — nessun effetto.
+    if (!activeRow && session.dd_wager == null) return { outcome: "noop" as const, delta: 0 };
 
     const isDD = session.dd_wager != null;
     const value = session.dd_wager ?? tile.points;

@@ -37,7 +37,13 @@ function QueueOverlay() {
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          gap: 140,
+          /*
+           * 140 era tarato sulla vecchia trasformazione, che riservava al
+           * layout la scatola NON ingrandita: fra punteggi e coda se ne
+           * vedevano una quarantina. Ora che la scatola è quella vera, questo
+           * è lo spazio che si vede davvero.
+           */
+          gap: 48,
         }}
       >
         <OverlayScores state={state} />

@@ -30,3 +30,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# `.env` resta tracciato: contiene solo indirizzo, identificativo e chiave
+# pubblicabile — valori che viaggiano comunque nel pacchetto che arriva al
+# browser — e toglierlo rischierebbe di rompere la build.
+#
+# Quello che NON deve mai finire qui dentro è una chiave di servizio. Se ti
+# serve un segreto in locale, mettilo in `.env.local`, che è ignorato.
+.env.local
+.env.*.local

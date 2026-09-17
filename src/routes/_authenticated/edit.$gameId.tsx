@@ -44,12 +44,14 @@ import {
   type ThemeSettings,
   type TextScope,
   type TextStyle,
+  teamColorVars,
 } from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { AccountMenu } from "@/components/AccountMenu";
+import { APP_BAR, APP_BAR_INNER } from "@/components/app-bar";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
@@ -86,7 +88,7 @@ const ROW_LABEL = "shrink-0 text-[10px] font-bold uppercase tracking-wider text-
 const BOARD_RATIO = 5 / 5.4;
 
 const FIELD_LABEL =
-  "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
+  "mb-1.5 block text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
 
 const THEME_PRESETS: { name: string; theme: Pick<ThemeSettings, "bg" | "card" | "accent"> }[] = [
   { name: "Lilac Bloom", theme: { bg: "#F4EAF8", card: "#E3D3F5", accent: "#5B3E77" } },
@@ -165,6 +167,7 @@ function EditorPage() {
      */
     <div
       data-editor
+      style={teamColorVars(theme)}
       className="flex min-h-screen flex-col text-foreground min-[1100px]:h-screen min-[1100px]:overflow-hidden"
     >
       {/*
@@ -173,7 +176,7 @@ function EditorPage() {
        * in due posti, e il secondo è il menu del profilo, dove stanno anche il
        * codice invito e le impostazioni.
        */}
-      <header className="z-50 shrink-0 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
+      <header className={APP_BAR}>
         {/*
          * Tre colonne, non una fila: le due laterali hanno lo stesso peso, così
          * il titolo cade sulla mezzeria della finestra — che è anche quella
@@ -181,7 +184,7 @@ function EditorPage() {
          * `flex` e `ml-auto` il titolo stava a sinistra e in mezzo restava
          * mezzo schermo di niente.
          */}
-        <div className="grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6">
+        <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] ${APP_BAR_INNER}`}>
           <div className="flex min-w-0 items-center">
             <Link
               to="/studio"
@@ -239,6 +242,9 @@ function EditorPage() {
           className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[1100px]:min-h-0 min-[1100px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1100px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[1100px]:[--board-reserve:46rem]"
         >
           <aside className="order-2 flex flex-col gap-3 min-[1100px]:order-1 min-[1100px]:mt-[var(--board-offset)] min-[1100px]:max-h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:justify-self-end min-[1100px]:self-start min-[1100px]:overflow-y-auto min-[1100px]:pr-1">
+            {/* Ordine chiesto: il testo è quello che si tocca di più mentre si
+                scrive un gioco, le Daily Double una volta sola alla fine. */}
+            <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
             <DailyDoublePanel
               count={dailyDoubles.length}
               picking={ddMode}
@@ -247,14 +253,8 @@ function EditorPage() {
                 setSelectedTileId(null);
               }}
             />
-            <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
           </aside>
 
-          {/*
-           * LA TELA. Il riquadro esterno è il contenitore misurato; quello dentro
-           * prende il lato più stretto fra larghezza e altezza e si centra, così
-           * la board entra sempre intera senza che nessuno debba scorrere.
-           */}
           <main
             /* Il lato lo decide `--board-side`, lo stesso che conoscono le
                colonne. Sotto i 1100px non ci sono colonne: la board prende la
@@ -442,7 +442,12 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
     return (
       <button
         onClick={() => setEditing(true)}
-        className="max-w-[45vw] truncate rounded-full bg-mint px-4 py-1.5 text-left font-display text-base font-black text-foreground transition-transform hover:scale-[1.02] sm:text-xl"
+        /* Niente pastiglia verde: una pastiglia colorata si legge come
+           un'etichetta di stato, non come il titolo della cosa che stai
+           modificando. Testo pieno, più grande, e la pastiglia compare solo
+           sotto il cursore per dire che si può cambiare. */
+        title="Click to rename"
+        className="max-w-[45vw] truncate rounded-full px-3 py-1 text-center font-display text-xl font-black tracking-tight text-foreground transition-colors hover:bg-foreground/10 sm:text-2xl"
       >
         {value}
       </button>
@@ -459,7 +464,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
       }}
       onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
       maxLength={80}
-      className="w-[45vw] max-w-xs rounded-full bg-muted px-4 py-1.5 font-display text-base font-black outline-none ring-2 ring-ink-accent sm:text-xl"
+      className="w-[45vw] max-w-sm rounded-full bg-muted px-4 py-1 text-center font-display text-xl font-black tracking-tight outline-none ring-2 ring-ink-accent sm:text-2xl"
     />
   );
 }
@@ -722,7 +727,6 @@ function TileEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
-  const [points, setPoints] = useState(tile.points);
   const [answer, setAnswer] = useState(tile.answer);
   const [hint, setHint] = useState(tile.hint ?? "");
   const [focused, setFocused] = useState(false);
@@ -806,7 +810,10 @@ function TileEditor({
         </h3>
         <button
           onClick={onClose}
-          className="absolute right-0 top-1/2 flex h-11 w-11 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+          /* Dentro la riga del titolo e non incollata al bordo: a 44px
+             abbondanti, il tondo tocca quasi lo spigolo della scheda. Qui è
+             più piccola e rientra, così sta dentro la curva. */
+          className="absolute right-0 top-1/2 flex h-9 w-9 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground"
           aria-label="Close editor"
           title="Close (Esc)"
         >
@@ -818,18 +825,11 @@ function TileEditor({
           quello che avanza invece di restare a 96 pixel fissi con mezza scheda
           vuota sotto. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1">
-        <label className="block shrink-0">
-          <span className={FIELD_LABEL}>Points</span>
-          <input
-            type="number"
-            value={points}
-            onChange={(e) => setPoints(Number(e.target.value))}
-            onBlur={() => points !== tile.points && void save({ points })}
-            className="h-12 w-28 rounded-full bg-muted px-4 font-display text-sm font-black tabular-nums outline-none ring-2 ring-transparent focus:ring-ink-accent"
-          />
-        </label>
-
-        <div className="flex min-h-[9rem] flex-1 flex-col">
+        {/* Cresce col testo invece di riempire tutta la scheda: una domanda di
+            sei parole non ha bisogno di un riquadro alto mezzo schermo. Il
+            contentEditable si allunga da sé, quindi basta non forzargli
+            un'altezza. */}
+        <div className="shrink-0">
           <span className={FIELD_LABEL}>Question</span>
           <AnimatePresence>
             {focused && (
@@ -885,7 +885,7 @@ function TileEditor({
               setFocused(false);
               saveQuestion();
             }}
-            className="min-h-0 flex-1 overflow-y-auto rounded-[26px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
+            className="min-h-12 rounded-[26px] bg-muted px-4 py-3.5 text-sm leading-relaxed outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </div>
 
@@ -1109,6 +1109,13 @@ function ThemeBar({
     await saveTheme({ textStyles: next });
   };
 
+  /** Il colore di una squadra: salvato in ritardo, come le altre tinte. */
+  const applyTeamColor = (key: "teamAlphaColor" | "teamBravoColor", value: string) => {
+    patchThemeCache({ [key]: value });
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void saveTheme({ [key]: value }), 400);
+  };
+
   const applyTeamName = async (key: "teamAlpha" | "teamBravo", value: string) => {
     const patch = { [key]: value.trim() };
     patchThemeCache(patch);
@@ -1133,6 +1140,74 @@ function ThemeBar({
      * della console — stessa forma, stesso titolo, stessa elevazione.
      */
     <>
+      <Panel title="Text">
+        {/* A CHE COSA si applica. Da solo in riga: è la scelta che comanda
+            tutte le altre, e affiancato al carattere si leggevano come due
+            valori senza chiave. */}
+        <span className={`${ROW_LABEL} mb-1.5 block`}>Applies to</span>
+        {/* Menu scritto a mano e non `<select>`: il menu di sistema tiene il
+            testo a sinistra e incolla la freccia al bordo, e non c'è verso di
+            centrarlo. Qui il valore sta al centro come in tutte le altre
+            pastiglie, e la freccia ha il suo margine. */}
+        <PillSelect
+          label="Text target"
+          value={scope}
+          options={[
+            { value: "numbers", label: "Numbers" },
+            { value: "questions", label: "Questions" },
+            { value: "categories", label: "Categories" },
+            { value: "all", label: "All text" },
+          ]}
+          onChange={(v) => setScope(v as TextScope | "all")}
+        />
+
+        <span className={`${ROW_LABEL} mb-1.5 mt-3 block`}>Font</span>
+        <FontPicker
+          font={current.font ?? ""}
+          weight={current.weight}
+          onPick={(patch) => void applyTextStyle(patch)}
+        />
+
+        <span className={`${ROW_LABEL} mb-1.5 mt-3 flex items-center gap-1`}>
+          <Type className="h-3.5 w-3.5" /> Size
+        </span>
+        {/* Il cursore non lasciava scrivere un valore. Qui il numero è il
+            comando: doppio clic e si digita, oppure meno e più di uno alla
+            volta. La misura è in centesimi del corpo di partenza. */}
+        <Stepper
+          value={Math.round((current.size ?? 1) * 100)}
+          min={60}
+          max={180}
+          wide
+          label="Text size"
+          onChange={(v) => void applyTextStyle({ size: v / 100 })}
+        />
+
+        <div className="mt-3 flex gap-2">
+          {(
+            [
+              ["bold", "B", "font-black"],
+              ["italic", "I", "italic"],
+              ["underline", "U", "underline"],
+            ] as const
+          ).map(([key, label, cls]) => (
+            <button
+              key={key}
+              onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
+              aria-pressed={Boolean(current[key])}
+              aria-label={key}
+              className={`h-12 flex-1 rounded-full text-sm transition-colors ${cls} ${
+                current[key]
+                  ? "bg-ink-accent text-card"
+                  : "border border-foreground/15 text-foreground hover:bg-foreground/5"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Panel>
+
       <Panel title="Appearance">
         {/* Cinque pastiglie in riga: quattro temi pronti e una personalizzata.
             Con quattro restava un buco a destra, e il gruppo non era centrato
@@ -1168,89 +1243,30 @@ function ThemeBar({
         </div>
       </Panel>
 
-      <Panel title="Text">
-        {/* A CHE COSA si applica. Da solo in riga: è la scelta che comanda
-            tutte le altre, e affiancato al carattere si leggevano come due
-            valori senza chiave. */}
-        <span className={`${ROW_LABEL} mb-1.5 block`}>Applies to</span>
-        <select
-          value={scope}
-          onChange={(e) => setScope(e.target.value as TextScope | "all")}
-          aria-label="Text target"
-          className="h-12 w-full rounded-full bg-muted px-4 text-xs font-bold text-foreground outline-none"
-        >
-          <option value="numbers">Numbers</option>
-          <option value="questions">Questions</option>
-          <option value="categories">Categories</option>
-          <option value="all">All text</option>
-        </select>
-
-        <span className={`${ROW_LABEL} mb-1.5 mt-3 block`}>Font</span>
-        <FontPicker
-          font={current.font ?? ""}
-          weight={current.weight}
-          onPick={(patch) => void applyTextStyle(patch)}
-        />
-
-        <span className={`${ROW_LABEL} mb-1.5 mt-3 flex items-center gap-1`}>
-          <Type className="h-3.5 w-3.5" /> Size
-        </span>
-        {/* Il cursore non lasciava scrivere un valore. Qui il numero è il
-            comando: doppio clic e si digita, oppure meno e più di uno alla
-            volta. La misura è in centesimi del corpo di partenza. */}
-        <Stepper
-          value={Math.round((current.size ?? 1) * 100)}
-          min={60}
-          max={180}
-          suffix="%"
-          wide
-          label="Text size"
-          onChange={(v) => void applyTextStyle({ size: v / 100 })}
-        />
-
-        <div className="mt-3 flex gap-2">
-          {(
-            [
-              ["bold", "B", "font-black"],
-              ["italic", "I", "italic"],
-              ["underline", "U", "underline"],
-            ] as const
-          ).map(([key, label, cls]) => (
-            <button
-              key={key}
-              onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
-              aria-pressed={Boolean(current[key])}
-              aria-label={key}
-              className={`h-12 flex-1 rounded-full text-sm transition-colors ${cls} ${
-                current[key]
-                  ? "bg-ink-accent text-card"
-                  : "border border-foreground/15 text-foreground hover:bg-foreground/5"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </Panel>
-
       <Panel title="Game">
-        <span className={`${ROW_LABEL} mb-2 block`}>Teams</span>
-        <div className="flex flex-col gap-2">
+        <span className={`${ROW_LABEL} mb-2 block text-center`}>Teams</span>
+        {/* Le due squadre stanno una accanto all'altra: sono una coppia, e in
+            colonna si leggevano come due impostazioni separate. */}
+        <div className="flex gap-2">
           <TeamNameInput
             defaultValue={theme.teamAlpha ?? ""}
             placeholder="Alpha"
-            swatch="bg-team-alpha"
+            colorVar="--team-alpha"
+            color={theme.teamAlphaColor}
+            onSaveColor={(c) => applyTeamColor("teamAlphaColor", c)}
             onSave={(v) => void applyTeamName("teamAlpha", v)}
           />
           <TeamNameInput
             defaultValue={theme.teamBravo ?? ""}
             placeholder="Bravo"
-            swatch="bg-team-bravo"
+            colorVar="--team-bravo"
+            color={theme.teamBravoColor}
+            onSaveColor={(c) => applyTeamColor("teamBravoColor", c)}
             onSave={(v) => void applyTeamName("teamBravo", v)}
           />
         </div>
 
-        <span className={`${ROW_LABEL} mb-2 mt-3 block`}>Points ladder</span>
+        <span className={`${ROW_LABEL} mb-2 mt-3 block text-center`}>Points ladder</span>
         {/* Cinque valori in una riga sola: è una scala, e a capo 3+2 si leggeva
             come due gruppi con l'ultima riga mezza vuota. */}
         <div className="flex gap-1.5">
@@ -1276,6 +1292,79 @@ function ThemeBar({
 }
 
 /* ------------------------------- Controlli -------------------------------- */
+
+/**
+ * Una pastiglia che apre un elenco. Il valore sta al centro e la freccia ha il
+ * suo margine: il `<select>` di sistema teneva il testo a sinistra e incollava
+ * la freccia al bordo, e non c'è modo di centrarlo.
+ */
+function PillSelect({
+  value,
+  options,
+  label,
+  onChange,
+}: {
+  value: string;
+  options: { value: string; label: string }[];
+  label: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label={label}
+        aria-expanded={open}
+        /* Il rientro a sinistra pareggia quello a destra PIÙ la freccia
+           (12 + 16 = 28): altrimenti il testo esce di sei pixel dal centro
+           della pastiglia, che è proprio quello che si stava cercando di
+           evitare passando dal menu di sistema. */
+        className="flex h-12 w-full items-center rounded-full bg-muted pl-7 pr-3 text-foreground"
+      >
+        <span className="flex-1 truncate text-center text-sm font-bold">{current?.label}</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <>
+            <button
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-20 cursor-default"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -6 }}
+              transition={SPRING_UI}
+              className="absolute left-0 right-0 top-14 z-30 rounded-[26px] bg-popover p-2 elev-3"
+            >
+              {options.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  className={`h-11 w-full rounded-full px-4 text-center text-sm font-semibold transition-colors ${
+                    o.value === value ? "bg-ink-accent text-card" : "hover:bg-foreground/5"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 /**
  * Meno · numero · più.
@@ -1382,23 +1471,29 @@ function FontPicker({
 
   return (
     <div className="relative">
+      {/* Due cose distinte dentro un comando solo: la famiglia e il taglio di
+          peso, separate da un filetto. Prima erano "Display" e "BLACK" alle due
+          estremità della stessa pastiglia, senza niente in mezzo che dicesse
+          che erano due informazioni diverse. */}
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex h-12 w-full items-center justify-between gap-2 rounded-full bg-muted px-4 text-left text-foreground"
+        aria-label="Font"
+        className="flex h-12 w-full items-center gap-2 rounded-full bg-muted pl-4 pr-3 text-foreground"
       >
         <span
-          className="truncate text-sm font-semibold"
+          className="min-w-0 flex-1 truncate text-center text-sm font-semibold"
           style={family.value ? { fontFamily: family.value } : undefined}
         >
           {family.label}
         </span>
-        <span className="flex shrink-0 items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {cut?.label ?? "Auto"}
-          </span>
-          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        <span aria-hidden className="h-6 w-px shrink-0 rounded-full bg-foreground/20" />
+        <span className="w-16 shrink-0 text-center text-[11px] font-bold text-muted-foreground">
+          {cut?.label ?? "Auto"}
         </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       <AnimatePresence>
@@ -1421,7 +1516,7 @@ function FontPicker({
                   <button
                     key={f.label}
                     onClick={() => onPick({ font: f.value })}
-                    className={`flex h-11 w-full items-center rounded-full px-4 text-sm transition-colors ${
+                    className={`h-11 w-full rounded-full px-4 text-center text-sm transition-colors ${
                       f.value === font ? "bg-ink-accent text-card" : "hover:bg-foreground/5"
                     }`}
                     style={f.value ? { fontFamily: f.value } : undefined}
@@ -1540,22 +1635,47 @@ function CustomThemeSwatch({
   );
 }
 
+/**
+ * Pallino del colore e nome della squadra, appaiati.
+ *
+ * Il pallino non era decorazione: adesso apre il selettore e cambia la tinta
+ * della squadra ovunque — pastiglie dei punteggi, coda, buzzer sul telefono,
+ * overlay — perché quella tinta è una variabile CSS che tutto il resto legge.
+ */
 function TeamNameInput({
   defaultValue,
   placeholder,
-  swatch,
+  colorVar,
+  color,
   onSave,
+  onSaveColor,
 }: {
   defaultValue: string;
   placeholder: string;
-  swatch: string;
+  colorVar: string;
+  color: string | undefined;
   onSave: (value: string) => void;
+  onSaveColor: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
   useEffect(() => setValue(defaultValue), [defaultValue]);
+
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={`h-4 w-4 ${swatch} scallop`} />
+    <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full bg-muted p-1">
+      <label
+        className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full"
+        style={{ backgroundColor: color ?? `var(${colorVar})` }}
+        title={`${placeholder} colour`}
+      >
+        <input
+          type="color"
+          value={color ?? "#888888"}
+          onChange={(e) => onSaveColor(e.target.value)}
+          aria-label={`${placeholder} colour`}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        />
+        <Palette className="h-3.5 w-3.5 text-foreground/70 mix-blend-difference" />
+      </label>
       <input
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -1563,7 +1683,8 @@ function TeamNameInput({
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         placeholder={placeholder}
         maxLength={24}
-        className="h-12 w-24 rounded-full bg-muted px-3 text-xs font-bold outline-none ring-2 ring-transparent focus:ring-ink-accent"
+        aria-label={`${placeholder} name`}
+        className="min-w-0 flex-1 bg-transparent px-1 text-center text-xs font-bold outline-none"
       />
     </div>
   );

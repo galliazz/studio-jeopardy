@@ -2,6 +2,13 @@
  * Broadcast mirror pieces. These render the Host Console's own components in
  * read-only mode — no second implementation of the board, clue, score chips or
  * buzz queue exists. Any visual difference from the console is a bug.
+ *
+ * La domanda si misura sulla propria scheda, esattamente come sulla console.
+ * Per un po' l'ho fatta misurare sulla tela 1920x1080, per conservare le
+ * dimensioni che aveva prima: in un riquadro da 556 pixel usciva testo
+ * calcolato per una tela intera, che veniva tagliato invece di rimpicciolirsi
+ * — e la risposta, che sta in fondo, non si vedeva mai. Conservavo un difetto
+ * credendo di conservare un progetto.
  */
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -124,7 +131,6 @@ export function OverlayBoard({
               queue={state.queue}
               theme={theme}
               readOnly
-              ownContainer={false}
             />
           )}
         </AnimatePresence>
@@ -138,9 +144,15 @@ export function OverlayBoard({
 export function OverlayScores({ state }: { state: OverlayState }) {
   const theme = useOverlayTheme(state);
   return (
-    /* Console-sized chips scaled up so every glyph clears 28px at 1080p.
-       The scale lives on a static wrapper: motion owns the inner transform. */
-    <div style={{ transform: "scale(2.6)", transformOrigin: "top center" }}>
+    /*
+     * Console-sized chips scaled up so every glyph clears 28px at 1080p.
+     *
+     * `zoom` e non `transform: scale`: una trasformazione ingrandisce solo i
+     * pixel disegnati e lascia al layout la scatola originale, così il
+     * contenitore riserva meno spazio di quello che poi si vede e il ritaglio
+     * taglia via la parte in eccesso. `zoom` ingrandisce anche la scatola.
+     */
+    <div style={{ zoom: 2.6 }}>
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -174,7 +186,13 @@ export function OverlayScores({ state }: { state: OverlayState }) {
 
 export function OverlayQueue({ state, align = "right" }: { state: OverlayState; align?: "left" | "right" }) {
   return (
-    <div style={{ transform: "scale(1.6)", transformOrigin: `top ${align}`, width: 340 }}>
+    /*
+     * Stessa ragione dei punteggi, ma qui il difetto si vedeva: il riquadro
+     * attorno riservava l'altezza NON ingrandita, e `overflow: hidden`
+     * tagliava tutto il resto — con due persone in coda se ne vedeva una e
+     * mezza. Vedi il commento in OverlayScores.
+     */
+    <div style={{ zoom: 1.6, width: 340, marginLeft: align === "right" ? "auto" : undefined }}>
     <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}

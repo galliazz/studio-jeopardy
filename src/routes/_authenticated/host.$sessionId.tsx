@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -532,14 +532,28 @@ function HostPage() {
        * columns scroll; below that the whole body scrolls, so nothing is ever
        * clipped by a short window.
        */}
-      <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 [container-type:size] sm:px-6 min-[840px]:overflow-y-hidden min-[840px]:py-0">
-        <div className="grid h-full grid-cols-1 gap-4 min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      {/*
+       * Il corpo è il contenitore su cui si misura tutto quel che sta dentro.
+       * Ha dei margini verticali suoi, e `100cqh` conta solo lo spazio interno:
+       * la board si accorcia da sola di quel tanto, invece di appoggiarsi al
+       * bordo dello schermo.
+       */}
+      <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 [container-type:size] sm:px-6 min-[840px]:overflow-y-hidden min-[840px]:py-6">
+        <div
+          /*
+           * `--board-side` è il lato della board, e lo conoscono anche le
+           * colonne: è così che sanno dove comincia, per allinearcisi.
+           * `--board-offset` è l'aria sopra di lei, che a schermo stretto non
+           * esiste perché non ci sono colonne a fianco.
+           */
+          style={{ "--board-side": `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))` } as CSSProperties}
+          className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[840px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[840px]:[--board-reserve:23rem] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1200px]:[--board-reserve:46rem]">
           {/*
            * SINISTRA: stato, giocatori, soundboard e — in fondo — i comandi
            * della domanda. Stavano a destra, lontani dalla board e a fianco
            * degli stessi pulsanti ripetuti nella casella centrale.
            */}
-          <div className="order-2 min-h-0 w-full space-y-4 self-center min-[840px]:order-1 min-[840px]:max-h-full min-[840px]:max-w-[340px] min-[840px]:justify-self-end min-[840px]:overflow-y-auto min-[840px]:py-4 min-[840px]:pr-1">
+          <div className="order-2 min-h-0 w-full space-y-4 min-[840px]:order-1 min-[840px]:mt-[var(--board-offset)] min-[840px]:max-h-[var(--board-side)] min-[840px]:max-w-[340px] min-[840px]:justify-self-end min-[840px]:self-start min-[840px]:overflow-y-auto min-[840px]:pr-1">
             <SessionStatus
               connectedCount={connectedCount}
               remaining={tiles.length - played}
@@ -585,10 +599,10 @@ function HostPage() {
            * ai suoi bordi invece di stare inchiodate a quelli della finestra.
            */}
           <div
-            className="relative order-1 mx-auto [--board-reserve:0px] [container-type:size] min-[840px]:order-2 min-[840px]:[--board-reserve:23rem] min-[1200px]:[--board-reserve:46rem]"
+            className="relative order-1 mx-auto self-center [container-type:size] min-[840px]:order-2"
             style={{
-              width: `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) * ${BOARD_RATIO})))`,
-              height: `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))`,
+              width: `calc(var(--board-side) * ${BOARD_RATIO})`,
+              height: "var(--board-side)",
             }}
           >
             <BoardGrid
@@ -634,7 +648,7 @@ function HostPage() {
            * quello nella casella centrale era la stessa azione due volte.
            */}
           <div
-            className={`order-3 min-h-0 w-full flex-col gap-4 self-center overflow-y-auto min-[1200px]:flex min-[1200px]:max-h-full min-[1200px]:max-w-[340px] min-[1200px]:justify-self-start min-[1200px]:py-4 ${
+            className={`order-3 min-h-0 w-full flex-col gap-4 min-[1200px]:mt-[var(--board-offset)] min-[1200px]:flex min-[1200px]:h-[var(--board-side)] min-[1200px]:max-w-[340px] min-[1200px]:justify-self-start min-[1200px]:self-start ${
               panelOpen
                 ? "fixed inset-y-0 right-0 z-40 flex w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
                 : "hidden"
@@ -1128,7 +1142,9 @@ function BuzzerPanel({
   );
 
   return (
-    <div className="rounded-[32px] bg-card p-5 elev-2">
+    /* Alto quanto la board: la coda può allungarsi, e una scheda che cresce e
+       cala a ogni buzz farebbe ballare tutta la colonna. */
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
       <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Buzzer</h3>
       <p
         className={`mb-4 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider ${
@@ -1142,7 +1158,7 @@ function BuzzerPanel({
         {armed ? "Buzzers armed" : "Buzzers closed"}
       </p>
       {waiting.length === 0 ? (
-        <p className="py-2 text-center text-sm text-muted-foreground">
+        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">
           {armed ? "Nobody has buzzed yet" : "Open a tile to arm the buzzers"}
         </p>
       ) : (

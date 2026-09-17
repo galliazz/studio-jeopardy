@@ -17,6 +17,7 @@ import {
   ExternalLink,
   ChevronDown,
   Type,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -77,6 +78,8 @@ function EditorPage() {
 
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [playOpen, setPlayOpen] = useState(false);
+  /** Mentre è attivo, toccare una casella la promuove invece di aprirla. */
+  const [ddMode, setDdMode] = useState(false);
 
   const board = data as unknown as BoardData | undefined;
   const isDark = useThemeMode() === "dark";
@@ -87,6 +90,30 @@ function EditorPage() {
   const refresh = useCallback(
     () => queryClient.invalidateQueries({ queryKey: ["board", gameId] }),
     [queryClient, gameId],
+  );
+
+  /*
+   * Le Daily Double si scelgono qui e vivono sul gioco, non sulla partita: la
+   * sessione nasce solo quando si preme Play, e ogni nuova partita le eredita.
+   * Se non ne scegli nessuna, il server ne sorteggia due.
+   */
+  const dailyDoubles = board ? (themeOf(board.game).dailyDoubleTileIds ?? []) : [];
+  const toggleDailyDouble = useCallback(
+    async (tileId: string) => {
+      if (!board) return;
+      const base = themeOf(board.game);
+      const current = base.dailyDoubleTileIds ?? [];
+      if (!current.includes(tileId) && current.length >= 2) {
+        toast.error("Two Daily Doubles at most — remove one first");
+        return;
+      }
+      const next = current.includes(tileId) ? current.filter((id) => id !== tileId) : [...current, tileId];
+      // `themeOf(board.game)` e non il tema già adattato al tema scuro:
+      // salvare quello inciderebbe i colori notturni nel gioco.
+      await updateGame({ data: { gameId, theme: { ...base, dailyDoubleTileIds: next } } });
+      await refresh();
+    },
+    [board, gameId, refresh],
   );
 
   if (!board || !theme) {
@@ -153,15 +180,35 @@ function EditorPage() {
                     tile={tile}
                     theme={theme}
                     selected={selectedTileId === tile.id}
-                    onClick={() => setSelectedTileId(tile.id)}
+                    dailyDouble={dailyDoubles.includes(tile.id)}
+                    picking={ddMode}
+                    onClick={() => (ddMode ? void toggleDailyDouble(tile.id) : setSelectedTileId(tile.id))}
                   />
                 );
               }),
             )}
           </div>
         </div>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          Tap any tile to edit its question, answer, media, and formatting.
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={() => {
+              setDdMode((v) => !v);
+              setSelectedTileId(null);
+            }}
+            aria-pressed={ddMode}
+            className={`flex min-h-12 items-center gap-2 rounded-full px-5 text-sm font-bold transition-colors ${
+              ddMode ? "bg-butter text-ink-gold elev-1" : "border border-foreground/20 text-foreground hover:bg-foreground/5"
+            }`}
+          >
+            <Sparkles className="h-4 w-4" />
+            {ddMode ? "Done picking" : "Pick Daily Doubles"}
+            <span className="rounded-full bg-foreground/10 px-2 text-xs tabular-nums">{dailyDoubles.length}/2</span>
+          </button>
+        </div>
+        <p className="mt-3 text-center text-sm text-muted-foreground">
+          {ddMode
+            ? "Tap tiles to mark them as Daily Doubles. Leave none and the game picks two at random."
+            : "Tap any tile to edit its question, answer, media, and formatting."}
         </p>
       </div>
 
@@ -350,11 +397,15 @@ function TileCell({
   tile,
   theme,
   selected,
+  dailyDouble,
+  picking,
   onClick,
 }: {
   tile: Tile;
   theme: ThemeSettings;
   selected: boolean;
+  dailyDouble: boolean;
+  picking: boolean;
   onClick: () => void;
 }) {
   const preview = stripHtml(tile.question);
@@ -362,15 +413,24 @@ function TileCell({
     <motion.button
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
-      className={`flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden p-1 text-center transition-all sm:aspect-[4/3] sm:gap-1 sm:p-2 ${
+      aria-pressed={picking ? dailyDouble : undefined}
+      className={`relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden p-1 text-center transition-all sm:aspect-[4/3] sm:gap-1 sm:p-2 ${
         selected ? "ring-4 ring-ink-accent" : "hover:-translate-y-0.5 hover:brightness-[1.03]"
-      }`}
+      } ${dailyDouble ? "ring-4 ring-ink-gold" : ""}`}
       style={{
         backgroundColor: theme.card,
         borderRadius: theme.radius,
         boxShadow: `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 28%, transparent)`,
       }}
     >
+      {dailyDouble && (
+        <span
+          aria-label="Daily Double"
+          className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-butter sm:h-6 sm:w-6"
+        >
+          <Sparkles className="h-3 w-3 text-ink-gold sm:h-3.5 sm:w-3.5" />
+        </span>
+      )}
       <span
         className="font-display text-sm font-black sm:text-3xl"
         style={{ color: theme.accent, ...textScopeCss(theme, "numbers", 1.875) }}

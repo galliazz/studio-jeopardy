@@ -6,9 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Play,
-  Bold,
-  Italic,
-  Underline,
   Palette,
   ImagePlus,
   Music,
@@ -729,7 +726,6 @@ function TileEditor({
   const audioRef = useRef<HTMLInputElement>(null);
   const [answer, setAnswer] = useState(tile.answer);
   const [hint, setHint] = useState(tile.hint ?? "");
-  const [focused, setFocused] = useState(false);
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
 
@@ -761,11 +757,6 @@ function TileEditor({
       void save({ question: html });
       toast.success("Saved", { duration: 1000 });
     }
-  };
-
-  const exec = (cmd: string, value?: string) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false, value);
   };
 
   const handleUpload = async (file: File, kind: "image" | "audio") => {
@@ -831,59 +822,29 @@ function TileEditor({
             un'altezza. */}
         <div className="shrink-0">
           <span className={FIELD_LABEL}>Question</span>
-          <AnimatePresence>
-            {focused && (
-              <motion.div
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 6 }}
-                className="mb-2 flex flex-wrap items-center gap-1 rounded-full bg-lilac p-2 elev-1"
-              >
-                <FmtBtn onClick={() => exec("bold")} label="Bold">
-                  <Bold className="h-4 w-4" />
-                </FmtBtn>
-                <FmtBtn onClick={() => exec("italic")} label="Italic">
-                  <Italic className="h-4 w-4" />
-                </FmtBtn>
-                <FmtBtn onClick={() => exec("underline")} label="Underline">
-                  <Underline className="h-4 w-4" />
-                </FmtBtn>
-                <select
-                  onChange={(e) => exec("fontSize", e.target.value)}
-                  defaultValue="3"
-                  className="h-11 rounded-full bg-card px-3 text-xs font-semibold text-foreground outline-none"
-                  aria-label="Font size"
-                >
-                  <option value="2">Small</option>
-                  <option value="3">Normal</option>
-                  <option value="5">Large</option>
-                  <option value="7">Huge</option>
-                </select>
-                <label
-                  className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-card"
-                  aria-label="Text color"
-                >
-                  <Palette className="h-4 w-4" />
-                  <input
-                    type="color"
-                    className="sr-only"
-                    onChange={(e) => exec("foreColor", e.target.value)}
-                  />
-                </label>
-                <FmtBtn onClick={() => exec("removeFormat")} label="Clear formatting">
-                  <X className="h-4 w-4" />
-                </FmtBtn>
-              </motion.div>
-            )}
-          </AnimatePresence>
           <div
             ref={editorRef}
             contentEditable
             suppressContentEditableWarning
-            onFocus={() => setFocused(true)}
-            onBlur={() => {
-              setFocused(false);
-              saveQuestion();
+            onBlur={saveQuestion}
+            /*
+             * Incolla come testo semplice.
+             *
+             * Prima c'era una barretta che compariva al primo clic con grassetto,
+             * corsivo, corpo e colore: gli stessi comandi che stanno nel pannello
+             * Testo, dove però valgono per TUTTE le domande invece che per una
+             * selezione dentro una. Due posti per la stessa cosa, e quello che
+             * spuntava dal nulla spingeva giù Risposta, Hint e Media a ogni clic
+             * nel campo.
+             *
+             * Tolta quella, resta questo: senza più un "azzera formattazione",
+             * un incolla da una pagina web porterebbe dentro font e colori suoi
+             * che la board non governa.
+             */
+            onPaste={(e) => {
+              e.preventDefault();
+              const text = e.clipboardData.getData("text/plain");
+              document.execCommand("insertText", false, text);
             }}
             className="min-h-12 rounded-[26px] bg-muted px-4 py-3.5 text-sm leading-relaxed outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
@@ -1013,29 +974,6 @@ function TileEditor({
         </div>
       </div>
     </motion.div>
-  );
-}
-
-function FmtBtn({
-  children,
-  onClick,
-  label,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      onMouseDown={(e) => {
-        e.preventDefault();
-        onClick();
-      }}
-      className="flex h-11 w-11 items-center justify-center rounded-full text-foreground transition-colors hover:bg-card"
-      aria-label={label}
-    >
-      {children}
-    </button>
   );
 }
 

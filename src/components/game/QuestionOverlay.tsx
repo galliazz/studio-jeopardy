@@ -12,7 +12,7 @@
  * facevano diventare enorme il testo dentro una finestra larga e bassa.
  */
 import { useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import { motion, type MotionStyle } from "framer-motion";
 import { useCountdown } from "@/hooks/use-countdown";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
@@ -71,6 +71,21 @@ export function QuestionOverlay({
       sfx.alarm();
     }
   }, [readOnly, countdown.seconds, countdown.expired, session.timer_ends_at]);
+
+  /*
+   * La risposta aveva una misura scritta a mano e non passava dal tema: era
+   * l'unico testo del gioco che ignorava la pagina di Edit. Ora segue la
+   * domanda, con gli stessi numeri di prima — a moltiplicatore 1 esce identica.
+   *
+   * Estratta dal JSX perché `boardTextCss` ha proprietà facoltative e
+   * MotionStyle, con exactOptionalPropertyTypes, non ne accetta l'`undefined`.
+   */
+  const answerStyle = {
+    backgroundColor: theme.bg,
+    borderRadius: theme.radius,
+    color: theme.accent,
+    ...boardTextCss(theme, "questions", 3, 5.2),
+  } as MotionStyle;
 
   const flashRed = countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
   const showTimer = countdown.seconds != null && session.phase !== "reveal";
@@ -173,12 +188,7 @@ export function QuestionOverlay({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-[clamp(4px,1cqmin,8px)] px-[clamp(12px,4cqmin,36px)] py-[clamp(6px,2cqmin,16px)] font-display font-black leading-snug"
-              style={{
-                backgroundColor: theme.bg,
-                borderRadius: theme.radius,
-                color: theme.accent,
-                fontSize: "clamp(0.8rem, 5.2cqmin, 3rem)",
-              }}
+              style={answerStyle}
             >
               {tile.answer}
             </motion.div>

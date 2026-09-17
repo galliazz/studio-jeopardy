@@ -83,13 +83,27 @@ export function textScopeCss(
 export function boardTextCss(
   theme: ThemeSettings,
   scope: TextScope,
-  capRem: number,
+  /**
+   * Tetto assoluto in rem, oppure `null` per non averne.
+   *
+   * Un tetto in rem dentro una misura in `cqmin` è incoerente: il primo non sa
+   * niente del contenitore, la seconda è tutta contenitore. Finché il tetto non
+   * morde il testo è proporzionale; appena morde diventa una dimensione fissa, e
+   * la stessa griglia disegnata grande e disegnata piccola smette di avere le
+   * stesse proporzioni. Dove la scatola misurata è davvero quella del testo il
+   * tetto va tolto: non può esserci nulla di "troppo grande" rispetto a una
+   * scatola che è già il metro.
+   */
+  capRem: number | null,
   cqmin: number,
 ): CSSProperties {
   const s = theme.textStyles?.[scope];
   const m = s?.size ?? 1;
   const css: CSSProperties = {
-    fontSize: `clamp(0.45rem, ${(cqmin * m).toFixed(3)}cqmin, ${(capRem * m).toFixed(3)}rem)`,
+    fontSize:
+      capRem === null
+        ? `${(cqmin * m).toFixed(3)}cqmin`
+        : `clamp(0.45rem, ${(cqmin * m).toFixed(3)}cqmin, ${(capRem * m).toFixed(3)}rem)`,
   };
   if (s?.font) css.fontFamily = s.font;
   if (s?.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;

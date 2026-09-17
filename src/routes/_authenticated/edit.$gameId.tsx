@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -17,6 +17,10 @@ import {
   ExternalLink,
   Type,
   Sparkles,
+  Trash2,
+  Minus,
+  Plus,
+  ChevronDown,
   QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +37,7 @@ import {
   themeOf,
   boardTextCss,
   BOARD_FONTS,
+  FONT_WEIGHTS,
   type BoardData,
   type Category,
   type Tile,
@@ -54,9 +59,15 @@ export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
     meta: [
       { title: "Board Editor — JEOPARDESTINY" },
-      { name: "description", content: "Design your trivia board: questions, answers, media, and theme." },
+      {
+        name: "description",
+        content: "Design your trivia board: questions, answers, media, and theme.",
+      },
       { property: "og:title", content: "Board Editor — JEOPARDESTINY" },
-      { property: "og:description", content: "Design your trivia board: questions, answers, media, and theme." },
+      {
+        property: "og:description",
+        content: "Design your trivia board: questions, answers, media, and theme.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -71,7 +82,11 @@ export const Route = createFileRoute("/_authenticated/edit/$gameId")({
 /** Etichetta di riga, in linea con i comandi invece che sopra. */
 const ROW_LABEL = "shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
 
-const FIELD_LABEL = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
+/** Larghezza della board diviso la sua altezza: 5 colonne su 5.4 di altezza. */
+const BOARD_RATIO = 5 / 5.4;
+
+const FIELD_LABEL =
+  "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
 
 const THEME_PRESETS: { name: string; theme: Pick<ThemeSettings, "bg" | "card" | "accent"> }[] = [
   { name: "Lilac Bloom", theme: { bg: "#F4EAF8", card: "#E3D3F5", accent: "#5B3E77" } },
@@ -122,7 +137,9 @@ function EditorPage() {
         toast.error("Two Daily Doubles at most — remove one first");
         return;
       }
-      const next = current.includes(tileId) ? current.filter((id) => id !== tileId) : [...current, tileId];
+      const next = current.includes(tileId)
+        ? current.filter((id) => id !== tileId)
+        : [...current, tileId];
       // `themeOf(board.game)` e non il tema già adattato al tema scuro:
       // salvare quello inciderebbe i colori notturni nel gioco.
       await updateGame({ data: { gameId, theme: { ...base, dailyDoubleTileIds: next } } });
@@ -146,7 +163,10 @@ function EditorPage() {
      * stesse della console — strumenti a sinistra, la tela in mezzo, e a
      * destra quello che riguarda la cosa selezionata.
      */
-    <div data-editor className="flex min-h-screen flex-col text-foreground min-[1100px]:h-screen min-[1100px]:overflow-hidden">
+    <div
+      data-editor
+      className="flex min-h-screen flex-col text-foreground min-[1100px]:h-screen min-[1100px]:overflow-hidden"
+    >
       {/*
        * BARRA — scura e a filo, come Studio e la console, invece della pillola
        * chiara che galleggiava. L'interruttore giorno/notte non è più qui: era
@@ -154,15 +174,24 @@ function EditorPage() {
        * codice invito e le impostazioni.
        */}
       <header className="z-50 shrink-0 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6">
-          <Link
-            to="/studio"
-            className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5"
-            aria-label="Back to studio"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="hidden sm:inline">Studio</span>
-          </Link>
+        {/*
+         * Tre colonne, non una fila: le due laterali hanno lo stesso peso, così
+         * il titolo cade sulla mezzeria della finestra — che è anche quella
+         * della board, visto che le colonne sotto sono larghe uguali. Con
+         * `flex` e `ml-auto` il titolo stava a sinistra e in mezzo restava
+         * mezzo schermo di niente.
+         */}
+        <div className="grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6">
+          <div className="flex min-w-0 items-center">
+            <Link
+              to="/studio"
+              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5"
+              aria-label="Back to studio"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span className="hidden sm:inline">Studio</span>
+            </Link>
+          </div>
 
           <InlineTitle
             value={board.game.title}
@@ -172,7 +201,7 @@ function EditorPage() {
             }}
           />
 
-          <div className="ml-auto flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center justify-end gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
@@ -193,101 +222,127 @@ function EditorPage() {
       {/*
        * CORPO — strumenti · tela · ispettore.
        *
-       * La tela sta ferma. Prima la board scivolava di lato all'apertura della
-       * scheda: un movimento che si nota, e che sposta proprio la cosa che stai
-       * guardando. Qui la colonna di destra c'è sempre, come il pannello del
-       * buzzer sulla console: cambia il contenuto, non l'impaginazione.
+       * Stessa costruzione della console, perché le proporzioni devono essere
+       * quelle: `--board-side` è il lato della board e lo conoscono anche le
+       * colonne, così sanno dove comincia e ci si allineano in cima invece di
+       * galleggiare a mezza altezza. `--board-offset` è l'aria sopra di lei.
+       * Le due colonne hanno lo STESSO tetto di larghezza, quindi la board
+       * cade sulla mezzeria esatta della composizione.
        */}
-      <div className="grid grid-cols-1 gap-3 p-4 min-[1100px]:min-h-0 min-[1100px]:flex-1 min-[1100px]:grid-cols-[19rem_minmax(0,1fr)_22rem] min-[1100px]:gap-4 min-[1100px]:overflow-hidden min-[1100px]:p-5">
-        <aside className="flex flex-col gap-3 min-[1100px]:min-h-0 min-[1100px]:overflow-y-auto min-[1100px]:pr-1">
-          <DailyDoublePanel
-            count={dailyDoubles.length}
-            picking={ddMode}
-            onToggle={() => {
-              setDdMode((v) => !v);
-              setSelectedTileId(null);
-            }}
-          />
-          <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
-        </aside>
-
-        {/*
-         * LA TELA. Il riquadro esterno è il contenitore misurato; quello dentro
-         * prende il lato più stretto fra larghezza e altezza e si centra, così
-         * la board entra sempre intera senza che nessuno debba scorrere.
-         */}
-        <main /*
-         * `container-type: size` pretende una dimensione definita su tutti e due
-         * gli assi. In colonna singola la riga si misura sul contenuto, quindi
-         * l'altezza è indefinita e il contenitore collassa a zero — la board
-         * spariva. Sotto i 1100px gliela do io con la proporzione della board;
-         * sopra, la cella della griglia è già alta quanto deve.
-         */
-        className="relative order-first aspect-[5/5.4] w-full min-w-0 [container-type:size] min-[1100px]:order-none min-[1100px]:aspect-auto min-[1100px]:h-full min-[1100px]:w-auto min-[1100px]:min-h-0">
-          <div
-            className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden p-[2.2cqmin] elev-3 [container-type:size]"
-            style={{
-              width: `min(100cqw, calc(100cqh * ${5 / 5.4}))`,
-              height: `min(100cqh, calc(100cqw * ${5.4 / 5}))`,
-              backgroundColor: theme.bg,
-              borderRadius: theme.radius + 8,
-            }}
-          >
-            <div className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]">
-              {board.categories.map((cat) => (
-                <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
-              ))}
-              {[0, 1, 2, 3, 4].map((row) =>
-                board.categories.map((cat) => {
-                  const tile = board.tiles.find((t) => t.category_id === cat.id && t.row_index === row);
-                  if (!tile) return <div key={`${cat.id}-${row}`} />;
-                  return (
-                    <TileCell
-                      key={tile.id}
-                      tile={tile}
-                      theme={theme}
-                      selected={selectedTileId === tile.id}
-                      dailyDouble={dailyDoubles.includes(tile.id)}
-                      picking={ddMode}
-                      onClick={() =>
-                        ddMode ? void toggleDailyDouble(tile.id) : setSelectedTileId(tile.id)
-                      }
-                    />
-                  );
-                }),
-              )}
-            </div>
-          </div>
-        </main>
-
-        <aside className="flex flex-col min-[1100px]:min-h-0 min-[1100px]:overflow-hidden">
-          {selectedTile ? (
-            <TileEditor
-              key={selectedTile.id}
-              tile={selectedTile}
-              hostId={board.game.host_id}
-              gameId={gameId}
-              theme={theme}
-              onClose={() => setSelectedTileId(null)}
-              onSaved={refresh}
+      <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 [container-type:size] sm:px-6 min-[1100px]:overflow-y-hidden min-[1100px]:py-6">
+        <div
+          style={
+            {
+              "--board-side": `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))`,
+            } as CSSProperties
+          }
+          className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[1100px]:min-h-0 min-[1100px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1100px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[1100px]:[--board-reserve:46rem]"
+        >
+          <aside className="order-2 flex flex-col gap-3 min-[1100px]:order-1 min-[1100px]:mt-[var(--board-offset)] min-[1100px]:max-h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:justify-self-end min-[1100px]:self-start min-[1100px]:overflow-y-auto min-[1100px]:pr-1">
+            <DailyDoublePanel
+              count={dailyDoubles.length}
+              picking={ddMode}
+              onToggle={() => {
+                setDdMode((v) => !v);
+                setSelectedTileId(null);
+              }}
             />
-          ) : (
-            <Panel fill title={ddMode ? "Daily Doubles" : "No tile selected"} className="justify-center text-center">
-              <p className="text-sm text-muted-foreground">
-                {ddMode
-                  ? "Tap tiles on the board to mark them. Leave none and the game picks two at random."
-                  : "Tap any tile to edit its question, answer, media and formatting."}
-              </p>
-            </Panel>
-          )}
-        </aside>
+            <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
+          </aside>
+
+          {/*
+           * LA TELA. Il riquadro esterno è il contenitore misurato; quello dentro
+           * prende il lato più stretto fra larghezza e altezza e si centra, così
+           * la board entra sempre intera senza che nessuno debba scorrere.
+           */}
+          <main
+            /* Il lato lo decide `--board-side`, lo stesso che conoscono le
+               colonne. Sotto i 1100px non ci sono colonne: la board prende la
+               larghezza disponibile e si dà l'altezza dalla proporzione. */
+            className="relative order-1 aspect-[5/5.4] w-full min-w-0 self-center overflow-hidden [container-type:size] min-[1100px]:order-2 min-[1100px]:aspect-auto min-[1100px]:h-[var(--board-side)] min-[1100px]:w-[calc(var(--board-side)*0.9259)]"
+            style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
+          >
+            <div className="h-full w-full p-[2.2cqmin]">
+              <div className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]">
+                {board.categories.map((cat) => (
+                  <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
+                ))}
+                {[0, 1, 2, 3, 4].map((row) =>
+                  board.categories.map((cat) => {
+                    const tile = board.tiles.find(
+                      (t) => t.category_id === cat.id && t.row_index === row,
+                    );
+                    if (!tile) return <div key={`${cat.id}-${row}`} />;
+                    return (
+                      <TileCell
+                        key={tile.id}
+                        tile={tile}
+                        theme={theme}
+                        selected={selectedTileId === tile.id}
+                        dailyDouble={dailyDoubles.includes(tile.id)}
+                        picking={ddMode}
+                        onClick={() =>
+                          ddMode ? void toggleDailyDouble(tile.id) : setSelectedTileId(tile.id)
+                        }
+                      />
+                    );
+                  }),
+                )}
+              </div>
+            </div>
+          </main>
+
+          <aside className="order-3 flex flex-col min-[1100px]:mt-[var(--board-offset)] min-[1100px]:h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:self-start min-[1100px]:overflow-hidden">
+            {selectedTile ? (
+              <TileEditor
+                key={selectedTile.id}
+                tile={selectedTile}
+                categoryTitle={
+                  board.categories.find((c) => c.id === selectedTile.category_id)?.title
+                }
+                isDailyDouble={dailyDoubles.includes(selectedTile.id)}
+                onToggleDailyDouble={() => void toggleDailyDouble(selectedTile.id)}
+                hostId={board.game.host_id}
+                gameId={gameId}
+                theme={theme}
+                onClose={() => setSelectedTileId(null)}
+                onSaved={refresh}
+              />
+            ) : (
+              <Panel
+                fill
+                title={ddMode ? "Daily Doubles" : "Nothing selected"}
+                className="justify-center text-center"
+              >
+                <p className="text-sm text-muted-foreground">
+                  {ddMode
+                    ? "Tap tiles on the board to mark them. Leave none and the game picks two at random."
+                    : "Tap any tile to edit its question, answer, media and formatting."}
+                </p>
+                {!ddMode && (
+                  /* L'unica cosa non evidente della pagina: le categorie si
+                   rinominano cliccandole, e niente lo diceva. */
+                  <p className="mt-3 text-xs text-muted-foreground/80">
+                    Category names are editable too — click one at the top of the board.
+                  </p>
+                )}
+              </Panel>
+            )}
+          </aside>
+        </div>
       </div>
 
       <AnimatePresence>
         {playOpen && (
-          <PlayDialog gameId={gameId} joinCode={board.game.join_code} onClose={() => setPlayOpen(false)} />
+          <PlayDialog
+            gameId={gameId}
+            joinCode={board.game.join_code}
+            onClose={() => setPlayOpen(false)}
+          />
         )}
-        {joinOpen && <JoinDialog joinCode={board.game.join_code} onClose={() => setJoinOpen(false)} />}
+        {joinOpen && (
+          <JoinDialog joinCode={board.game.join_code} onClose={() => setJoinOpen(false)} />
+        )}
       </AnimatePresence>
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </div>
@@ -326,8 +381,13 @@ function Panel({
         fill ? "min-h-0 flex-1" : "shrink-0"
       } ${className}`}
     >
-      <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
-        <h3 className="truncate text-sm font-semibold text-muted-foreground">{title}</h3>
+      {/* Titolo al centro, come le schede della console. Se c'è un contatore
+          sta a fianco del titolo e il gruppo resta centrato: messo a destra
+          sbilanciava la riga e il titolo non era più sulla mezzeria. */}
+      <div className="mb-2.5 flex shrink-0 items-center justify-center gap-2">
+        <h3 className="truncate text-center text-sm font-semibold text-muted-foreground">
+          {title}
+        </h3>
         {action}
       </div>
       {children}
@@ -542,12 +602,29 @@ function TileCell({
       /* Riempie la sua cella: l'altezza la decide la griglia, che a sua volta
          entra sempre intera nella finestra. Niente aspetto fisso, o la board
          tornerebbe a essere più alta dello schermo. */
-      className={`relative flex h-full w-full flex-col items-center justify-center gap-[0.6cqmin] overflow-hidden p-[1cqmin] text-center transition-all ${
-        selected ? "ring-4 ring-ink-accent" : "hover:-translate-y-0.5 hover:brightness-[1.03]"
-      } ${dailyDouble ? "ring-4 ring-ink-gold" : ""}`}
+      /*
+       * `ring-*` di Tailwind È un box-shadow, e questa casella ne ha uno scritto
+       * inline: lo stile inline vinceva sulla classe e l'anello non si disegnava
+       * mai. Non si capiva quale delle cinque caselle da 200 si stesse
+       * modificando, e le Daily Double non avevano il loro bordo dorato.
+       *
+       * Ora: bordo per la Daily Double (trasparente sulle altre, così la
+       * scatola è identica e il contenuto non balla), contorno per la
+       * selezione. Il passaggio del cursore accende un contorno chiaro, e la
+       * selezione lo scavalca perché arriva inline.
+       */
+      className="relative flex h-full w-full flex-col items-center justify-center gap-[0.6cqmin] overflow-hidden p-[1cqmin] text-center transition-[transform,filter] hover:-translate-y-0.5 hover:brightness-[1.04] hover:[outline:2px_solid_color-mix(in_srgb,white_70%,transparent)] hover:[outline-offset:2px]"
       style={{
         backgroundColor: theme.card,
         borderRadius: theme.radius,
+        border: `0.4cqmin solid ${dailyDouble ? "var(--ink-gold)" : "transparent"}`,
+        ...(selected
+          ? {
+              outline: "0.55cqmin solid var(--ink-accent)",
+              outlineOffset: "0.35cqmin",
+              filter: "brightness(1.08)",
+            }
+          : null),
         boxShadow: `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 28%, transparent)`,
       }}
     >
@@ -588,8 +665,13 @@ function TileCell({
       {/* Icone al posto delle emoji: le emoji cambiano faccia da un sistema
           all'altro e non prendono il colore del tema. */}
       {(tile.image_url || tile.audio_url) && (
-        <span className="flex items-center gap-[0.6cqmin] opacity-70" style={{ color: theme.accent }}>
-          {tile.image_url && <ImagePlus className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has image" />}
+        <span
+          className="flex items-center gap-[0.6cqmin] opacity-70"
+          style={{ color: theme.accent }}
+        >
+          {tile.image_url && (
+            <ImagePlus className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has image" />
+          )}
           {tile.audio_url && <Music className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has audio" />}
         </span>
       )}
@@ -601,6 +683,9 @@ function TileCell({
 
 function TileEditor({
   tile,
+  categoryTitle,
+  isDailyDouble,
+  onToggleDailyDouble,
   hostId,
   gameId,
   theme,
@@ -608,12 +693,32 @@ function TileEditor({
   onSaved,
 }: {
   tile: Tile;
+  /** Serve a dire QUALE casella: di "200" ce ne sono cinque. */
+  categoryTitle: string | undefined;
+  isDailyDouble: boolean;
+  onToggleDailyDouble: () => void;
   hostId: string;
   gameId: string;
   theme: ThemeSettings;
   onClose: () => void;
   onSaved: () => void;
 }) {
+  // Esc chiude, come ci si aspetta da un ispettore. Ignorato mentre si scrive
+  // in un campo, dove Esc serve semmai ad annullare la riga.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const el = document.activeElement;
+      const typing =
+        el instanceof HTMLElement &&
+        (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName));
+      if (typing) return;
+      onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const editorRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
@@ -692,21 +797,28 @@ function TileEditor({
       transition={SPRING_UI}
       className="flex min-h-0 flex-1 flex-col rounded-[32px] bg-card p-4 elev-2"
     >
-      <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
-        <h3 className="truncate text-sm font-semibold text-muted-foreground">
-          Edit tile · <span className="font-display font-black tabular-nums text-foreground">{tile.points}</span>
+      <div className="relative mb-2.5 flex shrink-0 items-center justify-center gap-2">
+        <h3 className="truncate text-center text-sm font-semibold text-muted-foreground">
+          {categoryTitle ? `${categoryTitle} · ` : ""}
+          <span className="font-display font-black tabular-nums text-foreground">
+            {tile.points}
+          </span>
         </h3>
         <button
           onClick={onClose}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+          className="absolute right-0 top-1/2 flex h-11 w-11 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
           aria-label="Close editor"
+          title="Close (Esc)"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
-        <label className="block">
+      {/* Colonna, non pila con spaziatura: così la domanda può prendersi tutto
+          quello che avanza invece di restare a 96 pixel fissi con mezza scheda
+          vuota sotto. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1">
+        <label className="block shrink-0">
           <span className={FIELD_LABEL}>Points</span>
           <input
             type="number"
@@ -717,7 +829,7 @@ function TileEditor({
           />
         </label>
 
-        <div>
+        <div className="flex min-h-[9rem] flex-1 flex-col">
           <span className={FIELD_LABEL}>Question</span>
           <AnimatePresence>
             {focused && (
@@ -727,9 +839,15 @@ function TileEditor({
                 exit={{ opacity: 0, y: 6 }}
                 className="mb-2 flex flex-wrap items-center gap-1 rounded-full bg-lilac p-2 elev-1"
               >
-                <FmtBtn onClick={() => exec("bold")} label="Bold"><Bold className="h-4 w-4" /></FmtBtn>
-                <FmtBtn onClick={() => exec("italic")} label="Italic"><Italic className="h-4 w-4" /></FmtBtn>
-                <FmtBtn onClick={() => exec("underline")} label="Underline"><Underline className="h-4 w-4" /></FmtBtn>
+                <FmtBtn onClick={() => exec("bold")} label="Bold">
+                  <Bold className="h-4 w-4" />
+                </FmtBtn>
+                <FmtBtn onClick={() => exec("italic")} label="Italic">
+                  <Italic className="h-4 w-4" />
+                </FmtBtn>
+                <FmtBtn onClick={() => exec("underline")} label="Underline">
+                  <Underline className="h-4 w-4" />
+                </FmtBtn>
                 <select
                   onChange={(e) => exec("fontSize", e.target.value)}
                   defaultValue="3"
@@ -741,9 +859,16 @@ function TileEditor({
                   <option value="5">Large</option>
                   <option value="7">Huge</option>
                 </select>
-                <label className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-card" aria-label="Text color">
+                <label
+                  className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-foreground hover:bg-card"
+                  aria-label="Text color"
+                >
                   <Palette className="h-4 w-4" />
-                  <input type="color" className="sr-only" onChange={(e) => exec("foreColor", e.target.value)} />
+                  <input
+                    type="color"
+                    className="sr-only"
+                    onChange={(e) => exec("foreColor", e.target.value)}
+                  />
                 </label>
                 <FmtBtn onClick={() => exec("removeFormat")} label="Clear formatting">
                   <X className="h-4 w-4" />
@@ -760,11 +885,11 @@ function TileEditor({
               setFocused(false);
               saveQuestion();
             }}
-            className="min-h-24 rounded-[26px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
+            className="min-h-0 flex-1 overflow-y-auto rounded-[26px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </div>
 
-        <label className="block">
+        <label className="block shrink-0">
           <span className={FIELD_LABEL}>Answer</span>
           <input
             value={answer}
@@ -775,17 +900,18 @@ function TileEditor({
           />
         </label>
 
-        <label className="block">
+        <label className="block shrink-0">
           <span className={FIELD_LABEL}>Hint · host only</span>
           <input
             value={hint}
             onChange={(e) => setHint(e.target.value)}
+            placeholder="Only you see this while hosting"
             onBlur={() => hint !== (tile.hint ?? "") && void save({ hint: hint || null })}
             className="h-12 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
 
-        <div>
+        <div className="shrink-0">
           <span className={FIELD_LABEL}>Media</span>
           <div className="flex gap-2">
             <button
@@ -800,12 +926,36 @@ function TileEditor({
             >
               <Music className="h-4 w-4" /> Audio
             </button>
-            <input ref={imageRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleUpload(f, "image"); e.target.value = ""; }} />
-            <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleUpload(f, "audio"); e.target.value = ""; }} />
+            <input
+              ref={imageRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleUpload(f, "image");
+                e.target.value = "";
+              }}
+            />
+            <input
+              ref={audioRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleUpload(f, "audio");
+                e.target.value = "";
+              }}
+            />
           </div>
           {imageUrl && (
             <div className="relative mt-2">
-              <img src={imageUrl} alt="Tile media" className="max-h-32 w-full rounded-[26px] object-cover" />
+              <img
+                src={imageUrl}
+                alt="Tile media"
+                className="max-h-32 w-full rounded-[26px] object-cover"
+              />
               <button
                 onClick={() => void save({ image_url: null })}
                 className="absolute right-2 top-2 rounded-full bg-card p-1.5 text-foreground elev-1"
@@ -818,19 +968,63 @@ function TileEditor({
           {audioUrl && (
             <div className="mt-2 flex items-center gap-2">
               <audio controls src={audioUrl} className="h-8 w-full" />
-              <button onClick={() => void save({ audio_url: null })} className="rounded-full bg-muted p-1.5" aria-label="Remove audio">
+              <button
+                onClick={() => void save({ audio_url: null })}
+                className="rounded-full bg-muted p-1.5"
+                aria-label="Remove audio"
+              >
                 <X className="h-3 w-3" />
               </button>
             </div>
           )}
-          <p className="mt-2 text-[10px] text-muted-foreground">Images ≤ 5MB · Audio ≤ 10MB · stored privately</p>
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            Images ≤ 5MB · Audio ≤ 10MB · stored privately
+          </p>
+        </div>
+
+        {/* I comandi della casella. Stanno in fondo perché è lì che si arriva
+            quando si è finito di scriverla, e perché quello spazio era vuoto. */}
+        <div className="mt-auto shrink-0 border-t border-foreground/10 pt-3">
+          <button
+            onClick={onToggleDailyDouble}
+            aria-pressed={isDailyDouble}
+            className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-colors ${
+              isDailyDouble
+                ? "bg-butter text-ink-gold elev-1"
+                : "border border-foreground/20 text-foreground hover:bg-foreground/5"
+            }`}
+          >
+            <Sparkles className="h-4 w-4" />
+            {isDailyDouble ? "Is a Daily Double" : "Make it a Daily Double"}
+          </button>
+          <button
+            onClick={() => {
+              if (!window.confirm("Clear this tile? Question, answer, hint and media are removed."))
+                return;
+              if (editorRef.current) editorRef.current.innerHTML = "";
+              setAnswer("");
+              setHint("");
+              void save({ question: "", answer: "", hint: null, image_url: null, audio_url: null });
+            }}
+            className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-danger-ink transition-colors hover:bg-danger-ink/10"
+          >
+            <Trash2 className="h-4 w-4" /> Clear tile
+          </button>
         </div>
       </div>
     </motion.div>
   );
 }
 
-function FmtBtn({ children, onClick, label }: { children: React.ReactNode; onClick: () => void; label: string }) {
+function FmtBtn({
+  children,
+  onClick,
+  label,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+}) {
   return (
     <button
       onMouseDown={(e) => {
@@ -847,10 +1041,17 @@ function FmtBtn({ children, onClick, label }: { children: React.ReactNode; onCli
 
 /* -------------------------------- Theme bar ------------------------------- */
 
-function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSettings; onSaved: () => void }) {
+function ThemeBar({
+  gameId,
+  theme,
+  onSaved,
+}: {
+  gameId: string;
+  theme: ThemeSettings;
+  onSaved: () => void;
+}) {
   const queryClient = useQueryClient();
   const [rowPoints, setRowPointsState] = useState(theme.rowPoints);
-  const [radiusEditing, setRadiusEditing] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setRowPointsState(theme.rowPoints), [theme.rowPoints]);
 
@@ -874,6 +1075,14 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
     [gameId, theme, onSaved],
   );
 
+  /** Colori scelti a mano: salva e basta. Un avviso a ogni scatto del
+   *  selettore di colore sarebbe una raffica di notifiche. */
+  const applyColors = (patch: Pick<ThemeSettings, "bg" | "card" | "accent">) => {
+    patchThemeCache(patch);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => void saveTheme(patch), 400);
+  };
+
   const applyPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
     patchThemeCache(preset.theme);
     await saveTheme(preset.theme);
@@ -888,7 +1097,8 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
   };
 
   const [scope, setScope] = useState<TextScope | "all">("numbers");
-  const current: TextStyle = (scope === "all" ? theme.textStyles?.numbers : theme.textStyles?.[scope]) ?? {};
+  const current: TextStyle =
+    (scope === "all" ? theme.textStyles?.numbers : theme.textStyles?.[scope]) ?? {};
 
   /** Write a typography patch into the theme JSON for the selected scope(s). */
   const applyTextStyle = async (patch: TextStyle) => {
@@ -924,103 +1134,81 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
      */
     <>
       <Panel title="Appearance">
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Cinque pastiglie in riga: quattro temi pronti e una personalizzata.
+            Con quattro restava un buco a destra, e il gruppo non era centrato
+            rispetto alla scheda. */}
+        <div className="flex items-center justify-between gap-2">
           {THEME_PRESETS.map((p) => (
             <button
               key={p.name}
               onClick={() => void applyPreset(p)}
               title={p.name}
               aria-label={`Apply theme ${p.name}`}
-              className="h-12 w-12 transition-transform hover:scale-110 scallop"
-              style={{ background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})` }}
+              className="h-12 w-12 shrink-0 transition-transform hover:scale-110 scallop"
+              style={{
+                background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})`,
+              }}
             />
           ))}
+          <CustomThemeSwatch theme={theme} onPick={applyColors} />
         </div>
 
-        <label className="mt-3 flex h-12 items-center gap-3">
+        <div className="mt-3 flex h-12 items-center gap-3">
           <span className={ROW_LABEL}>Roundness</span>
           <input
             type="range"
             min={0}
             max={50}
             value={theme.radius}
+            aria-label="Roundness"
             onChange={(e) => applyRadius(Number(e.target.value))}
             className="min-w-0 flex-1 accent-[var(--ink-accent)]"
           />
-          {radiusEditing ? (
-            <input
-              autoFocus
-              type="number"
-              min={0}
-              max={50}
-              value={theme.radius}
-              onChange={(e) => applyRadius(Math.max(0, Math.min(50, Number(e.target.value))))}
-              onBlur={() => setRadiusEditing(false)}
-              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className="h-12 w-14 shrink-0 rounded-full bg-muted px-1 text-center font-display text-xs font-black tabular-nums text-foreground outline-none ring-2 ring-ink-accent"
-            />
-          ) : (
-            <button
-              onClick={() => setRadiusEditing(true)}
-              title="Click to type a value"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-display font-black tabular-nums text-foreground hover:bg-muted"
-            >
-              {theme.radius}
-            </button>
-          )}
-        </label>
+          <Stepper value={theme.radius} min={0} max={50} onChange={applyRadius} label="Roundness" />
+        </div>
       </Panel>
 
       <Panel title="Text">
-        {/* Prima riga: a CHE COSA si applica, e con quale carattere. */}
-        <div className="flex gap-2">
-          <select
-            value={scope}
-            onChange={(e) => setScope(e.target.value as TextScope | "all")}
-            aria-label="Text target"
-            className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 text-xs font-bold text-foreground outline-none"
-          >
-            <option value="numbers">Numbers</option>
-            <option value="questions">Questions</option>
-            <option value="categories">Categories</option>
-            <option value="all">All text</option>
-          </select>
-          <select
-            value={current.font ?? ""}
-            onChange={(e) => void applyTextStyle({ font: e.target.value })}
-            aria-label="Font"
-            title="Font"
-            className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 font-display text-xs font-semibold text-foreground outline-none"
-          >
-            {BOARD_FONTS.map((f) => (
-              <option key={f.label} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* A CHE COSA si applica. Da solo in riga: è la scelta che comanda
+            tutte le altre, e affiancato al carattere si leggevano come due
+            valori senza chiave. */}
+        <span className={`${ROW_LABEL} mb-1.5 block`}>Applies to</span>
+        <select
+          value={scope}
+          onChange={(e) => setScope(e.target.value as TextScope | "all")}
+          aria-label="Text target"
+          className="h-12 w-full rounded-full bg-muted px-4 text-xs font-bold text-foreground outline-none"
+        >
+          <option value="numbers">Numbers</option>
+          <option value="questions">Questions</option>
+          <option value="categories">Categories</option>
+          <option value="all">All text</option>
+        </select>
 
-        <div className="mt-2 flex h-12 items-center gap-3 rounded-full bg-muted px-4">
-          <span className={`${ROW_LABEL} flex items-center gap-1`}>
-            <Type className="h-3.5 w-3.5" /> Size
-          </span>
-          <input
-            type="range"
-            min={0.6}
-            max={1.8}
-            step={0.1}
-            value={current.size ?? 1}
-            onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
-            aria-label="Text size"
-            className="min-w-0 flex-1 accent-[var(--ink-accent)]"
-          />
-          {/* Il cursore da solo non dice mai dove sei: il numero sì. */}
-          <span className="w-8 shrink-0 text-right font-display text-xs font-black tabular-nums text-foreground">
-            {(current.size ?? 1).toFixed(1)}×
-          </span>
-        </div>
+        <span className={`${ROW_LABEL} mb-1.5 mt-3 block`}>Font</span>
+        <FontPicker
+          font={current.font ?? ""}
+          weight={current.weight}
+          onPick={(patch) => void applyTextStyle(patch)}
+        />
 
-        <div className="mt-2 flex gap-2">
+        <span className={`${ROW_LABEL} mb-1.5 mt-3 flex items-center gap-1`}>
+          <Type className="h-3.5 w-3.5" /> Size
+        </span>
+        {/* Il cursore non lasciava scrivere un valore. Qui il numero è il
+            comando: doppio clic e si digita, oppure meno e più di uno alla
+            volta. La misura è in centesimi del corpo di partenza. */}
+        <Stepper
+          value={Math.round((current.size ?? 1) * 100)}
+          min={60}
+          max={180}
+          suffix="%"
+          wide
+          label="Text size"
+          onChange={(v) => void applyTextStyle({ size: v / 100 })}
+        />
+
+        <div className="mt-3 flex gap-2">
           {(
             [
               ["bold", "B", "font-black"],
@@ -1033,8 +1221,10 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
               aria-pressed={Boolean(current[key])}
               aria-label={key}
-              className={`h-12 flex-1 rounded-full text-sm ${cls} ${
-                current[key] ? "bg-ink-accent text-card" : "bg-muted text-foreground"
+              className={`h-12 flex-1 rounded-full text-sm transition-colors ${cls} ${
+                current[key]
+                  ? "bg-ink-accent text-card"
+                  : "border border-foreground/15 text-foreground hover:bg-foreground/5"
               }`}
             >
               {label}
@@ -1061,7 +1251,9 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
         </div>
 
         <span className={`${ROW_LABEL} mb-2 mt-3 block`}>Points ladder</span>
-        <div className="flex flex-wrap gap-2">
+        {/* Cinque valori in una riga sola: è una scala, e a capo 3+2 si leggeva
+            come due gruppi con l'ultima riga mezza vuota. */}
+        <div className="flex gap-1.5">
           {rowPoints.map((p, i) => (
             <input
               key={i}
@@ -1074,12 +1266,277 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
                 setRowPointsState(next);
               }}
               onBlur={() => void applyRowPoints()}
-              className="h-12 w-[calc(33.333%-0.34rem)] rounded-full bg-muted px-2 text-center font-display text-xs font-black tabular-nums outline-none ring-2 ring-transparent focus:ring-ink-accent"
+              className="h-12 min-w-0 flex-1 rounded-full bg-muted px-1 text-center font-display text-xs font-black tabular-nums outline-none ring-2 ring-transparent focus:ring-ink-accent"
             />
           ))}
         </div>
       </Panel>
     </>
+  );
+}
+
+/* ------------------------------- Controlli -------------------------------- */
+
+/**
+ * Meno · numero · più.
+ *
+ * Il numero È il comando: doppio clic e si digita. Prima c'era un bottone che
+ * apriva un campo al primo clic, ma il campo si richiudeva da solo e il valore
+ * non si riusciva a scrivere.
+ */
+function Stepper({
+  value,
+  min,
+  max,
+  suffix = "",
+  wide = false,
+  label,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  suffix?: string;
+  /** Occupa tutta la riga invece di stare in coda a un cursore. */
+  wide?: boolean;
+  label: string;
+  onChange: (v: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const clamp = (v: number) => Math.max(min, Math.min(max, v));
+
+  const commit = () => {
+    if (draft !== null) {
+      const n = Number(draft);
+      if (Number.isFinite(n)) onChange(clamp(Math.round(n)));
+    }
+    setDraft(null);
+  };
+
+  const Step = ({ delta, children }: { delta: number; children: React.ReactNode }) => (
+    <button
+      onClick={() => onChange(clamp(value + delta))}
+      disabled={delta < 0 ? value <= min : value >= max}
+      aria-label={`${label} ${delta > 0 ? "+" : "−"}1`}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/10 disabled:opacity-30"
+    >
+      {children}
+    </button>
+  );
+
+  return (
+    <div
+      className={`flex h-12 items-center gap-1 rounded-full bg-muted px-1 ${wide ? "w-full" : "shrink-0"}`}
+    >
+      <Step delta={-1}>
+        <Minus className="h-4 w-4" />
+      </Step>
+      {draft !== null ? (
+        <input
+          autoFocus
+          value={draft}
+          inputMode="numeric"
+          aria-label={label}
+          onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ""))}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") setDraft(null);
+          }}
+          onFocus={(e) => e.target.select()}
+          className={`${wide ? "flex-1" : "w-10"} min-w-0 bg-transparent text-center font-display text-sm font-black tabular-nums text-foreground outline-none`}
+        />
+      ) : (
+        <button
+          onDoubleClick={() => setDraft(String(value))}
+          title="Double-click to type a value"
+          className={`${wide ? "flex-1" : "w-10"} cursor-text select-none text-center font-display text-sm font-black tabular-nums text-foreground`}
+        >
+          {value}
+          {suffix}
+        </button>
+      )}
+      <Step delta={1}>
+        <Plus className="h-4 w-4" />
+      </Step>
+    </div>
+  );
+}
+
+/**
+ * Un bottone solo per il carattere. Si apre e mostra le famiglie scritte nella
+ * propria faccia — il nome da solo non dice come sarà — e sotto i tagli di peso.
+ */
+function FontPicker({
+  font,
+  weight,
+  onPick,
+}: {
+  font: string;
+  weight: number | undefined;
+  onPick: (patch: TextStyle) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const family = BOARD_FONTS.find((f) => f.value === font) ?? BOARD_FONTS[0]!;
+  const cut = FONT_WEIGHTS.find((w) => w.value === weight);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex h-12 w-full items-center justify-between gap-2 rounded-full bg-muted px-4 text-left text-foreground"
+      >
+        <span
+          className="truncate text-sm font-semibold"
+          style={family.value ? { fontFamily: family.value } : undefined}
+        >
+          {family.label}
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+            {cut?.label ?? "Auto"}
+          </span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <button
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-20 cursor-default"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -6 }}
+              transition={SPRING_UI}
+              className="absolute left-0 right-0 top-14 z-30 rounded-[26px] bg-popover p-2 elev-3"
+            >
+              <div className="max-h-56 overflow-y-auto overscroll-contain">
+                {BOARD_FONTS.map((f) => (
+                  <button
+                    key={f.label}
+                    onClick={() => onPick({ font: f.value })}
+                    className={`flex h-11 w-full items-center rounded-full px-4 text-sm transition-colors ${
+                      f.value === font ? "bg-ink-accent text-card" : "hover:bg-foreground/5"
+                    }`}
+                    style={f.value ? { fontFamily: f.value } : undefined}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 border-t border-foreground/10 pt-2">
+                <span className={`${ROW_LABEL} mb-1.5 block px-2`}>Weight</span>
+                <div className="flex flex-wrap gap-1.5 px-1 pb-1">
+                  {FONT_WEIGHTS.map((w) => (
+                    <button
+                      key={w.value}
+                      onClick={() => onPick({ weight: w.value })}
+                      className={`h-10 flex-1 rounded-full px-2 text-xs transition-colors ${
+                        w.value === weight
+                          ? "bg-ink-accent text-card"
+                          : "bg-muted hover:brightness-110"
+                      }`}
+                      style={{
+                        fontWeight: w.value,
+                        ...(family.value ? { fontFamily: family.value } : null),
+                      }}
+                    >
+                      {w.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/**
+ * La quinta pastiglia: i colori se li sceglie l'host. Chiude la riga — con
+ * quattro restava un vuoto a destra — e aggiunge l'unica cosa che i temi
+ * pronti non possono dare.
+ */
+function CustomThemeSwatch({
+  theme,
+  onPick,
+}: {
+  theme: ThemeSettings;
+  onPick: (patch: Pick<ThemeSettings, "bg" | "card" | "accent">) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rows: { key: "bg" | "card" | "accent"; label: string }[] = [
+    { key: "bg", label: "Board" },
+    { key: "card", label: "Tiles" },
+    { key: "accent", label: "Text" },
+  ];
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        title="Custom colours"
+        aria-label="Custom colours"
+        className="flex h-12 w-12 items-center justify-center text-foreground transition-transform hover:scale-110 scallop"
+        style={{ background: `linear-gradient(135deg, ${theme.bg} 40%, ${theme.accent})` }}
+      >
+        <Palette className="h-4 w-4 mix-blend-difference" />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <button
+              aria-label="Close"
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 z-20 cursor-default"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: -6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: -6 }}
+              transition={SPRING_UI}
+              className="absolute right-0 top-14 z-30 w-56 rounded-[26px] bg-popover p-3 elev-3"
+            >
+              {rows.map((r) => (
+                <label
+                  key={r.key}
+                  className="mb-1.5 flex h-11 items-center gap-3 rounded-full px-2 last:mb-0"
+                >
+                  <input
+                    type="color"
+                    value={theme[r.key]}
+                    onChange={(e) =>
+                      onPick({
+                        bg: theme.bg,
+                        card: theme.card,
+                        accent: theme.accent,
+                        [r.key]: e.target.value,
+                      })
+                    }
+                    aria-label={r.label}
+                    className="h-7 w-7 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0"
+                  />
+                  <span className="flex-1 text-sm font-semibold text-foreground">{r.label}</span>
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                    {theme[r.key]}
+                  </span>
+                </label>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -1114,7 +1571,15 @@ function TeamNameInput({
 
 /* ------------------------------- Play dialog ------------------------------ */
 
-function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: string; onClose: () => void }) {
+function PlayDialog({
+  gameId,
+  joinCode,
+  onClose,
+}: {
+  gameId: string;
+  joinCode: string;
+  onClose: () => void;
+}) {
   const navigate = useNavigate();
   const start = useServerFn(startSession);
   const [nonce] = useState(() => Date.now());
@@ -1146,7 +1611,9 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
         <h2 className="font-display text-2xl font-black">Players join with this code</h2>
         <p className="mt-1 text-sm text-muted-foreground">Open on any phone — no app needed</p>
 
-        <div className="my-5 font-display text-5xl font-black tracking-[0.25em] text-ink-accent">{joinCode}</div>
+        <div className="my-5 font-display text-5xl font-black tracking-[0.25em] text-ink-accent">
+          {joinCode}
+        </div>
 
         <div className="mx-auto mb-5 w-fit rounded-[28px] bg-muted p-4">
           <QRCodeSVG value={joinUrl} size={160} />
@@ -1165,7 +1632,8 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
           <button
             disabled={isLoading || isError}
             onClick={() => {
-              if (data) void navigate({ to: "/host/$sessionId", params: { sessionId: data.session.id } });
+              if (data)
+                void navigate({ to: "/host/$sessionId", params: { sessionId: data.session.id } });
             }}
             className="flex items-center justify-center gap-2 rounded-full bg-coral py-3.5 font-display text-sm font-black text-foreground elev-2 disabled:opacity-50"
           >

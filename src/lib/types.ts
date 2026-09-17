@@ -10,6 +10,11 @@ export interface TextStyle {
   font?: string;
   /** Multiplier applied to the scope's default size (0.6 – 1.8). */
   size?: number;
+  /**
+   * Peso esplicito (100–900). Quando c'è vince su `bold`, che resta per i
+   * giochi salvati prima che questo esistesse.
+   */
+  weight?: number;
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -41,12 +46,35 @@ export const DEFAULT_THEME: ThemeSettings = {
   rowPoints: [200, 400, 600, 800, 1000],
 };
 
+/**
+ * Le famiglie disponibili sulla board.
+ *
+ * Solo caratteri già presenti sulla macchina o già caricati dall'app: una
+ * famiglia che va scaricata comparirebbe dopo, e sulla trasmissione OBS
+ * significa vedere la board cambiare forma in diretta.
+ */
 export const BOARD_FONTS: { label: string; value: string }[] = [
   { label: "Display", value: "" },
-  { label: "Sans", value: "ui-sans-serif, system-ui, sans-serif" },
-  { label: "Serif", value: "Georgia, 'Times New Roman', serif" },
-  { label: "Mono", value: "ui-monospace, SFMono-Regular, monospace" },
+  { label: "Sans", value: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif" },
+  { label: "System", value: "system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  { label: "Grotesk", value: "'Helvetica Neue', Helvetica, Arial, sans-serif" },
   { label: "Rounded", value: "'Trebuchet MS', 'Segoe UI', sans-serif" },
+  { label: "Serif", value: "Georgia, 'Times New Roman', serif" },
+  { label: "Old Style", value: "'Palatino Linotype', Palatino, 'Book Antiqua', serif" },
+  { label: "Slab", value: "Rockwell, 'Courier Bold', Courier, Georgia, serif" },
+  { label: "Mono", value: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" },
+  { label: "Condensed", value: "'Arial Narrow', 'Helvetica Neue Condensed', sans-serif" },
+  { label: "Handwriting", value: "'Bradley Hand', 'Segoe Script', cursive" },
+];
+
+/** I pesi offerti dal menu del carattere. Non tutte le famiglie li hanno tutti:
+ *  dove manca il taglio, il browser lo sintetizza o si avvicina. */
+export const FONT_WEIGHTS: { label: string; value: number }[] = [
+  { label: "Light", value: 300 },
+  { label: "Book", value: 400 },
+  { label: "Medium", value: 500 },
+  { label: "Bold", value: 700 },
+  { label: "Black", value: 900 },
 ];
 
 /**
@@ -63,7 +91,8 @@ export function textScopeCss(
   const css: CSSProperties = {};
   if (s.font) css.fontFamily = s.font;
   if (s.size && baseRem) css.fontSize = `${(baseRem * s.size).toFixed(3)}rem`;
-  if (s.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;
+  if (s.weight) css.fontWeight = s.weight;
+  else if (s.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;
   if (s.italic) css.fontStyle = "italic";
   if (s.underline) css.textDecoration = "underline";
   return css;
@@ -106,7 +135,8 @@ export function boardTextCss(
         : `clamp(0.45rem, ${(cqmin * m).toFixed(3)}cqmin, ${(capRem * m).toFixed(3)}rem)`,
   };
   if (s?.font) css.fontFamily = s.font;
-  if (s?.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;
+  if (s?.weight) css.fontWeight = s.weight;
+  else if (s?.bold !== undefined) css.fontWeight = s.bold ? 900 : 500;
   if (s?.italic) css.fontStyle = "italic";
   if (s?.underline) css.textDecoration = "underline";
   return css;

@@ -128,7 +128,6 @@ export function OverlayBoard({
               tile={tile}
               category={category}
               players={state.players}
-              queue={state.queue}
               theme={theme}
               readOnly
             />

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Zap, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -62,7 +63,7 @@ function AuthPage() {
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 140, damping: 18 }}
+        transition={SPRING_UI}
         className="relative z-10 w-full max-w-md rounded-[36px] bg-card p-8 elev-2"
       >
         <div className="mb-6 flex items-center gap-3">

@@ -61,6 +61,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SPRING_SNAP, SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
@@ -315,7 +316,7 @@ function StudioPage() {
             ref={searchWrapRef}
             layout
             animate={{ width: searchOpen || search ? 320 : 40 }}
-            transition={{ type: "spring", stiffness: 380, damping: 18 }}
+            transition={SPRING_SNAP}
             className={`relative z-10 flex h-10 max-w-[calc(100vw-3rem)] shrink-0 items-center overflow-hidden rounded-full ${
               searchOpen || search ? "bg-card elev-1" : ""
             }`}
@@ -497,7 +498,7 @@ function GameCard({
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05, type: "spring", stiffness: 160, damping: 20 }}
+        transition={{ ...SPRING_UI, delay: index * 0.05 }}
         role="button"
         tabIndex={0}
         title="Open in editor"

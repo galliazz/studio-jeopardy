@@ -46,6 +46,7 @@ import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
+import { SPRING_SNAP, SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
@@ -305,7 +306,7 @@ function JoinCodeBadge({ joinCode }: { joinCode: string }) {
               initial={{ opacity: 0, scale: 0.92, y: -6 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: -6 }}
-              transition={{ type: "spring", stiffness: 320, damping: 24 }}
+              transition={SPRING_SNAP}
               className="absolute right-0 top-12 z-20 w-56 rounded-[26px] bg-popover p-4 text-center elev-3"
             >
               <div className="mx-auto mb-3 w-fit rounded-[20px] bg-card p-2">
@@ -540,7 +541,7 @@ function TileEditor({
       initial={{ opacity: 0, x: 80 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 80 }}
-      transition={{ type: "spring", stiffness: 260, damping: 26 }}
+      transition={SPRING_UI}
       className="fixed inset-x-2 bottom-[11rem] top-auto z-40 flex max-h-[58svh] w-auto flex-col overflow-hidden rounded-[36px] bg-card elev-3 sm:inset-x-auto sm:bottom-40 sm:right-4 sm:top-24 sm:max-h-none sm:w-[min(420px,calc(100vw-2rem))]"
     >
       <div className="flex items-center justify-between gap-2 bg-lilac px-5 py-3 sm:px-6 sm:py-4">
@@ -761,7 +762,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
     <motion.div
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 200, damping: 24, delay: 0.2 }}
+      transition={{ ...SPRING_UI, delay: 0.2 }}
       className="fixed bottom-3 left-1/2 z-30 max-h-[12rem] w-[min(1040px,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto rounded-[36px] bg-card/95 px-5 py-4 text-foreground elev-3 backdrop-blur-md sm:bottom-5 sm:px-8 sm:py-5"
     >
       <div className="flex flex-wrap items-stretch gap-x-6 gap-y-4">
@@ -974,7 +975,7 @@ function PlayDialog({ gameId, joinCode, onClose }: { gameId: string; joinCode: s
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        transition={SPRING_UI}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-[36px] bg-card p-8 text-center elev-3"
       >

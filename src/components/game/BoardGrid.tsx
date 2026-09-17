@@ -9,7 +9,7 @@
  * viewport breakpoints made them look enormous whenever the window was wide but
  * short, because the board shrank and the type did not.
  */
-import { motion } from "framer-motion";
+import { motion, type MotionStyle } from "framer-motion";
 import { boardTextCss, type ThemeSettings } from "@/lib/types";
 
 export interface BoardTile {
@@ -113,6 +113,20 @@ export function BoardGrid({
               const tile = tiles.find((t) => t.category_id === cat.id && t.row_index === row);
               if (!tile) return <div key={`${cat.id}-${row}`} />;
               const used = usedIds.has(tile.id);
+              // `boardTextCss` restituisce proprietà facoltative, e con
+              // exactOptionalPropertyTypes MotionStyle non ne accetta l'`undefined`.
+              // A runtime una chiave non impostata è identica a una chiave assente:
+              // l'annotazione dice questo, non nasconde niente.
+              const tileStyle = {
+                backgroundColor: used ? "transparent" : theme.card,
+                borderRadius: theme.radius,
+                color: used ? "transparent" : theme.accent,
+                opacity: used ? 0.35 : 1,
+                ...tileFont,
+                boxShadow: used
+                  ? "none"
+                  : `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 30%, transparent)`,
+              } as MotionStyle;
               return (
                 <motion.button
                   key={tile.id}
@@ -122,16 +136,7 @@ export function BoardGrid({
                   className={`flex items-center justify-center overflow-hidden font-display font-black tracking-tight transition-all ${
                     fill ? "min-h-0" : "min-h-12 text-base sm:text-3xl"
                   }`}
-                  style={{
-                    backgroundColor: used ? "transparent" : theme.card,
-                    borderRadius: theme.radius,
-                    color: used ? "transparent" : theme.accent,
-                    opacity: used ? 0.35 : 1,
-                    ...tileFont,
-                    boxShadow: used
-                      ? "none"
-                      : `0 2px 6px -2px color-mix(in srgb, ${theme.accent} 22%, transparent), 0 10px 22px -14px color-mix(in srgb, ${theme.accent} 30%, transparent)`,
-                  }}
+                  style={tileStyle}
                 >
                   {used ? "✓" : tile.points}
                 </motion.button>

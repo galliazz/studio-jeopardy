@@ -23,6 +23,7 @@ import {
   subscribe,
   type SoundboardClip,
 } from "@/lib/soundboard-engine";
+import { SPRING_UI } from "@/lib/motion";
 
 export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string }) {
   const qc = useQueryClient();
@@ -258,7 +259,7 @@ function ClipChip({
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.94 }}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      transition={SPRING_UI}
       draggable
       onDragStart={onDragStart}
       onDragOver={(e) => e.preventDefault()}

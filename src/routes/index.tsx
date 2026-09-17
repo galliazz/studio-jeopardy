@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Zap, Gamepad2, Radio } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { isPreviewSurface } from "@/lib/preview";
+import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -54,13 +55,13 @@ function LandingPage() {
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 120, damping: 18 }}
+        transition={SPRING_UI}
         className="relative z-10 flex w-full max-w-xl flex-col items-center text-center"
       >
         <motion.div
           initial={{ rotate: -8, scale: 0.8 }}
           animate={{ rotate: 0, scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
+          transition={{ ...SPRING_PLAYFUL, delay: 0.1 }}
           className="mb-6 flex h-24 w-24 items-center justify-center bg-butter elev-2 scallop"
         >
           <Zap className="h-11 w-11 text-ink-gold" />

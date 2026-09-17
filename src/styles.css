@@ -297,6 +297,31 @@
 }
 
 
+/* ---------- Risposta alla pressione ---------- */
+
+/*
+ * Ogni comando reagisce quando il dito preme, non quando si stacca. La console
+ * host è fatta di 21 <button> grezzi che prima non dicevano niente finché il
+ * server non rispondeva: in diretta l'host non sapeva se il tasto era stato
+ * preso, e ripremeva.
+ *
+ * `brightness` e non `scale` per due motivi: non si somma alle scale che
+ * framer-motion applica già con `whileTap` su una dozzina di bottoni, e resta
+ * un segnale valido anche quando il movimento è ridotto, perché non è un
+ * movimento. Nessuna transizione: la risposta deve essere immediata.
+ *
+ * `:where()` tiene la specificità a zero, così qualunque componente può dire la
+ * sua senza dover combattere a colpi di !important. Chi dichiara già un
+ * `active:brightness-*` suo è escluso, per non scurire due volte.
+ */
+:where(button, [role="button"], a[href]):not(
+    :disabled,
+    [aria-disabled="true"],
+    [class*="active:brightness"]
+  ):active {
+  filter: brightness(0.93);
+}
+
 /* ---------- Presentation preferences (Settings > Appearance / Performance) ---------- */
 
 /* Reduce motion: keep layout, drop non-essential animation. */
@@ -306,6 +331,55 @@ html.reduce-motion *::after {
   animation-duration: 0.001ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.001ms !important;
+}
+
+/* La pressione dei bottoni rimpicciolisce: sotto movimento ridotto resta solo il
+   cambio di luminosità, che è un segnale ma non uno spostamento. `scale` e non
+   `transform`, così non tocchiamo i -translate-x che tengono in posizione gli
+   elementi centrati. */
+html.reduce-motion [class*="active:scale-"]:active {
+  scale: none !important;
+}
+
+/* ---------- Preferenze di sistema: trasparenza e contrasto ---------- */
+
+/* Trasparenza ridotta: le superfici diventano piene e la sfocatura sparisce.
+   Gli schermi di oscuramento perdono la sfocatura che li separava dallo sfondo,
+   quindi devono scurire di più per continuare a separare. */
+@media (prefers-reduced-transparency: reduce) {
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+  [class*="bg-background/9"] {
+    background-color: var(--background) !important;
+  }
+  [class*="bg-card/9"] {
+    background-color: var(--card) !important;
+  }
+  [class*="bg-foreground/3"] {
+    background-color: color-mix(in oklab, var(--foreground) 65%, transparent) !important;
+  }
+}
+
+/* Contrasto alto: niente sfocature, superfici piene, e un bordo dichiarato al
+   posto dell'ombra — l'elevazione da sola non basta più a dire dove finisce una
+   scheda. `outline` e non `border`: non sposta di un pixel quello che c'è dentro. */
+@media (prefers-contrast: more) {
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+  [class*="bg-background/9"] {
+    background-color: var(--background) !important;
+  }
+  [class*="bg-card/9"] {
+    background-color: var(--card) !important;
+  }
+  .elev-1,
+  .elev-2,
+  .elev-3 {
+    outline: 1px solid color-mix(in oklab, var(--foreground) 45%, transparent);
+    outline-offset: -1px;
+  }
 }
 
 /* Background effects off: hide the ambient colored blobs. */

@@ -19,6 +19,7 @@ import {
   type Team,
   type ThemeSettings,
 } from "@/lib/types";
+import { SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/play/$code")({
   head: () => ({
@@ -217,7 +218,7 @@ function JoinForm({
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 160, damping: 20 }}
+        transition={SPRING_UI}
         className="w-full"
       >
         <h1 className="mb-1 text-center font-display text-2xl font-black">{gameTitle}</h1>
@@ -391,6 +392,9 @@ function LivePlayer({
 
   // Haptics/audio cues on becoming active
   const wasActive = useRef(false);
+  /** Ultima casella per cui è già partita una prenotazione: evita i doppi invii. */
+  const buzzSentFor = useRef<string | null>(null);
+
   useEffect(() => {
     if (iAmActive && !wasActive.current) {
       vibrate([60, 40, 60]);
@@ -399,12 +403,24 @@ function LivePlayer({
     wasActive.current = iAmActive;
   }, [iAmActive]);
 
+  // Quando la casella si chiude il fermo cade: se l'host la riapre, il buzzer
+  // torna disponibile invece di restare muto per il resto della partita.
+  useEffect(() => {
+    const open = session?.phase === "question_open" || session?.phase === "answering";
+    if (!open) buzzSentFor.current = null;
+  }, [session?.phase, session?.current_tile_id]);
+
   const doBuzz = async () => {
     if (!session?.current_tile_id || !buzzerLive) return;
+    const tileId = session.current_tile_id;
+    // `pointerdown` può arrivare due volte sulla stessa pressione (due dita, penna
+    // più tocco). `buzzerLive` non fa da scudo: si spegne solo quando lo stato è
+    // già tornato indietro. Una casella, una richiesta.
+    if (buzzSentFor.current === tileId) return;
+    buzzSentFor.current = tileId;
     vibrate(50);
     sfx.click();
     const now = new Date().toISOString();
-    const tileId = session.current_tile_id;
     queryClient.setQueryData(["play", sessionId], (old: unknown) => {
       const prev = old as PlayerState | undefined;
       if (!prev || "error" in prev) return old;
@@ -430,11 +446,14 @@ function LivePlayer({
     try {
       const res = await buzz({ data: { playerId: identity.playerId, token: identity.token } });
       if (!res.ok) {
+        // Rifiutata: la casella torna libera, altrimenti "riprova" sarebbe una bugia.
+        buzzSentFor.current = null;
         void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
         if (res.reason === "closed") toast.error("Buzzers are closed");
         else toast.error("Buzz rejected");
       }
     } catch {
+      buzzSentFor.current = null;
       void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
       toast.error("Buzz failed — try again");
     }
@@ -548,14 +567,31 @@ function LivePlayer({
               ) : (
                 <motion.button
                   whileTap={{ scale: 0.92 }}
-                  onClick={() => void doBuzz()}
+                  /*
+                   * Parte alla PRESSIONE, non al rilascio. La coda la decide l'ordine
+                   * di arrivo al server, e fra il momento in cui il dito tocca e quello
+                   * in cui si stacca passano decimi interi: con `onClick` chi preme per
+                   * primo ma tiene giù il dito perde il punto contro chi tocca e molla.
+                   */
+                  onPointerDown={(e) => {
+                    // Solo il pulsante principale: col destro si apre un menu, non si prenota.
+                    if (e.button !== 0) return;
+                    void doBuzz();
+                  }}
+                  /* La tastiera non emette pointerdown: Invio e Spazio restano la via. */
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      void doBuzz();
+                    }
+                  }}
                   disabled={!buzzerLive}
-                  className={`flex aspect-square w-[min(78vw,20rem)] flex-col items-center justify-center rounded-full font-display elev-3 transition-colors disabled:opacity-60 ${
+                  className={`flex aspect-square w-[min(78vw,20rem)] touch-manipulation select-none flex-col items-center justify-center rounded-full font-display elev-3 transition-[filter,background-color] duration-75 active:brightness-95 disabled:opacity-60 ${
                     myTeam === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
                   }`}
                 >
                   <Zap className="mb-1 h-12 w-12 text-foreground" />
-                  <span className="text-4xl font-black tracking-wide text-foreground">BUZZ</span>
+                  <span className="text-4xl font-black tracking-tight text-foreground">BUZZ</span>
                 </motion.button>
               )}
             </motion.div>

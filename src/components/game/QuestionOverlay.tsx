@@ -19,6 +19,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import { useSignedUrl } from "@/lib/media";
 import { boardTextCss } from "@/lib/types";
 import type { Category, Player, Session, ThemeSettings, Tile } from "@/lib/types";
+import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
 
 export function QuestionOverlay({
   session,
@@ -85,7 +86,7 @@ export function QuestionOverlay({
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 260, damping: 26, duration: 0.4 }}
+        transition={SPRING_UI}
         className="pointer-events-auto flex h-full w-full flex-col overflow-hidden p-[clamp(6px,2.2cqmin,20px)] elev-2"
         style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
       >
@@ -94,7 +95,7 @@ export function QuestionOverlay({
           <motion.div
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 18 }}
+            transition={SPRING_PLAYFUL}
             style={{ fontSize: "clamp(0.6rem, 3cqmin, 1.35rem)" }}
             className="mb-[clamp(3px,1cqmin,8px)] shrink-0 rounded-full bg-butter py-[clamp(3px,1.2cqmin,10px)] text-center font-display font-black uppercase tracking-[0.25em] text-ink-gold"
           >

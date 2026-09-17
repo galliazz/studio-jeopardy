@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { formatDelta, type Player, type QueueEntry, type Session } from "@/lib/types";
+import { SPRING_UI } from "@/lib/motion";
 
 export function QueueList({
   session,
@@ -58,7 +59,7 @@ export function QueueList({
             layout
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ type: "spring", stiffness: 320, damping: 24 }}
+            transition={SPRING_UI}
             className={`flex items-center gap-3 rounded-[26px] px-3 py-2.5 ${
               isActive ? "bg-butter elev-1" : "border border-foreground/10 bg-transparent"
             }`}

@@ -86,6 +86,7 @@ import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
 import { ScorePill } from "@/components/game/ScorePill";
 import { darkBoardColors } from "@/lib/theme-mode";
+import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/host/$sessionId")({
   head: () => ({
@@ -158,7 +159,7 @@ function ConfirmDialog({
       <motion.div
         initial={{ scale: 0.94, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        transition={SPRING_UI}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-[32px] bg-card p-6 elev-2"
       >
@@ -555,7 +556,6 @@ function HostPage() {
            */}
           <div className="order-2 min-h-0 w-full space-y-4 min-[840px]:order-1 min-[840px]:mt-[var(--board-offset)] min-[840px]:max-h-[var(--board-side)] min-[840px]:max-w-[340px] min-[840px]:justify-self-end min-[840px]:self-start min-[840px]:overflow-y-auto min-[840px]:pr-1">
             <SessionStatus
-              connectedCount={connectedCount}
               remaining={tiles.length - played}
               total={tiles.length}
               dailyDoublesLeft={session.daily_double_tile_ids.filter((id) => !usedSet.has(id)).length}
@@ -1490,7 +1490,7 @@ function Podium({
       <motion.div
         initial={{ scale: 0.8, y: 40 }}
         animate={{ scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 160, damping: 16 }}
+        transition={SPRING_PLAYFUL}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-[36px] bg-card p-8 text-center elev-3"
       >
@@ -1550,7 +1550,7 @@ function Dialog({
         initial={{ scale: 0.92, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.92, y: 20 }}
-        transition={{ type: "spring", stiffness: 240, damping: 22 }}
+        transition={SPRING_UI}
         onClick={(e) => e.stopPropagation()}
         className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} rounded-[36px] bg-card p-7 text-foreground elev-3`}
       >

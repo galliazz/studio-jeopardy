@@ -7,6 +7,7 @@ import {
   toggleThemeMode,
   type ThemeMode,
 } from "@/lib/theme-mode";
+import { SPRING_SNAP } from "@/lib/motion";
 
 /** Reactive access to the current presentation mode. */
 export function useThemeMode(): ThemeMode {
@@ -43,13 +44,13 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         <motion.span
           layout
           className="absolute inset-0 rounded-full bg-card elev-1"
-          transition={{ type: "spring", stiffness: 420, damping: 26 }}
+          transition={SPRING_SNAP}
         />
         <motion.span
           key={mode}
           initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
           animate={{ rotate: 0, opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 320, damping: 16 }}
+          transition={SPRING_SNAP}
           className="relative flex items-center justify-center text-ink-accent"
         >
           {dark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}

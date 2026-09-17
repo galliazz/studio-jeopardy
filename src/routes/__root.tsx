@@ -9,6 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -17,6 +18,7 @@ import { supabase } from "../integrations/supabase/client";
 import { initThemeMode } from "../lib/theme-mode";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { SettingsButton } from "../components/SettingsDialog";
+import { useSettings } from "../lib/settings";
 
 function NotFoundComponent() {
   return (
@@ -151,6 +153,7 @@ function AuthListener() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
+  const { reduceMotion } = useSettings();
   // OBS browser sources are pure graphics: no app chrome, no toasts.
   const overlay = location.pathname.startsWith("/overlay/");
 
@@ -160,10 +163,19 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthListener />
-      {!overlay && <TopContextBar />}
-      <Outlet />
-      {!overlay && <Toaster position="top-center" richColors closeButton />}
+      {/*
+        Il CSS di `html.reduce-motion` azzera le durate delle transizioni CSS, ma
+        framer-motion anima in JavaScript con stili inline: quel CSS non lo sfiora.
+        MotionConfig è l'unico interruttore che le raggiunge tutte — spegne
+        trasformazioni e spostamenti (comprese le pulsazioni a ripetizione
+        infinita) e lascia in piedi solo l'opacità, che resta leggibile.
+      */}
+      <MotionConfig reducedMotion={reduceMotion ? "always" : "never"}>
+        <AuthListener />
+        {!overlay && <TopContextBar />}
+        <Outlet />
+        {!overlay && <Toaster position="top-center" richColors closeButton />}
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

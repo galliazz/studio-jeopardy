@@ -111,14 +111,18 @@ export function OverlayBoard({
        * happens to sit on top of it.
        */}
       <div style={{ position: "relative", height: "100%", aspectRatio: "5 / 5.4" }}>
+        {/*
+         * Nessun parametro di scala: la board si misura da sé, esattamente come
+         * sulla console. Prima riceveva `scale={height / 640}`, che riscriveva
+         * il corpo del carattere con un numero di pixel fisso e buttava via la
+         * dimensione scelta in Edit.
+         */}
         <BoardGrid
           theme={theme}
           categories={state.categories}
           tiles={state.tiles}
           usedIds={new Set(state.session.used_tile_ids)}
-          scale={height / 640}
           fill
-          ownContainer={false}
         />
         <AnimatePresence>
           {clueOpen && tile && (

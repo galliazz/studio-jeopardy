@@ -8,6 +8,18 @@
  * follow the board's real size instead of the viewport's. Sizing the numbers by
  * viewport breakpoints made them look enormous whenever the window was wide but
  * short, because the board shrank and the type did not.
+ *
+ * Ogni misura qui dentro è una frazione della board e basta: nessun tetto in
+ * pixel, nessun tetto in rem, nessun moltiplicatore per la tela. Disegnata a
+ * 556 pixel o a 942, la griglia ha le stesse proporzioni — e l'unica cosa che
+ * le cambia è il moltiplicatore che l'host sceglie nella pagina di Edit.
+ *
+ * Non è sempre stato così. Sulla trasmissione questo componente riceveva uno
+ * `scale` che RISCRIVEVA il `fontSize` con un numero di pixel fisso, buttando
+ * via la scelta fatta in Edit, e misurava i suoi `cqmin` sulla tela 1920x1080
+ * invece che su sé stesso. Il risultato: nella vista combinata, testo calcolato
+ * per una tela intera dentro una board da 556 pixel — "MISCELLANEA" andava a
+ * capo e "1000" usciva dalla casella.
  */
 import { motion, type MotionStyle } from "framer-motion";
 import { boardTextCss, type ThemeSettings } from "@/lib/types";
@@ -26,9 +38,7 @@ export function BoardGrid({
   usedIds,
   disabled = false,
   onOpenTile,
-  scale = 1,
   fill = false,
-  ownContainer = true,
 }: {
   theme: ThemeSettings;
   categories: { id: string; title: string }[];
@@ -36,35 +46,28 @@ export function BoardGrid({
   usedIds: Set<string>;
   disabled?: boolean;
   onOpenTile?: ((tileId: string) => void) | undefined;
-  /** Multiplier for the broadcast canvas, where 1080p needs heavier type. */
-  scale?: number;
   /** Fill the caller's box exactly instead of imposing the 5/5.4 ratio. */
   fill?: boolean;
-  /**
-   * Whether this board is the box its own `cqmin` lengths measure. The Host
-   * Console says yes. The broadcast says NO and lets them resolve against the
-   * 1920x1080 canvas instead, which is what the fixed pixel spacing used to be
-   * calibrated against — so the overlay keeps exactly the geometry it had.
-   */
-  ownContainer?: boolean;
 }) {
   const readOnly = !onOpenTile;
 
   /*
    * Font e proporzioni vengono da quanto l'host ha impostato nella pagina di
-   * Edit — finora quel pannello scriveva nel tema e nessuno lo leggeva. Uno
-   * `scale` esplicito (la tela 1080p) continua a vincere su tutto.
+   * Edit, e da niente altro.
+   *
+   * I coefficienti sono tarati su come la console disegna la board oggi: a 942
+   * pixel di larghezza le cifre escono a 52px e le categorie a 15.2px, cioè
+   * 5.5% e 1.6% del lato corto. Espressi così, quegli stessi rapporti valgono a
+   * ogni dimensione invece che solo a quella.
    */
-  const headerStyle = boardTextCss(theme, "categories", 0.95, 2.6);
-  const tileStyle = boardTextCss(theme, "numbers", 3.25, 7.5);
-  const headerFont = scale !== 1 ? { ...headerStyle, fontSize: 20 * scale } : fill ? headerStyle : null;
-  const tileFont = scale !== 1 ? { ...tileStyle, fontSize: 44 * scale } : fill ? tileStyle : null;
+  const headerFont = fill ? boardTextCss(theme, "categories", null, 1.6) : null;
+  const tileFont = fill ? boardTextCss(theme, "numbers", null, 5.5) : null;
 
   return (
     <div
       className={
         fill
-          ? `h-full w-full overflow-hidden elev-2 ${ownContainer ? "[container-type:size]" : ""}`
+          ? "h-full w-full overflow-hidden elev-2 [container-type:size]"
           : "flex h-full max-h-full w-auto max-w-full flex-col elev-2"
       }
       style={{
@@ -79,13 +82,11 @@ export function BoardGrid({
        * cannot size itself with them.
        */}
       <div
-        className={`flex h-full w-full flex-col ${
-          fill ? "p-[clamp(6px,2.2cqmin,20px)]" : "p-2.5 sm:p-5"
-        }`}
+        className={`flex h-full w-full flex-col ${fill ? "p-[2.2cqmin]" : "p-2.5 sm:p-5"}`}
       >
         <div
           className={`grid flex-1 grid-cols-5 grid-rows-[auto_repeat(5,1fr)] ${
-            fill ? "gap-[clamp(3px,1.2cqmin,10px)]" : "gap-1 sm:gap-2.5"
+            fill ? "gap-[1.2cqmin]" : "gap-1 sm:gap-2.5"
           }`}
         >
           {categories.map((cat) => (
@@ -93,7 +94,7 @@ export function BoardGrid({
               key={cat.id}
               className={`flex items-center justify-center overflow-hidden text-center font-bold uppercase leading-tight tracking-wide ${
                 fill
-                  ? "min-h-[6cqmin] p-[clamp(2px,0.8cqmin,6px)]"
+                  ? "min-h-[6cqmin] p-[0.8cqmin]"
                   : "min-h-10 p-1 text-[8px] sm:min-h-16 sm:p-1.5 sm:text-xs"
               }`}
               style={{

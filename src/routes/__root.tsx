@@ -185,13 +185,21 @@ function TopContextBar() {
   const path = location.pathname;
   // OBS browser-source overlays render with no chrome at all.
   if (path.startsWith("/overlay/")) return null;
-  // Studio and the Host console render their own app bars instead of this pill.
-  if (path === "/studio" || path.startsWith("/host/") || path.startsWith("/play/")) return null;
+  // Studio, Host console ed Edit hanno una barra loro: questa pillola ci
+  // finiva sopra, in alto a destra, e diventava un secondo posto dove cercare
+  // le impostazioni. Un solo posto per pagina — il bottone vive nella barra.
+  if (
+    path === "/studio" ||
+    path.startsWith("/host/") ||
+    path.startsWith("/play/") ||
+    path.startsWith("/edit/")
+  )
+    return null;
 
 
   const label = screenLabel(path);
-  // Host console and the editor relocate the Day/Night switch into their own top bars.
-  const showThemeToggleHere = !path.startsWith("/host/") && !path.startsWith("/edit/");
+  // La console ha il proprio interruttore giorno/notte nella sua barra.
+  const showThemeToggleHere = !path.startsWith("/host/");
 
   return (
     <div className="pointer-events-none fixed right-3 top-3 z-[80] flex max-w-[calc(100vw-1.5rem)] justify-end sm:right-5 sm:top-5">

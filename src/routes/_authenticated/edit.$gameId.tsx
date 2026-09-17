@@ -15,9 +15,9 @@ import {
   X,
   Copy,
   ExternalLink,
-  ChevronDown,
   Type,
   Sparkles,
+  QrCode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -31,7 +31,7 @@ import {
 import { startSession } from "@/lib/sessions.functions";
 import {
   themeOf,
-  textScopeCss,
+  boardTextCss,
   BOARD_FONTS,
   type BoardData,
   type Category,
@@ -42,12 +42,13 @@ import {
 } from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
-import { ThemeToggle, useThemeMode } from "@/components/ThemeToggle";
-import { SettingsButton } from "@/components/SettingsDialog";
+import { useThemeMode } from "@/components/ThemeToggle";
+import { SettingsDialog } from "@/components/SettingsDialog";
+import { AccountMenu } from "@/components/AccountMenu";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
-import { SPRING_SNAP, SPRING_UI } from "@/lib/motion";
+import { SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
@@ -67,6 +68,9 @@ export const Route = createFileRoute("/_authenticated/edit/$gameId")({
  * colore attenuato. È lo stesso della console — le due pagine ora dicono
  * "questa è un'etichetta" nello stesso modo, invece di ognuna a modo suo.
  */
+/** Etichetta di riga, in linea con i comandi invece che sopra. */
+const ROW_LABEL = "shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
+
 const FIELD_LABEL = "mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
 
 const THEME_PRESETS: { name: string; theme: Pick<ThemeSettings, "bg" | "card" | "accent"> }[] = [
@@ -87,6 +91,8 @@ function EditorPage() {
 
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [playOpen, setPlayOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   /** Mentre è attivo, toccare una casella la promuove invece di aprirla. */
   const [ddMode, setDdMode] = useState(false);
 
@@ -127,28 +133,37 @@ function EditorPage() {
 
   if (!board || !theme) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-56">
-      {/* Top bar */}
-      <div className="sticky top-0 z-30 px-4 pt-4">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 rounded-[32px] bg-card/90 px-3 py-3 elev-2 backdrop-blur-md sm:gap-3 sm:rounded-full sm:px-4">
-          {/* Neutral lavender chips: navigation + presentation mode, grouped together */}
-          <div className="flex items-center gap-1.5">
-            <Link
-              to="/studio"
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-lilac text-foreground transition-transform hover:scale-105"
-              aria-label="Back to studio"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <ThemeToggle />
-          </div>
+    /*
+     * Una schermata sola, alta quanto la finestra e senza scorrimento: a
+     * scorrere è semmai una colonna, mai la pagina. Le tre regioni sono le
+     * stesse della console — strumenti a sinistra, la tela in mezzo, e a
+     * destra quello che riguarda la cosa selezionata.
+     */
+    <div data-editor className="flex min-h-screen flex-col text-foreground min-[1100px]:h-screen min-[1100px]:overflow-hidden">
+      {/*
+       * BARRA — scura e a filo, come Studio e la console, invece della pillola
+       * chiara che galleggiava. L'interruttore giorno/notte non è più qui: era
+       * in due posti, e il secondo è il menu del profilo, dove stanno anche il
+       * codice invito e le impostazioni.
+       */}
+      <header className="z-50 shrink-0 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6">
+          <Link
+            to="/studio"
+            className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5"
+            aria-label="Back to studio"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Studio</span>
+          </Link>
+
           <InlineTitle
             value={board.game.title}
             onSave={async (title) => {
@@ -156,112 +171,203 @@ function EditorPage() {
               void refresh();
             }}
           />
-          <div className="ml-auto flex items-center gap-2">
-            <JoinCodeBadge joinCode={board.game.join_code} />
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
-              className="flex min-h-12 items-center gap-2 rounded-full bg-coral px-5 font-display text-sm font-black text-foreground elev-2 sm:px-6"
+              className="flex h-11 items-center gap-2 rounded-full bg-coral px-5 font-display text-sm font-black text-foreground elev-2"
             >
-              <Play className="h-4 w-4" /> Play Game
+              <Play className="h-4 w-4" /> <span className="hidden sm:inline">Play Game</span>
             </motion.button>
-            {/* Le impostazioni stanno qui e in nessun altro posto della pagina. */}
-            <SettingsButton className="h-12 w-12" />
+            <AccountMenu
+              displayName={board.profile?.username ?? "Host"}
+              avatarUrl={board.profile?.avatar_url ?? null}
+              onOpenSettings={() => setSettingsOpen(true)}
+              items={[{ icon: QrCode, label: "Join code & QR", onSelect: () => setJoinOpen(true) }]}
+            />
           </div>
         </div>
-      </div>
+      </header>
 
       {/*
-       * Board canvas — themed preview.
+       * CORPO — strumenti · tela · ispettore.
        *
-       * Quando la scheda di modifica è aperta la board si ritira per farle
-       * posto. Prima la scheda ci finiva sopra e copriva l'ultima colonna:
-       * stavi scrivendo una domanda senza poter vedere la casella a cui
-       * apparteneva. Una scheda che nasconde proprio la cosa che stai
-       * modificando non è un pannello affiancato, è un ostacolo.
+       * La tela sta ferma. Prima la board scivolava di lato all'apertura della
+       * scheda: un movimento che si nota, e che sposta proprio la cosa che stai
+       * guardando. Qui la colonna di destra c'è sempre, come il pannello del
+       * buzzer sulla console: cambia il contenuto, non l'impaginazione.
        */}
-      <div
-        className={`mx-auto max-w-7xl px-4 pt-6 transition-[padding] duration-300 ease-out ${
-          selectedTile ? "min-[1024px]:pr-[27.5rem]" : ""
-        }`}
-      >
-        <div
-          className="mx-auto w-full p-2.5 elev-3 transition-[border-radius] duration-300 sm:p-7"
-          style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
-        >
-          <div className="grid grid-cols-5 gap-1 sm:gap-3">
-            {board.categories.map((cat) => (
-              <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
-            ))}
-            {[0, 1, 2, 3, 4].map((row) =>
-              board.categories.map((cat) => {
-                const tile = board.tiles.find((t) => t.category_id === cat.id && t.row_index === row);
-                if (!tile) return <div key={`${cat.id}-${row}`} />;
-                return (
-                  <TileCell
-                    key={tile.id}
-                    tile={tile}
-                    theme={theme}
-                    selected={selectedTileId === tile.id}
-                    dailyDouble={dailyDoubles.includes(tile.id)}
-                    picking={ddMode}
-                    onClick={() => (ddMode ? void toggleDailyDouble(tile.id) : setSelectedTileId(tile.id))}
-                  />
-                );
-              }),
-            )}
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={() => {
+      <div className="grid grid-cols-1 gap-3 p-4 min-[1100px]:min-h-0 min-[1100px]:flex-1 min-[1100px]:grid-cols-[19rem_minmax(0,1fr)_22rem] min-[1100px]:gap-4 min-[1100px]:overflow-hidden min-[1100px]:p-5">
+        <aside className="flex flex-col gap-3 min-[1100px]:min-h-0 min-[1100px]:overflow-y-auto min-[1100px]:pr-1">
+          <DailyDoublePanel
+            count={dailyDoubles.length}
+            picking={ddMode}
+            onToggle={() => {
               setDdMode((v) => !v);
               setSelectedTileId(null);
             }}
-            aria-pressed={ddMode}
-            className={`flex min-h-12 items-center gap-2 rounded-full px-5 text-sm font-bold transition-colors ${
-              ddMode ? "bg-butter text-ink-gold elev-1" : "border border-foreground/20 text-foreground hover:bg-foreground/5"
-            }`}
+          />
+          <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
+        </aside>
+
+        {/*
+         * LA TELA. Il riquadro esterno è il contenitore misurato; quello dentro
+         * prende il lato più stretto fra larghezza e altezza e si centra, così
+         * la board entra sempre intera senza che nessuno debba scorrere.
+         */}
+        <main /*
+         * `container-type: size` pretende una dimensione definita su tutti e due
+         * gli assi. In colonna singola la riga si misura sul contenuto, quindi
+         * l'altezza è indefinita e il contenitore collassa a zero — la board
+         * spariva. Sotto i 1100px gliela do io con la proporzione della board;
+         * sopra, la cella della griglia è già alta quanto deve.
+         */
+        className="relative order-first aspect-[5/5.4] w-full min-w-0 [container-type:size] min-[1100px]:order-none min-[1100px]:aspect-auto min-[1100px]:h-full min-[1100px]:w-auto min-[1100px]:min-h-0">
+          <div
+            className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden p-[2.2cqmin] elev-3 [container-type:size]"
+            style={{
+              width: `min(100cqw, calc(100cqh * ${5 / 5.4}))`,
+              height: `min(100cqh, calc(100cqw * ${5.4 / 5}))`,
+              backgroundColor: theme.bg,
+              borderRadius: theme.radius + 8,
+            }}
           >
-            <Sparkles className="h-4 w-4" />
-            {ddMode ? "Done picking" : "Pick Daily Doubles"}
-            <span className="rounded-full bg-foreground/10 px-2 text-xs tabular-nums">{dailyDoubles.length}/2</span>
-          </button>
-        </div>
-        <p className="mt-3 text-center text-sm text-muted-foreground">
-          {ddMode
-            ? "Tap tiles to mark them as Daily Doubles. Leave none and the game picks two at random."
-            : "Tap any tile to edit its question, answer, media, and formatting."}
-        </p>
+            <div className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]">
+              {board.categories.map((cat) => (
+                <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
+              ))}
+              {[0, 1, 2, 3, 4].map((row) =>
+                board.categories.map((cat) => {
+                  const tile = board.tiles.find((t) => t.category_id === cat.id && t.row_index === row);
+                  if (!tile) return <div key={`${cat.id}-${row}`} />;
+                  return (
+                    <TileCell
+                      key={tile.id}
+                      tile={tile}
+                      theme={theme}
+                      selected={selectedTileId === tile.id}
+                      dailyDouble={dailyDoubles.includes(tile.id)}
+                      picking={ddMode}
+                      onClick={() =>
+                        ddMode ? void toggleDailyDouble(tile.id) : setSelectedTileId(tile.id)
+                      }
+                    />
+                  );
+                }),
+              )}
+            </div>
+          </div>
+        </main>
+
+        <aside className="flex flex-col min-[1100px]:min-h-0 min-[1100px]:overflow-hidden">
+          {selectedTile ? (
+            <TileEditor
+              key={selectedTile.id}
+              tile={selectedTile}
+              hostId={board.game.host_id}
+              gameId={gameId}
+              theme={theme}
+              onClose={() => setSelectedTileId(null)}
+              onSaved={refresh}
+            />
+          ) : (
+            <Panel fill title={ddMode ? "Daily Doubles" : "No tile selected"} className="justify-center text-center">
+              <p className="text-sm text-muted-foreground">
+                {ddMode
+                  ? "Tap tiles on the board to mark them. Leave none and the game picks two at random."
+                  : "Tap any tile to edit its question, answer, media and formatting."}
+              </p>
+            </Panel>
+          )}
+        </aside>
       </div>
 
-      {/* Tile editor panel */}
       <AnimatePresence>
-        {selectedTile && (
-          <TileEditor
-            key={selectedTile.id}
-            tile={selectedTile}
-            hostId={board.game.host_id}
-            gameId={gameId}
-            theme={theme}
-            onClose={() => setSelectedTileId(null)}
-            onSaved={refresh}
-          />
+        {playOpen && (
+          <PlayDialog gameId={gameId} joinCode={board.game.join_code} onClose={() => setPlayOpen(false)} />
         )}
+        {joinOpen && <JoinDialog joinCode={board.game.join_code} onClose={() => setJoinOpen(false)} />}
       </AnimatePresence>
-
-      {/* Theme bar */}
-      <ThemeBar
-        gameId={gameId}
-        theme={theme}
-        onSaved={refresh}
-      />
-
-      {/* Play dialog */}
-      <AnimatePresence>
-        {playOpen && <PlayDialog gameId={gameId} joinCode={board.game.join_code} onClose={() => setPlayOpen(false)} />}
-      </AnimatePresence>
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </div>
+  );
+}
+
+/* --------------------------------- Panel --------------------------------- */
+
+/**
+ * La scheda dell'editor: stessa forma, stesso titolo e stessa elevazione delle
+ * schede della console. Era l'unica cosa che le due pagine non condividevano.
+ */
+function Panel({
+  title,
+  action,
+  fill = false,
+  className = "",
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  /** Occupa l'altezza che avanza invece di misurare sul contenuto. */
+  fill?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    /*
+     * `shrink-0` di norma. Dentro una colonna che scorre, una scheda flessibile
+     * si lascia rimpicciolire sotto il proprio contenuto per far stare tutto
+     * nello spazio disponibile: a finestra bassa le schede si accavallavano e
+     * la riga della rotondità finiva sotto quella del testo.
+     */
+    <div
+      className={`flex flex-col rounded-[32px] bg-card p-4 elev-2 ${
+        fill ? "min-h-0 flex-1" : "shrink-0"
+      } ${className}`}
+    >
+      <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
+        <h3 className="truncate text-sm font-semibold text-muted-foreground">{title}</h3>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ----------------------------- Daily Doubles ------------------------------ */
+
+function DailyDoublePanel({
+  count,
+  picking,
+  onToggle,
+}: {
+  count: number;
+  picking: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Panel
+      title="Daily Doubles"
+      action={
+        <span className="shrink-0 rounded-full bg-foreground/10 px-2.5 py-1 font-display text-xs font-black tabular-nums">
+          {count}/2
+        </span>
+      }
+    >
+      <button
+        onClick={onToggle}
+        aria-pressed={picking}
+        className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-colors ${
+          picking
+            ? "bg-butter text-ink-gold elev-1"
+            : "border border-foreground/20 text-foreground hover:bg-foreground/5"
+        }`}
+      >
+        <Sparkles className="h-4 w-4" />
+        {picking ? "Done picking" : "Pick on the board"}
+      </button>
+    </Panel>
   );
 }
 
@@ -298,67 +404,61 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
   );
 }
 
-/* ---------------------------- Join code badge ----------------------------- */
+/* ------------------------------ Join dialog ------------------------------- */
 
-/** Invite-code chip that pops open a small QR/copy panel — not the full "Play Game" flow. */
-function JoinCodeBadge({ joinCode }: { joinCode: string }) {
+/**
+ * Codice invito, QR e link. Sta nel menu del profilo e non più come pastiglia
+ * verde in barra: lì occupava il posto più in vista della pagina per una cosa
+ * che serve una volta sola, quando inviti i giocatori.
+ */
+function JoinDialog({ joinCode, onClose }: { joinCode: string; onClose: () => void }) {
   const origin = useOrigin();
   const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
-  const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative">
-      <motion.button
-        whileTap={{ scale: 0.94 }}
-        onClick={() => {
-          sfx.pop();
-          setOpen((v) => !v);
-        }}
-        aria-expanded={open}
-        /* Lo stesso carattere del codice dentro il pannello che questa pastiglia
-           apre: prima erano due — mono qui, display di là — per la stessa cosa. */
-        className="hidden h-12 items-center gap-1.5 rounded-full bg-mint px-4 font-display text-sm font-black tracking-[0.15em] text-foreground transition-transform hover:scale-105 sm:flex"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.94, opacity: 0 }}
+        transition={SPRING_UI}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-[32px] bg-card p-6 text-center elev-3"
       >
-        {joinCode}
-        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
-      </motion.button>
-      <AnimatePresence>
-        {open && (
-          <>
-            <button aria-label="Close" onClick={() => setOpen(false)} className="fixed inset-0 z-10 cursor-default" />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: -6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: -6 }}
-              transition={SPRING_SNAP}
-              className="absolute right-0 top-12 z-20 w-56 rounded-[26px] bg-popover p-4 text-center elev-3"
-            >
-              <div className="mx-auto mb-3 w-fit rounded-[20px] bg-card p-2">
-                {joinUrl ? <QRCodeSVG value={joinUrl} size={112} /> : <div className="h-28 w-28" />}
-              </div>
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(joinCode);
-                  toast.success("Join code copied");
-                }}
-                className="mx-auto flex items-center gap-1.5 font-display text-lg font-black tracking-[0.15em] text-ink-accent"
-              >
-                {joinCode} <Copy className="h-3.5 w-3.5 opacity-60" />
-              </button>
-              <button
-                onClick={() => {
-                  void navigator.clipboard.writeText(joinUrl);
-                  toast.success("Join link copied");
-                }}
-                className="mx-auto mt-3 flex items-center gap-2 rounded-full bg-card px-4 py-2 text-xs font-bold text-foreground elev-1 transition-transform hover:scale-105"
-              >
-                <Copy className="h-3.5 w-3.5" /> Copy link
-              </button>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground">Join code &amp; QR</h3>
+        <div className="mx-auto mb-4 w-fit rounded-[20px] bg-muted p-3 text-foreground">
+          {joinUrl ? (
+            <QRCodeSVG value={joinUrl} size={148} bgColor="transparent" fgColor="currentColor" />
+          ) : (
+            <div className="h-[148px] w-[148px]" />
+          )}
+        </div>
+        <button
+          onClick={() => {
+            void navigator.clipboard.writeText(joinCode);
+            toast.success("Join code copied");
+          }}
+          className="mx-auto flex items-center gap-2 font-display text-2xl font-black tracking-[0.15em] text-ink-accent"
+        >
+          {joinCode} <Copy className="h-4 w-4 opacity-60" />
+        </button>
+        <button
+          onClick={() => {
+            void navigator.clipboard.writeText(joinUrl);
+            toast.success("Join link copied");
+          }}
+          className="mx-auto mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-muted px-4 text-sm font-bold text-foreground elev-1"
+        >
+          <Copy className="h-4 w-4" /> Copy link
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -388,7 +488,7 @@ function CategoryHeader({
 
   return (
     <div
-      className="flex min-h-12 items-center justify-center overflow-hidden p-1 text-center transition-[border-radius] duration-300 sm:min-h-16 sm:p-2"
+      className="flex min-h-0 items-center justify-center overflow-hidden p-[0.8cqmin] text-center transition-[border-radius] duration-300"
       style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.75 }}
     >
       {editing ? (
@@ -399,14 +499,14 @@ function CategoryHeader({
           onBlur={() => void commit()}
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
           maxLength={60}
-          className="w-full bg-transparent text-center text-[9px] font-bold uppercase tracking-wide outline-none sm:text-sm"
-          style={{ color: theme.accent }}
+          className="w-full bg-transparent text-center font-bold uppercase tracking-wide outline-none"
+          style={{ color: theme.accent, ...boardTextCss(theme, "categories", null, 1.6) }}
         />
       ) : (
         <button
           onClick={() => setEditing(true)}
-          className="h-full w-full text-[8px] font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70 sm:text-sm"
-          style={{ color: theme.accent, ...textScopeCss(theme, "categories", 0.875) }}
+          className="h-full w-full font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70"
+          style={{ color: theme.accent, ...boardTextCss(theme, "categories", null, 1.6) }}
           title={category.title}
         >
           <span className="line-clamp-2 w-full break-words">{category.title}</span>
@@ -439,7 +539,10 @@ function TileCell({
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
       aria-pressed={picking ? dailyDouble : undefined}
-      className={`relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden p-1 text-center transition-all sm:aspect-[4/3] sm:gap-1 sm:p-2 ${
+      /* Riempie la sua cella: l'altezza la decide la griglia, che a sua volta
+         entra sempre intera nella finestra. Niente aspetto fisso, o la board
+         tornerebbe a essere più alta dello schermo. */
+      className={`relative flex h-full w-full flex-col items-center justify-center gap-[0.6cqmin] overflow-hidden p-[1cqmin] text-center transition-all ${
         selected ? "ring-4 ring-ink-accent" : "hover:-translate-y-0.5 hover:brightness-[1.03]"
       } ${dailyDouble ? "ring-4 ring-ink-gold" : ""}`}
       style={{
@@ -451,16 +554,16 @@ function TileCell({
       {dailyDouble && (
         <span
           aria-label="Daily Double"
-          className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-butter sm:h-6 sm:w-6"
+          className="absolute right-[1cqmin] top-[1cqmin] flex h-[3.2cqmin] w-[3.2cqmin] items-center justify-center rounded-full bg-butter"
         >
-          <Sparkles className="h-3 w-3 text-ink-gold sm:h-3.5 sm:w-3.5" />
+          <Sparkles className="h-[2cqmin] w-[2cqmin] text-ink-gold" />
         </span>
       )}
       <span
         /* `tracking-tight` come sulla board della console: più il testo cresce,
            più le lettere vanno strette, o si leggono staccate. */
-        className="font-display text-sm font-black tracking-tight sm:text-3xl"
-        style={{ color: theme.accent, ...textScopeCss(theme, "numbers", 1.875) }}
+        className="font-display font-black leading-none tracking-tight"
+        style={{ color: theme.accent, ...boardTextCss(theme, "numbers", null, 3.6) }}
       >
         {tile.points}
       </span>
@@ -469,15 +572,15 @@ function TileCell({
           /* Testo piccolo: un filo di spaziatura in più, al contrario dei numeri.
              E opacità 75 invece di 60 — a 60 il contrasto non reggeva sulle
              tinte chiare del tema. */
-          className="line-clamp-2 w-full break-words text-[8px] leading-snug tracking-[0.01em] opacity-75 sm:text-xs"
-          style={{ color: theme.accent, ...textScopeCss(theme, "questions", 0.75) }}
+          className="line-clamp-2 w-full break-words leading-snug tracking-[0.01em] opacity-75"
+          style={{ color: theme.accent, ...boardTextCss(theme, "questions", null, 1.45) }}
         >
           {preview}
         </span>
       ) : (
         <span
-          className="hidden text-[9px] font-bold uppercase tracking-wider opacity-45 sm:block"
-          style={{ color: theme.accent }}
+          className="font-bold uppercase tracking-wider opacity-45"
+          style={{ color: theme.accent, ...boardTextCss(theme, "questions", null, 1.3) }}
         >
           Empty
         </span>
@@ -485,9 +588,9 @@ function TileCell({
       {/* Icone al posto delle emoji: le emoji cambiano faccia da un sistema
           all'altro e non prendono il colore del tema. */}
       {(tile.image_url || tile.audio_url) && (
-        <span className="flex items-center gap-1 opacity-70" style={{ color: theme.accent }}>
-          {tile.image_url && <ImagePlus className="h-3 w-3" aria-label="Has image" />}
-          {tile.audio_url && <Music className="h-3 w-3" aria-label="Has audio" />}
+        <span className="flex items-center gap-[0.6cqmin] opacity-70" style={{ color: theme.accent }}>
+          {tile.image_url && <ImagePlus className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has image" />}
+          {tile.audio_url && <Music className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has audio" />}
         </span>
       )}
     </motion.button>
@@ -572,26 +675,37 @@ function TileEditor({
   };
 
   return (
+    /*
+     * Una scheda della colonna, non più un pannello che galleggiava sopra la
+     * board con una fascia lilla in testa. La fascia colorata era l'unico
+     * elemento del genere in tutta l'applicazione: la console non ne ha, Studio
+     * nemmeno. Qui il titolo è un titolo, come nelle altre schede.
+     *
+     * Entra con una dissolvenza minima. Prima arrivava scivolando da destra di
+     * 80 pixel mentre la board si spostava di lato per farle largo: due
+     * movimenti insieme per un clic su una casella, che è la cosa che si fa
+     * cento volte di fila mentre si scrive un gioco.
+     */
     <motion.div
-      initial={{ opacity: 0, x: 80 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 80 }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={SPRING_UI}
-      /*
-       * Sotto i 1024px resta un foglio dal basso. Da lì in su diventa un
-       * pannello a fianco, perché solo lì c'è posto per la board E per lui:
-       * a 700px un pannello da 420 lascerebbe alla board due colonne.
-       */
-      className="fixed inset-x-2 bottom-[13rem] top-auto z-40 flex max-h-[58svh] w-auto flex-col overflow-hidden rounded-[36px] bg-card elev-3 min-[1024px]:inset-x-auto min-[1024px]:bottom-40 min-[1024px]:right-4 min-[1024px]:top-24 min-[1024px]:max-h-none min-[1024px]:w-[min(420px,calc(100vw-2rem))]"
+      className="flex min-h-0 flex-1 flex-col rounded-[32px] bg-card p-4 elev-2"
     >
-      <div className="flex items-center justify-between gap-2 bg-lilac px-5 py-3 sm:px-6 sm:py-4">
-        <span className="truncate font-display text-sm font-black uppercase tracking-wide">Edit tile</span>
-        <button onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground" aria-label="Close editor">
+      <div className="mb-2.5 flex shrink-0 items-center justify-between gap-2">
+        <h3 className="truncate text-sm font-semibold text-muted-foreground">
+          Edit tile · <span className="font-display font-black tabular-nums text-foreground">{tile.points}</span>
+        </h3>
+        <button
+          onClick={onClose}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+          aria-label="Close editor"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-5">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-1">
         <label className="block">
           <span className={FIELD_LABEL}>Points</span>
           <input
@@ -799,76 +913,72 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
   };
 
   return (
-    <motion.div
-      initial={{ y: 80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ ...SPRING_UI, delay: 0.2 }}
-      className="fixed bottom-3 left-1/2 z-30 max-h-[44svh] w-[min(1100px,calc(100vw-1rem))] -translate-x-1/2 overflow-y-auto overscroll-contain rounded-[36px] bg-card/95 px-5 py-4 text-foreground elev-3 backdrop-blur-md sm:bottom-5 sm:px-7 sm:py-5"
-    >
-      {/*
-       * Tre gruppi dichiarati, non una fila indistinta di comandi.
-       *
-       * Prima erano otto controlli di quattro argomenti diversi separati da
-       * filetti sottili: colori, forma, testo, squadre e punteggi tutti sulla
-       * stessa riga. Un filetto dice "qui cambia qualcosa" ma non dice cosa.
-       * Con una didascalia sopra ogni gruppo, la vicinanza fra i comandi
-       * significa qualcosa e l'occhio trova subito la sezione che cerca.
-       */}
-      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
-        <DockGroup label="Appearance">
-          <div className="flex items-center gap-2">
-            {THEME_PRESETS.map((p) => (
-              <button
-                key={p.name}
-                onClick={() => void applyPreset(p)}
-                title={p.name}
-                aria-label={`Apply theme ${p.name}`}
-                className="h-12 w-12 transition-transform hover:scale-110 scallop"
-                style={{ background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})` }}
-              />
-            ))}
-          </div>
+    /*
+     * Tre schede impilate nella colonna degli strumenti, non più una barra
+     * galleggiante in fondo allo schermo.
+     *
+     * La barra era otto controlli di quattro argomenti diversi su una riga
+     * sola, appoggiata sopra la board e con uno scorrimento interno suo: non
+     * somigliava a niente altro nell'applicazione. Queste sono le stesse schede
+     * della console — stessa forma, stesso titolo, stessa elevazione.
+     */
+    <>
+      <Panel title="Appearance">
+        <div className="flex flex-wrap items-center gap-2">
+          {THEME_PRESETS.map((p) => (
+            <button
+              key={p.name}
+              onClick={() => void applyPreset(p)}
+              title={p.name}
+              aria-label={`Apply theme ${p.name}`}
+              className="h-12 w-12 transition-transform hover:scale-110 scallop"
+              style={{ background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})` }}
+            />
+          ))}
+        </div>
 
-          <label className="flex h-12 items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            Roundness
+        <label className="mt-3 flex h-12 items-center gap-3">
+          <span className={ROW_LABEL}>Roundness</span>
+          <input
+            type="range"
+            min={0}
+            max={50}
+            value={theme.radius}
+            onChange={(e) => applyRadius(Number(e.target.value))}
+            className="min-w-0 flex-1 accent-[var(--ink-accent)]"
+          />
+          {radiusEditing ? (
             <input
-              type="range"
+              autoFocus
+              type="number"
               min={0}
               max={50}
               value={theme.radius}
-              onChange={(e) => applyRadius(Number(e.target.value))}
-              className="w-24 accent-[var(--ink-accent)]"
+              onChange={(e) => applyRadius(Math.max(0, Math.min(50, Number(e.target.value))))}
+              onBlur={() => setRadiusEditing(false)}
+              onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+              className="h-12 w-14 shrink-0 rounded-full bg-muted px-1 text-center font-display text-xs font-black tabular-nums text-foreground outline-none ring-2 ring-ink-accent"
             />
-            {radiusEditing ? (
-              <input
-                autoFocus
-                type="number"
-                min={0}
-                max={50}
-                value={theme.radius}
-                onChange={(e) => applyRadius(Math.max(0, Math.min(50, Number(e.target.value))))}
-                onBlur={() => setRadiusEditing(false)}
-                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-                className="h-12 w-14 rounded-full bg-muted px-1 text-center font-display text-xs font-black tabular-nums text-foreground outline-none ring-2 ring-ink-accent"
-              />
-            ) : (
-              <button
-                onClick={() => setRadiusEditing(true)}
-                title="Click to type a value"
-                className="flex h-12 w-12 items-center justify-center rounded-full text-center font-display font-black tabular-nums text-foreground hover:bg-muted"
-              >
-                {theme.radius}
-              </button>
-            )}
-          </label>
-        </DockGroup>
+          ) : (
+            <button
+              onClick={() => setRadiusEditing(true)}
+              title="Click to type a value"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-display font-black tabular-nums text-foreground hover:bg-muted"
+            >
+              {theme.radius}
+            </button>
+          )}
+        </label>
+      </Panel>
 
-        <DockGroup label="Text">
+      <Panel title="Text">
+        {/* Prima riga: a CHE COSA si applica, e con quale carattere. */}
+        <div className="flex gap-2">
           <select
             value={scope}
             onChange={(e) => setScope(e.target.value as TextScope | "all")}
             aria-label="Text target"
-            className="h-12 rounded-full bg-muted px-4 text-xs font-bold text-foreground outline-none"
+            className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 text-xs font-bold text-foreground outline-none"
           >
             <option value="numbers">Numbers</option>
             <option value="questions">Questions</option>
@@ -880,7 +990,7 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
             onChange={(e) => void applyTextStyle({ font: e.target.value })}
             aria-label="Font"
             title="Font"
-            className="h-12 rounded-full bg-muted px-4 font-display text-xs font-semibold text-foreground outline-none"
+            className="h-12 min-w-0 flex-1 rounded-full bg-muted px-4 font-display text-xs font-semibold text-foreground outline-none"
           >
             {BOARD_FONTS.map((f) => (
               <option key={f.label} value={f.value}>
@@ -888,97 +998,88 @@ function ThemeBar({ gameId, theme, onSaved }: { gameId: string; theme: ThemeSett
               </option>
             ))}
           </select>
-          <div className="flex h-12 items-center gap-2 rounded-full bg-muted px-4">
-            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <Type className="h-3.5 w-3.5" /> Size
-            </span>
-            <input
-              type="range"
-              min={0.6}
-              max={1.8}
-              step={0.1}
-              value={current.size ?? 1}
-              onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
-              aria-label="Text size"
-              className="w-20 accent-[var(--ink-accent)]"
-            />
-            {/* Il cursore da solo non dice mai dove sei: il numero sì. */}
-            <span className="w-8 shrink-0 text-right font-display text-xs font-black tabular-nums text-foreground">
-              {(current.size ?? 1).toFixed(1)}×
-            </span>
-          </div>
-          {([
-            ["bold", "B", "font-black"],
-            ["italic", "I", "italic"],
-            ["underline", "U", "underline"],
-          ] as const).map(([key, label, cls]) => (
+        </div>
+
+        <div className="mt-2 flex h-12 items-center gap-3 rounded-full bg-muted px-4">
+          <span className={`${ROW_LABEL} flex items-center gap-1`}>
+            <Type className="h-3.5 w-3.5" /> Size
+          </span>
+          <input
+            type="range"
+            min={0.6}
+            max={1.8}
+            step={0.1}
+            value={current.size ?? 1}
+            onChange={(e) => void applyTextStyle({ size: Number(e.target.value) })}
+            aria-label="Text size"
+            className="min-w-0 flex-1 accent-[var(--ink-accent)]"
+          />
+          {/* Il cursore da solo non dice mai dove sei: il numero sì. */}
+          <span className="w-8 shrink-0 text-right font-display text-xs font-black tabular-nums text-foreground">
+            {(current.size ?? 1).toFixed(1)}×
+          </span>
+        </div>
+
+        <div className="mt-2 flex gap-2">
+          {(
+            [
+              ["bold", "B", "font-black"],
+              ["italic", "I", "italic"],
+              ["underline", "U", "underline"],
+            ] as const
+          ).map(([key, label, cls]) => (
             <button
               key={key}
               onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
               aria-pressed={Boolean(current[key])}
               aria-label={key}
-              className={`h-12 w-12 rounded-full text-sm ${cls} ${
+              className={`h-12 flex-1 rounded-full text-sm ${cls} ${
                 current[key] ? "bg-ink-accent text-card" : "bg-muted text-foreground"
               }`}
             >
               {label}
             </button>
           ))}
-        </DockGroup>
+        </div>
+      </Panel>
 
-        <DockGroup label="Game">
-          <div className="flex h-12 items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Teams</span>
-            <TeamNameInput
-              defaultValue={theme.teamAlpha ?? ""}
-              placeholder="Alpha"
-              swatch="bg-team-alpha"
-              onSave={(v) => void applyTeamName("teamAlpha", v)}
+      <Panel title="Game">
+        <span className={`${ROW_LABEL} mb-2 block`}>Teams</span>
+        <div className="flex flex-col gap-2">
+          <TeamNameInput
+            defaultValue={theme.teamAlpha ?? ""}
+            placeholder="Alpha"
+            swatch="bg-team-alpha"
+            onSave={(v) => void applyTeamName("teamAlpha", v)}
+          />
+          <TeamNameInput
+            defaultValue={theme.teamBravo ?? ""}
+            placeholder="Bravo"
+            swatch="bg-team-bravo"
+            onSave={(v) => void applyTeamName("teamBravo", v)}
+          />
+        </div>
+
+        <span className={`${ROW_LABEL} mb-2 mt-3 block`}>Points ladder</span>
+        <div className="flex flex-wrap gap-2">
+          {rowPoints.map((p, i) => (
+            <input
+              key={i}
+              type="number"
+              value={p}
+              aria-label={`Row ${i + 1} points`}
+              onChange={(e) => {
+                const next = [...rowPoints];
+                next[i] = Number(e.target.value);
+                setRowPointsState(next);
+              }}
+              onBlur={() => void applyRowPoints()}
+              className="h-12 w-[calc(33.333%-0.34rem)] rounded-full bg-muted px-2 text-center font-display text-xs font-black tabular-nums outline-none ring-2 ring-transparent focus:ring-ink-accent"
             />
-            <TeamNameInput
-              defaultValue={theme.teamBravo ?? ""}
-              placeholder="Bravo"
-              swatch="bg-team-bravo"
-              onSave={(v) => void applyTeamName("teamBravo", v)}
-            />
-          </div>
-
-          <div className="flex h-12 items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Points</span>
-            {rowPoints.map((p, i) => (
-              <input
-                key={i}
-                type="number"
-                value={p}
-                onChange={(e) => {
-                  const next = [...rowPoints];
-                  next[i] = Number(e.target.value);
-                  setRowPointsState(next);
-                }}
-                onBlur={() => void applyRowPoints()}
-                className="h-12 w-16 rounded-full bg-muted px-2 text-center font-display text-xs font-black tabular-nums outline-none ring-2 ring-transparent focus:ring-ink-accent"
-              />
-            ))}
-          </div>
-        </DockGroup>
-      </div>
-    </motion.div>
-  );
-}
-
-/**
- * Una didascalia e i comandi che le appartengono.
- *
- * Il registro tipografico è quello della console: maiuscoletto piccolo, molto
- * spaziato, in colore attenuato. Le due pagine adesso dicono "questa è
- * un'etichetta" nello stesso modo.
- */
-function DockGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-2">
-      <span className="px-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
-    </div>
+          ))}
+        </div>
+      </Panel>
+    </>
   );
 }
 

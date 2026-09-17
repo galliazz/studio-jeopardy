@@ -216,6 +216,7 @@ export interface BoardData {
   game: Game;
   categories: Category[];
   tiles: Tile[];
+  profile: Pick<Profile, "id" | "username" | "avatar_url"> | null;
 }
 
 export const PLAYER_AVATARS = [

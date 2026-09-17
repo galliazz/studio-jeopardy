@@ -89,7 +89,14 @@ export const getGameBoard = createServerFn({ method: "GET" })
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("*").in("category_id", catIds)
       : { data: [] };
-    return { game, categories: categories ?? [], tiles: tiles ?? [] };
+    // Il profilo serve all'avatar in barra: senza, l'editor dovrebbe fare una
+    // seconda chiamata solo per disegnare un cerchietto.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .eq("id", context.userId)
+      .maybeSingle();
+    return { game, categories: categories ?? [], tiles: tiles ?? [], profile: profile ?? null };
   });
 
 export const updateGame = createServerFn({ method: "POST" })

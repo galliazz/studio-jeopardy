@@ -18,6 +18,7 @@ import {
   type QueueEntry,
   type Team,
   type ThemeSettings,
+  teamColorVars,
 } from "@/lib/types";
 import { SPRING_UI } from "@/lib/motion";
 
@@ -466,7 +467,9 @@ function LivePlayer({
 
   return (
     <Shell>
-      <div className="flex w-full flex-col items-center">
+      {/* Le tinte scelte dall'host per le squadre valgono anche sul telefono:
+          il buzzer è del colore della propria squadra. */}
+      <div className="flex w-full flex-col items-center" style={teamColorVars(theme)}>
         {/* Scoreboard strip */}
         <div className="mb-5 flex w-full items-center justify-between gap-2">
           <TeamScore team="alpha" name={teamName(theme, "alpha")} score={session?.score_alpha ?? 0} mine={myTeam === "alpha"} />

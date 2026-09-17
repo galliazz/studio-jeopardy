@@ -17,7 +17,7 @@ import { BoardGrid } from "@/components/game/BoardGrid";
 import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
 import { ScorePill } from "@/components/game/ScorePill";
-import { teamName } from "@/lib/types";
+import { teamName, teamColorVars } from "@/lib/types";
 import {
   CANVAS_H,
   CANVAS_W,
@@ -155,7 +155,7 @@ export function OverlayScores({ state }: { state: OverlayState }) {
      * contenitore riserva meno spazio di quello che poi si vede e il ritaglio
      * taglia via la parte in eccesso. `zoom` ingrandisce anche la scatola.
      */
-    <div style={{ zoom: 2.6 }}>
+    <div style={{ zoom: 2.6, ...teamColorVars(theme) }}>
     <motion.div
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -188,6 +188,7 @@ export function OverlayScores({ state }: { state: OverlayState }) {
 /* ------------------------------ queue region ------------------------------ */
 
 export function OverlayQueue({ state, align = "right" }: { state: OverlayState; align?: "left" | "right" }) {
+  const theme = useOverlayTheme(state);
   return (
     /*
      * Stessa ragione dei punteggi, ma qui il difetto si vedeva: il riquadro
@@ -195,7 +196,14 @@ export function OverlayQueue({ state, align = "right" }: { state: OverlayState; 
      * tagliava tutto il resto — con due persone in coda se ne vedeva una e
      * mezza. Vedi il commento in OverlayScores.
      */
-    <div style={{ zoom: 1.6, width: 340, marginLeft: align === "right" ? "auto" : undefined }}>
+    <div
+      style={{
+        zoom: 1.6,
+        width: 340,
+        marginLeft: align === "right" ? "auto" : undefined,
+        ...teamColorVars(theme),
+      }}
+    >
     <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}

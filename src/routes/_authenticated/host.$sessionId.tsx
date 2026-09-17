@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { Soundboard } from "@/components/Soundboard";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { AccountMenu } from "@/components/AccountMenu";
+import { APP_BAR, APP_BAR_INNER } from "@/components/app-bar";
 import { QRCodeSVG } from "qrcode.react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
@@ -79,6 +80,7 @@ import {
   type Game,
   type Team,
   type ThemeSettings,
+  teamColorVars,
 } from "@/lib/types";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { BoardGrid } from "@/components/game/BoardGrid";
@@ -438,7 +440,13 @@ function HostPage() {
   };
 
   return (
-    <div data-host-console className="flex h-screen flex-col overflow-hidden text-foreground">
+    <div
+      data-host-console
+      /* Le tinte scelte per le squadre arrivano qui come variabili: tutto quello
+         che sta sotto le eredita senza cambiare una classe. */
+      style={teamColorVars(theme)}
+      className="flex h-screen flex-col overflow-hidden text-foreground"
+    >
       {/*
        * TOP APP BAR — one line, vertically centred: leave + title on the left,
        * the two scores in the middle, the account menu on the right. It sits a
@@ -446,8 +454,10 @@ function HostPage() {
        * 840px the scores drop to their own full-width row rather than colliding
        * with the title.
        */}
-      <header className="z-50 shrink-0 border-b border-foreground/10 bg-background/90 pt-2 backdrop-blur-md sm:pt-3">
-        <div className="mx-auto grid max-w-[1600px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 pb-2 sm:px-6 min-[840px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <header className={APP_BAR}>
+        <div
+          className={`grid grid-cols-[minmax(0,1fr)_auto] gap-y-2 py-2 min-[840px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[840px]:py-0 ${APP_BAR_INNER}`}
+        >
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => {

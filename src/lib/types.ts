@@ -28,6 +28,9 @@ export interface ThemeSettings {
   rowPoints: number[];
   teamAlpha?: string;
   teamBravo?: string;
+  /** Tinte scelte dall'host per le due squadre. Assenti = quelle del tema. */
+  teamAlphaColor?: string;
+  teamBravoColor?: string;
   customSounds?: { name: string; path: string }[];
   textStyles?: Partial<Record<TextScope, TextStyle>>;
   /**
@@ -140,6 +143,29 @@ export function boardTextCss(
   if (s?.italic) css.fontStyle = "italic";
   if (s?.underline) css.textDecoration = "underline";
   return css;
+}
+
+/**
+ * Le tinte delle squadre come variabili CSS.
+ *
+ * `bg-team-alpha` e compagnia leggono già `--team-alpha`: basta ridefinirla su
+ * un antenato e tutto quello che sta sotto — pastiglie, punteggi, buzzer del
+ * giocatore, overlay — cambia colore insieme, senza toccare una classe.
+ *
+ * L'inchiostro non lo scelgo io: `color-mix` scurisce la tinta scelta finché
+ * il testo sopra resta leggibile, qualunque colore l'host prenda.
+ */
+export function teamColorVars(theme: ThemeSettings): CSSProperties {
+  const vars: Record<string, string> = {};
+  if (theme.teamAlphaColor) {
+    vars["--team-alpha"] = theme.teamAlphaColor;
+    vars["--team-alpha-ink"] = `color-mix(in oklab, ${theme.teamAlphaColor} 45%, black)`;
+  }
+  if (theme.teamBravoColor) {
+    vars["--team-bravo"] = theme.teamBravoColor;
+    vars["--team-bravo-ink"] = `color-mix(in oklab, ${theme.teamBravoColor} 45%, black)`;
+  }
+  return vars as CSSProperties;
 }
 
 export interface Profile {

@@ -168,6 +168,26 @@ export function teamColorVars(theme: ThemeSettings): CSSProperties {
   return vars as CSSProperties;
 }
 
+/**
+ * La rotondità scelta in Edit, espressa come frazione della board.
+ *
+ * Il cursore salva un numero di pixel, e quei pixel erano tarati sulla board
+ * della console, larga circa 942: lì 50 pixel su una casella da 180 fanno un
+ * angolo morbido. Sull'overlay combinato la board ne misura 556 e la casella
+ * 95 — gli stessi 50 pixel la trasformavano in un cerchio, e i cerchi
+ * sbordavano verso i bordi della board. Il testo era già proporzionale; il
+ * raggio no.
+ *
+ * 942 / 100 = 9.42 pixel per `cqmin`: diviso per questo, un raggio esce
+ * identico sulla console e in proporzione ovunque altrove. Va usato solo dentro
+ * un contenitore di misura — `cqmin` si risolve sull'antenato che lo dichiara.
+ */
+export const RADIUS_PER_CQMIN = 9.42;
+
+export function radiusCq(px: number, factor = 1): string {
+  return `${((px * factor) / RADIUS_PER_CQMIN).toFixed(3)}cqmin`;
+}
+
 export interface Profile {
   id: string;
   username: string;

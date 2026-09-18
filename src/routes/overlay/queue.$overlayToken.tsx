@@ -32,7 +32,14 @@ function QueueOverlay() {
           position: "absolute",
           top: SAFE,
           left: SAFE,
-          width: 700,
+          /*
+           * Tutta la larghezza sicura, non 700. Le due pillole dei punteggi,
+           * ingrandite 2.6 volte, occupano circa 800 pixel — di più se una
+           * squadra ha molti giocatori — e la colonna da 700 ne tagliava via
+           * 95 della seconda. Il contenuto resta allineato a sinistra, quindi
+           * in OBS si ritaglia sempre dallo stesso angolo.
+           */
+          width: 1920 - SAFE * 2,
           maxHeight: 1080 - SAFE * 2,
           overflow: "hidden",
           display: "flex",

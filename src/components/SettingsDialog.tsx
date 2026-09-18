@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings as SettingsIcon, Volume2, Pencil, Keyboard, RotateCcw } from "lucide-react";
+import { Volume2, Pencil, Keyboard, RotateCcw } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { bootstrapStudio, updateProfile } from "@/lib/games.functions";
@@ -118,26 +118,6 @@ function ShortcutEditor({
   );
 }
 
-/** Low-emphasis gear pill available on every screen. */
-export function SettingsButton({ className = "", variant = "full" }: { className?: string; variant?: "full" | "guest" }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        onClick={() => {
-          sfx.pop();
-          setOpen(true);
-        }}
-        aria-label="Settings"
-        title="Settings"
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lilac text-foreground transition-transform hover:scale-110 ${className}`}
-      >
-        <SettingsIcon className="h-4 w-4" />
-      </button>
-      {open && <SettingsDialog variant={variant} onClose={() => setOpen(false)} />}
-    </>
-  );
-}
 
 /* ---------------- building blocks ---------------- */
 

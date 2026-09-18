@@ -15,9 +15,28 @@ export const APP_BAR =
   "z-50 shrink-0 border-b border-foreground/10 bg-background/90 backdrop-blur-md";
 
 /**
- * Il contenuto della barra: stesso tetto di larghezza e stesso margine laterale
- * ovunque, così i comandi non si appiccicano al bordo dello schermo e cadono
- * sulla stessa verticale in tutte le pagine.
+ * Il margine laterale dell'app, uno solo per la barra e per il corpo di ogni
+ * pagina.
+ *
+ * Prima la barra aveva un tetto a 1600 pixel e un margine di 32, mentre il
+ * corpo sotto aveva 24 di margine e — a seconda della pagina — nessun tetto
+ * (console, editor) o un tetto a 1440 (Studio). Su uno schermo da 1750 il
+ * "← Close" stava a 107 pixel dal bordo e la colonna sotto a 24: il bordo
+ * sinistro dei comandi e quello del contenuto non si incontravano mai.
+ *
+ * La barra non ha più tetto, come in Canva. Mettere il tetto al corpo avrebbe
+ * allineato le cose rimpicciolendo la board della console sugli schermi
+ * grandi: su un 2560 sarebbe scesa da 1290 a 800 pixel.
  */
-export const APP_BAR_INNER =
-  "mx-auto min-h-16 w-full max-w-[1600px] items-center gap-3 px-5 sm:px-8";
+export const APP_GUTTER = "px-4 sm:px-6 lg:px-8";
+
+/** Il contenuto della barra: stesso margine del corpo, a tutta larghezza. */
+export const APP_BAR_INNER = `min-h-16 w-full items-center gap-3 ${APP_GUTTER}`;
+
+/**
+ * Il bottone di navigazione a sinistra della barra — "← Studio", "← Close",
+ * "← Home". Uno solo: prima quello di Edit era alto 44 e quello della console
+ * 48, e passando da una pagina all'altra il bordo del bottone saltava.
+ */
+export const NAV_BUTTON =
+  "flex h-12 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5";

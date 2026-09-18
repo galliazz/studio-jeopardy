@@ -12,6 +12,7 @@
  */
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { InsideZoom } from "@/lib/motion";
 
 import { BoardGrid } from "@/components/game/BoardGrid";
 import { QuestionOverlay } from "@/components/game/QuestionOverlay";
@@ -27,7 +28,8 @@ import {
 } from "@/components/overlay/overlay-state";
 
 /** Soft dark scrim so text survives whatever the streamer composites underneath. */
-export const SCRIM = "drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] drop-shadow-[0_0_28px_rgba(0,0,0,0.45)]";
+export const SCRIM =
+  "drop-shadow-[0_2px_10px_rgba(0,0,0,0.65)] drop-shadow-[0_0_28px_rgba(0,0,0,0.45)]";
 
 const FADE = { duration: 0.4, ease: [0.2, 0, 0, 1] as [number, number, number, number] };
 
@@ -103,7 +105,14 @@ export function OverlayBoard({
   return (
     <div
       className={SCRIM}
-      style={{ position: "relative", width, height, display: "flex", justifyContent: "center", alignItems: "center" }}
+      style={{
+        position: "relative",
+        width,
+        height,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
     >
       {/*
        * Board and clue share ONE box, so the clue is a true container transform
@@ -156,38 +165,46 @@ export function OverlayScores({ state }: { state: OverlayState }) {
      * taglia via la parte in eccesso. `zoom` ingrandisce anche la scatola.
      */
     <div style={{ zoom: 2.6, ...teamColorVars(theme) }}>
-    <motion.div
-      initial={{ opacity: 0, y: -12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={FADE}
-      className={`flex items-center gap-10 ${SCRIM}`}
-    >
-      <ScorePill
-        team="alpha"
-        side="left"
-        name={teamName(theme, "alpha")}
-        score={state.session.score_alpha}
-        players={state.players}
-        step={0}
-        quickValues={[]}
-      />
-      <ScorePill
-        team="bravo"
-        side="right"
-        name={teamName(theme, "bravo")}
-        score={state.session.score_bravo}
-        players={state.players}
-        step={0}
-        quickValues={[]}
-      />
-    </motion.div>
+      <InsideZoom value={true}>
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={FADE}
+          className={`flex items-center gap-10 ${SCRIM}`}
+        >
+          <ScorePill
+            team="alpha"
+            side="left"
+            name={teamName(theme, "alpha")}
+            score={state.session.score_alpha}
+            players={state.players}
+            step={0}
+            quickValues={[]}
+          />
+          <ScorePill
+            team="bravo"
+            side="right"
+            name={teamName(theme, "bravo")}
+            score={state.session.score_bravo}
+            players={state.players}
+            step={0}
+            quickValues={[]}
+          />
+        </motion.div>
+      </InsideZoom>
     </div>
   );
 }
 
 /* ------------------------------ queue region ------------------------------ */
 
-export function OverlayQueue({ state, align = "right" }: { state: OverlayState; align?: "left" | "right" }) {
+export function OverlayQueue({
+  state,
+  align = "right",
+}: {
+  state: OverlayState;
+  align?: "left" | "right";
+}) {
   const theme = useOverlayTheme(state);
   return (
     /*
@@ -204,14 +221,16 @@ export function OverlayQueue({ state, align = "right" }: { state: OverlayState; 
         ...teamColorVars(theme),
       }}
     >
-    <motion.div
-      initial={{ opacity: 0, x: 24 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={FADE}
-      className={`text-foreground ${SCRIM}`}
-    >
-      <QueueList session={state.session} players={state.players} queue={state.queue} />
-    </motion.div>
+      <motion.div
+        initial={{ opacity: 0, x: 24 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={FADE}
+        className={`text-foreground ${SCRIM}`}
+      >
+        <InsideZoom value={true}>
+          <QueueList session={state.session} players={state.players} queue={state.queue} />
+        </InsideZoom>
+      </motion.div>
     </div>
   );
 }

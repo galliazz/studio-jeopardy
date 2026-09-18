@@ -3,10 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Clock, Ban, Trophy, Hourglass, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { Zap, Clock, Ban, Trophy, Hourglass, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { lookupSession, joinGame, getPlayerState, buzz, submitFinalAnswer } from "@/lib/play.functions";
-import { SettingsDialog } from "@/components/SettingsDialog";
 import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
@@ -21,6 +20,7 @@ import {
   teamColorVars,
 } from "@/lib/types";
 import { SPRING_UI } from "@/lib/motion";
+import { AppBar, GuestSettingsButton } from "@/components/AppBar";
 
 export const Route = createFileRoute("/play/$code")({
   head: () => ({
@@ -215,7 +215,7 @@ function JoinForm({
   };
 
   return (
-    <Shell>
+    <Shell title={gameTitle}>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -466,16 +466,16 @@ function LivePlayer({
   const buzzerLive = status === "live" && (phase === "question_open" || phase === "answering") && !locked && !myEntry;
 
   return (
-    <Shell>
+    <Shell title={gameTitle}>
       {/* Le tinte scelte dall'host per le squadre valgono anche sul telefono:
           il buzzer è del colore della propria squadra. */}
       <div className="flex w-full flex-col items-center" style={teamColorVars(theme)}>
         {/* Scoreboard strip */}
         <div className="mb-5 flex w-full items-center justify-between gap-2">
           <TeamScore team="alpha" name={teamName(theme, "alpha")} score={session?.score_alpha ?? 0} mine={myTeam === "alpha"} />
+          {/* Il titolo del gioco è salito nella barra: qui resta chi sei. */}
           <div className="min-w-0 flex-1 text-center">
-            <p className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{gameTitle}</p>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="truncate text-sm font-semibold text-foreground">
               {identity.avatar} {identity.name}
             </p>
           </div>
@@ -745,24 +745,35 @@ function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: s
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  const [settingsOpen, setSettingsOpen] = useState(false);
+function Shell({ children, title }: { children: React.ReactNode; title?: string | undefined }) {
   return (
     // Centred when there is room, scrollable (never clipped) when there is not,
     // so a short landscape viewport or an open keyboard keeps the button reachable.
-    <div className="relative min-h-[100svh] overflow-y-auto text-foreground">
-      <button
-        type="button"
-        onClick={() => setSettingsOpen(true)}
-        aria-label="Settings"
-        className="fixed right-3 top-3 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-card text-foreground elev-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        <SettingsIcon className="h-5 w-5" />
-      </button>
-      <div className="flex min-h-[100svh] items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-20">
+    <div className="relative flex min-h-[100svh] flex-col text-foreground">
+      {/*
+       * Anche il telefono ha la barra. Prima c'era solo un ingranaggio
+       * galleggiante a 12 pixel dal bordo, con un'ombra sua, sopra il
+       * contenuto: l'unica pagina dell'app senza una testata. Ora le
+       * impostazioni stanno nel cerchio in alto a destra, dove sta l'avatar
+       * sulle altre pagine.
+       */}
+      <AppBar
+        sticky
+        left={
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-butter scallop">
+            <Zap className="h-5 w-5 text-ink-gold" />
+          </span>
+        }
+        center={
+          title ? (
+            <span className="truncate font-display text-lg font-semibold tracking-tight">{title}</span>
+          ) : null
+        }
+        right={<GuestSettingsButton />}
+      />
+      <div className="flex flex-1 items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6">
         <div className="w-full max-w-md lg:max-w-xl">{children}</div>
       </div>
-      {settingsOpen && <SettingsDialog variant="guest" onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 }

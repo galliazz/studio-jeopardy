@@ -295,6 +295,61 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       }
     }
 
+    /*
+     * TUTTI FUORI: la partita non poteva più andare avanti.
+     *
+     * Se nessuno resta in coda e ogni giocatore della sessione ha già sbagliato
+     * questa casella, i buzzer si riaprivano ma nessuno poteva premere: tutti
+     * bloccati, e comunque il vincolo `unique (session_id, tile_id, player_id)`
+     * rifiuta una seconda riga per chi ne ha già una. Il pannello dell'host,
+     * intanto, scriveva "Nobody has buzzed yet" — falso — e nascondeva il
+     * pulsante per svuotare la coda, che vive dentro la lista vuota.
+     *
+     * Qui la casella si azzera da sola e tutti possono riprenotarsi. Chi non ha
+     * mai premuto non conta come "fuori": se c'è anche un solo giocatore che può
+     * ancora rispondere, la casella resta com'è e aspetta lui.
+     */
+    if (!nextPlayerId) {
+      const { data: everyone } = await supabase
+        .from("players")
+        .select("id, locked_out")
+        .eq("session_id", data.sessionId);
+      const allOut =
+        (everyone ?? []).length > 0 &&
+        (everyone ?? []).every((p) => p.id === judgedPlayerId || p.locked_out);
+
+      if (allOut) {
+        /*
+         * Stesso ordine di `clearQueue`, e al contrario del resto di questa
+         * funzione: `sessions` per ULTIMA. Riarmare i buzzer prima di aver
+         * cancellato la coda e sbloccato i giocatori respingerebbe proprio chi
+         * si sta riammettendo. Il giudizio non è ottimistico lato host, quindi
+         * le ricariche intermedie vedono ancora la fase di prima e non c'è
+         * niente che possa rimbalzare.
+         */
+        await supabase
+          .from("buzzer_queue")
+          .delete()
+          .eq("session_id", data.sessionId)
+          .eq("tile_id", openTileId);
+        await supabase
+          .from("players")
+          .update({ locked_out: false })
+          .eq("session_id", data.sessionId);
+        const { error: rErr } = await supabase
+          .from("sessions")
+          .update({
+            ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
+            phase: "question_open" as const,
+            active_player_id: null,
+            timer_ends_at: null,
+          })
+          .eq("id", data.sessionId);
+        if (rErr) throw new Error(rErr.message);
+        return { outcome: "reset" as const, delta };
+      }
+    }
+
     const { error: sErr } = await supabase
       .from("sessions")
       .update({

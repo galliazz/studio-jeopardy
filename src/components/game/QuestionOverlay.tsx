@@ -17,7 +17,7 @@ import { useCountdown } from "@/hooks/use-countdown";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { useSignedUrl } from "@/lib/media";
-import { boardTextCss } from "@/lib/types";
+import { boardTextCss, radiusCq } from "@/lib/types";
 import type { Category, Player, Session, ThemeSettings, Tile } from "@/lib/types";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
 
@@ -82,7 +82,7 @@ export function QuestionOverlay({
    */
   const answerStyle = {
     backgroundColor: theme.bg,
-    borderRadius: theme.radius,
+    borderRadius: radiusCq(theme.radius),
     color: theme.accent,
     ...boardTextCss(theme, "questions", 3, 5.2),
   } as MotionStyle;
@@ -103,7 +103,7 @@ export function QuestionOverlay({
         exit={{ opacity: 0, scale: 0.97 }}
         transition={SPRING_UI}
         className="pointer-events-auto flex h-full w-full flex-col overflow-hidden p-[clamp(6px,2.2cqmin,20px)] elev-2"
-        style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
+        style={{ backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) }}
       >
         {/* Daily Double: si annuncia sempre, nel momento in cui la casella si apre. */}
         {isDailyDouble && (
@@ -121,7 +121,14 @@ export function QuestionOverlay({
         <div className="flex shrink-0 items-center justify-end gap-2" style={{ minHeight: showTimer ? undefined : 0 }}>
           {showTimer && (
             <motion.span
-              animate={flashRed ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+              /*
+               * Lampeggia di luce, non di misura. Ingrandendosi del 35% la
+               * pillola usciva dall'angolo curvo della scheda: sta in cima a
+               * destra, proprio dove il bordo gira, e non c'era posto per
+               * crescere. L'opacità dice lo stesso "tempo scaduto" senza
+               * spostare niente.
+               */
+              animate={flashRed ? { opacity: [1, 0.4, 1] } : { opacity: 1 }}
               transition={flashRed ? { repeat: Infinity, duration: 0.5 } : { duration: 0.15 }}
               style={{ fontSize: "clamp(0.85rem, 4.5cqmin, 1.875rem)" }}
               className={`rounded-full px-[clamp(8px,2.5cqmin,20px)] py-[clamp(3px,1.2cqmin,8px)] font-display font-black ${
@@ -155,7 +162,7 @@ export function QuestionOverlay({
         {/* Compact header: category + value */}
         <div
           className="mt-[clamp(4px,1cqmin,8px)] flex shrink-0 items-center justify-between gap-[clamp(4px,1.5cqmin,12px)] px-[clamp(8px,2.2cqmin,16px)] py-[clamp(4px,1.2cqmin,8px)]"
-          style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.6 }}
+          style={{ backgroundColor: theme.card, borderRadius: radiusCq(theme.radius, 0.6) }}
         >
           <p
             className="truncate font-bold uppercase tracking-[0.3em]"
@@ -173,7 +180,7 @@ export function QuestionOverlay({
 
         <div
           className="mt-[clamp(4px,1cqmin,10px)] flex min-h-0 flex-1 flex-col items-center justify-center gap-[clamp(6px,1.8cqmin,16px)] overflow-y-auto p-[clamp(8px,2.5cqmin,24px)] text-center"
-          style={{ backgroundColor: theme.card, borderRadius: theme.radius }}
+          style={{ backgroundColor: theme.card, borderRadius: radiusCq(theme.radius) }}
         >
           <div
             className="max-w-4xl font-display font-black leading-tight [&_b]:opacity-80 [&_strong]:opacity-80"

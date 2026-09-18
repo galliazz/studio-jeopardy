@@ -18,6 +18,7 @@
  * tutte le animazioni insieme e lascia in piedi solo l'opacità.
  */
 
+import { createContext, useContext } from "react";
 import type { Transition } from "framer-motion";
 
 /** Comparse, uscite, pannelli, modali. ζ ≈ 0.99 — nessun rimbalzo. */
@@ -31,3 +32,22 @@ export const SPRING_PLAYFUL: Transition = { type: "spring", stiffness: 300, damp
 
 /** Dissolvenza secca, per quando una molla non c'entra niente. */
 export const FADE: Transition = { type: "tween", duration: 0.2, ease: "easeOut" };
+
+/**
+ * Vero dentro un elemento con `zoom` CSS: lì le animazioni di layout vanno
+ * spente.
+ *
+ * framer-motion misura l'elemento prima e dopo con `getBoundingClientRect`,
+ * che restituisce pixel VISIVI, già ingranditi; poi applica la correzione con
+ * un `transform` dentro l'elemento zoomato, dove ogni pixel vale di nuovo 2.6
+ * volte. Il movimento esce quindi 2.6 volte più ampio sulla pillola dei
+ * punteggi, 1.6 sulla coda: quando un punteggio cambia o qualcuno si
+ * prenota, l'elemento scatta lontano e poi rientra. Negli overlay gli
+ * elementi ora si posizionano e basta; sulla console, dove non c'è zoom,
+ * continuano ad animarsi.
+ */
+const InsideZoomContext = createContext(false);
+export const InsideZoom = InsideZoomContext.Provider;
+export function useLayoutAnimation(): boolean {
+  return !useContext(InsideZoomContext);
+}

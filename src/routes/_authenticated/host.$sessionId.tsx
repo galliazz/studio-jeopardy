@@ -7,6 +7,7 @@ import confetti from "canvas-confetti";
 import {
   ArrowLeft,
   RotateCcw,
+  RefreshCw,
   Sparkles,
   BarChart3,
   Crown,
@@ -24,7 +25,7 @@ import { toast } from "sonner";
 import { Soundboard } from "@/components/Soundboard";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { AccountMenu } from "@/components/AccountMenu";
-import { APP_BAR, APP_BAR_INNER } from "@/components/app-bar";
+import { APP_BAR, APP_BAR_INNER, APP_GUTTER, NAV_BUTTON } from "@/components/app-bar";
 import { QRCodeSVG } from "qrcode.react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import {
@@ -323,7 +324,12 @@ function HostPage() {
     async (correct: boolean, judgedPlayerId: string) => {
       judging.current = true;
       try {
-        await judgeAnswer({ data: { sessionId, correct, expectedPlayerId: judgedPlayerId } });
+        const res = await judgeAnswer({
+          data: { sessionId, correct, expectedPlayerId: judgedPlayerId },
+        });
+        // Il server ha riaperto la casella a tutti: va detto, perché la coda
+        // sparisce di colpo e altrimenti sembrerebbe un errore.
+        if (res.outcome === "reset") toast.success("Everyone missed — buzzers reopened for all");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Nothing was judged");
       } finally {
@@ -468,7 +474,7 @@ function HostPage() {
                   return;
                 leaveSession();
               }}
-              className="flex h-12 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5"
+              className={NAV_BUTTON}
               aria-label="Close session and back to editor"
             >
               <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
@@ -528,6 +534,14 @@ function HostPage() {
                 },
               ]}
               dangerItems={[
+                {
+                  icon: RefreshCw,
+                  label: "Reset buzzers",
+                  onSelect: () => {
+                    actions.clearQueue();
+                    toast.success("Buzzers reset — everyone can buzz again");
+                  },
+                },
                 { icon: RotateCcw, label: "Reset board", onSelect: () => setConfirm("reset") },
                 { icon: Crown, label: "End game", onSelect: () => setConfirm("end") },
               ]}
@@ -549,7 +563,9 @@ function HostPage() {
        * la board si accorcia da sola di quel tanto, invece di appoggiarsi al
        * bordo dello schermo.
        */}
-      <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 [container-type:size] sm:px-6 min-[840px]:overflow-y-hidden min-[840px]:py-6">
+      <div
+        className={`min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto py-4 [container-type:size] min-[840px]:overflow-y-hidden min-[840px]:py-6 ${APP_GUTTER}`}
+      >
         <div
           /*
            * `--board-side` è il lato della board, e lo conoscono anche le
@@ -910,10 +926,18 @@ function PlayerRoster({
 
 /* ------------------------------ OBS overlays ------------------------------ */
 
+/*
+ * Tre sorgenti singole — board, punteggi, buzzer — più quella combinata.
+ * Una scena OBS si compone meglio con pezzi separati, che si spostano e si
+ * ridimensionano ognuno per conto suo. "Buzzer queue + scores" resta per chi
+ * l'ha già montata in una scena: toglierla la romperebbe.
+ */
 const OBS_VIEWS: { path: string; label: string; hint: string }[] = [
-  { path: "board", label: "Board only", hint: "5×5 grid with live used tiles" },
-  { path: "queue", label: "Buzzer queue + scores", hint: "Queue order and team scores" },
-  { path: "combined", label: "Combined overlay", hint: "Board, scores and queue together" },
+  { path: "board", label: "Board only", hint: "5×5 grid, clue and timer" },
+  { path: "scores", label: "Scores only", hint: "The two team scores" },
+  { path: "buzzer", label: "Buzzer only", hint: "Who buzzed, in order" },
+  { path: "combined", label: "Combined overlay", hint: "Board, scores and buzzer together" },
+  { path: "queue", label: "Buzzer + scores", hint: "Older combination, kept for existing scenes" },
 ];
 
 /**
@@ -1147,6 +1171,7 @@ function BuzzerPanel({
   onClearQueue: () => void;
 }) {
   const armed = session.phase === "question_open" || session.phase === "answering";
+  const lockedOut = players.filter((p) => p.locked_out).length;
   const waiting = queue.filter(
     (q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
   );
@@ -1168,9 +1193,26 @@ function BuzzerPanel({
         {armed ? "Buzzers armed" : "Buzzers closed"}
       </p>
       {waiting.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-muted-foreground">
-          {armed ? "Nobody has buzzed yet" : "Open a tile to arm the buzzers"}
-        </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {!armed
+              ? "Open a tile to arm the buzzers"
+              : lockedOut > 0
+                ? /* Prima qui c'era "Nobody has buzzed yet" anche quando avevano
+                     premuto tutti e sbagliato tutti: falso, e senza un pulsante
+                     per uscirne. */
+                  `${lockedOut} of ${players.length} ${lockedOut === 1 ? "player is" : "players are"} locked out`
+                : "Nobody has buzzed yet"}
+          </p>
+          {armed && lockedOut > 0 && (
+            <button
+              onClick={onClearQueue}
+              className="flex min-h-12 items-center gap-2 rounded-full border border-foreground/20 px-5 text-sm font-bold transition-colors hover:bg-foreground/5"
+            >
+              <RefreshCw className="h-4 w-4" /> Reopen for everyone
+            </button>
+          )}
+        </div>
       ) : (
         <QueueList session={session} players={players} queue={queue} onClear={onClearQueue} />
       )}

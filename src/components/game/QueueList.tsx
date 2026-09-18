@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import { formatDelta, type Player, type QueueEntry, type Session } from "@/lib/types";
-import { SPRING_UI } from "@/lib/motion";
+import { SPRING_UI, useLayoutAnimation } from "@/lib/motion";
 
 export function QueueList({
   session,
@@ -19,6 +19,7 @@ export function QueueList({
   queue: QueueEntry[];
   onClear?: () => void;
 }) {
+  const animateLayout = useLayoutAnimation();
   const tileQueue = useMemo(() => {
     if (!session.current_tile_id) return [];
     return queue
@@ -56,7 +57,7 @@ export function QueueList({
         return (
           <motion.li
             key={entry.id}
-            layout
+            layout={animateLayout}
             initial={{ opacity: 0, x: 24 }}
             animate={{ opacity: 1, x: 0 }}
             transition={SPRING_UI}

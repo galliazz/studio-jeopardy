@@ -42,13 +42,15 @@ import {
   type TextScope,
   type TextStyle,
   teamColorVars,
+  radiusCq,
 } from "@/lib/types";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { AccountMenu } from "@/components/AccountMenu";
-import { APP_BAR, APP_BAR_INNER } from "@/components/app-bar";
+import { AppBar } from "@/components/AppBar";
+import { APP_GUTTER, NAV_BUTTON } from "@/components/app-bar";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
@@ -173,26 +175,16 @@ function EditorPage() {
        * in due posti, e il secondo è il menu del profilo, dove stanno anche il
        * codice invito e le impostazioni.
        */}
-      <header className={APP_BAR}>
-        {/*
-         * Tre colonne, non una fila: le due laterali hanno lo stesso peso, così
-         * il titolo cade sulla mezzeria della finestra — che è anche quella
-         * della board, visto che le colonne sotto sono larghe uguali. Con
-         * `flex` e `ml-auto` il titolo stava a sinistra e in mezzo restava
-         * mezzo schermo di niente.
-         */}
-        <div className={`grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] ${APP_BAR_INNER}`}>
-          <div className="flex min-w-0 items-center">
-            <Link
-              to="/studio"
-              className="flex h-11 shrink-0 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5"
-              aria-label="Back to studio"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="hidden sm:inline">Studio</span>
-            </Link>
-          </div>
-
+      {/* La barra condivisa: vedi AppBar. Il titolo cade sulla mezzeria della
+          finestra, che è anche quella della board. */}
+      <AppBar
+        left={
+          <Link to="/studio" className={NAV_BUTTON} aria-label="Back to studio">
+            <ArrowLeft className="h-5 w-5" />
+            <span className="hidden sm:inline">Studio</span>
+          </Link>
+        }
+        center={
           <InlineTitle
             value={board.game.title}
             onSave={async (title) => {
@@ -200,12 +192,13 @@ function EditorPage() {
               void refresh();
             }}
           />
-
-          <div className="flex shrink-0 items-center justify-end gap-2">
+        }
+        right={
+          <>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
-              className="flex h-11 items-center gap-2 rounded-full bg-coral px-5 font-display text-sm font-black text-foreground elev-2"
+              className="flex h-12 items-center gap-2 rounded-full bg-coral px-5 font-display text-sm font-black text-foreground elev-2"
             >
               <Play className="h-4 w-4" /> <span className="hidden sm:inline">Play Game</span>
             </motion.button>
@@ -215,9 +208,9 @@ function EditorPage() {
               onOpenSettings={() => setSettingsOpen(true)}
               items={[{ icon: QrCode, label: "Join code & QR", onSelect: () => setJoinOpen(true) }]}
             />
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/*
        * CORPO — strumenti · tela · ispettore.
@@ -229,7 +222,9 @@ function EditorPage() {
        * Le due colonne hanno lo STESSO tetto di larghezza, quindi la board
        * cade sulla mezzeria esatta della composizione.
        */}
-      <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-4 py-4 [container-type:size] sm:px-6 min-[1100px]:overflow-y-hidden min-[1100px]:py-6">
+      <div
+        className={`min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto py-4 [container-type:size] min-[1100px]:overflow-y-hidden min-[1100px]:py-6 ${APP_GUTTER}`}
+      >
         <div
           style={
             {
@@ -256,10 +251,16 @@ function EditorPage() {
             /* Il lato lo decide `--board-side`, lo stesso che conoscono le
                colonne. Sotto i 1100px non ci sono colonne: la board prende la
                larghezza disponibile e si dà l'altezza dalla proporzione. */
-            className="relative order-1 aspect-[5/5.4] w-full min-w-0 self-center overflow-hidden [container-type:size] min-[1100px]:order-2 min-[1100px]:aspect-auto min-[1100px]:h-[var(--board-side)] min-[1100px]:w-[calc(var(--board-side)*0.9259)]"
-            style={{ backgroundColor: theme.bg, borderRadius: theme.radius + 8 }}
+            className="relative order-1 aspect-[5/5.4] w-full min-w-0 self-center [container-type:size] min-[1100px]:order-2 min-[1100px]:aspect-auto min-[1100px]:h-[var(--board-side)] min-[1100px]:w-[calc(var(--board-side)*0.9259)]"
           >
-            <div className="h-full w-full p-[2.2cqmin]">
+            {/* Fondo e raggio un livello dentro, come in BoardGrid: il raggio è
+                in `cqmin` e sulla scatola che dichiara il contenitore non si
+                risolverebbe contro la board. Così gli angoli qui sono gli
+                stessi che si vedranno in partita e in trasmissione. */}
+            <div
+              className="h-full w-full overflow-hidden p-[2.2cqmin] elev-3"
+              style={{ backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) }}
+            >
               <div className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]">
                 {board.categories.map((cat) => (
                   <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
@@ -506,6 +507,7 @@ function JoinDialog({ joinCode, onClose }: { joinCode: string; onClose: () => vo
             void navigator.clipboard.writeText(joinCode);
             toast.success("Join code copied");
           }}
+          aria-label={`Copy join code ${joinCode}`}
           className="mx-auto flex items-center gap-2 font-display text-2xl font-black tracking-[0.15em] text-ink-accent"
         >
           {joinCode} <Copy className="h-4 w-4 opacity-60" />
@@ -551,7 +553,7 @@ function CategoryHeader({
   return (
     <div
       className="flex min-h-0 items-center justify-center overflow-hidden p-[0.8cqmin] text-center transition-[border-radius] duration-300"
-      style={{ backgroundColor: theme.card, borderRadius: theme.radius * 0.75 }}
+      style={{ backgroundColor: theme.card, borderRadius: radiusCq(theme.radius, 0.6) }}
     >
       {editing ? (
         <input
@@ -618,7 +620,7 @@ function TileCell({
       className="relative flex h-full w-full flex-col items-center justify-center gap-[0.6cqmin] overflow-hidden p-[1cqmin] text-center transition-[transform,filter] hover:-translate-y-0.5 hover:brightness-[1.04] hover:[outline:2px_solid_color-mix(in_srgb,white_70%,transparent)] hover:[outline-offset:2px]"
       style={{
         backgroundColor: theme.card,
-        borderRadius: theme.radius,
+        borderRadius: radiusCq(theme.radius),
         border: `0.4cqmin solid ${dailyDouble ? "var(--ink-gold)" : "transparent"}`,
         ...(selected
           ? {

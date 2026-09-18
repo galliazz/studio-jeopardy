@@ -35,6 +35,7 @@ import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { StudioTopBar } from "@/components/StudioTopBar";
+import { APP_GUTTER } from "@/components/app-bar";
 
 import { getSettings } from "@/lib/settings";
 import {
@@ -278,7 +279,9 @@ function StudioPage() {
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
-      <div className="relative z-10 mx-auto max-w-[1440px] px-4 pb-24 pt-8 sm:px-6">
+      {/* Stesso margine della barra: il titolo sta sotto il logo, la lente di
+          ricerca sotto l'avatar. */}
+      <div className={`relative z-10 w-full pb-24 pt-8 ${APP_GUTTER}`}>
         {/* Page header — plain text, no card */}
         <header className="mb-8">
           <h2 className="font-display text-[28px] font-black leading-9 tracking-tight text-foreground sm:text-[32px]">
@@ -398,7 +401,7 @@ function StudioPage() {
 
         {/* Game cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2000px]:grid-cols-6">
 
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
@@ -419,7 +422,7 @@ function StudioPage() {
             No boards yet — create your first one!
           </div>
         ) : (
-          <div className="grid grid-cols-1 items-stretch gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4">
+          <div className="grid grid-cols-1 items-stretch gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2000px]:grid-cols-6">
 
             {games.map((game, i) => (
               <GameCard

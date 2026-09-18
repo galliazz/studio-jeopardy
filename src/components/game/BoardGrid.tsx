@@ -22,7 +22,7 @@
  * capo e "1000" usciva dalla casella.
  */
 import { motion, type MotionStyle } from "framer-motion";
-import { boardTextCss, type ThemeSettings } from "@/lib/types";
+import { boardTextCss, radiusCq, type ThemeSettings } from "@/lib/types";
 
 export interface BoardTile {
   id: string;
@@ -67,22 +67,29 @@ export function BoardGrid({
     <div
       className={
         fill
-          ? "h-full w-full overflow-hidden elev-2 [container-type:size]"
+          ? "h-full w-full [container-type:size]"
           : "flex h-full max-h-full w-auto max-w-full flex-col elev-2"
       }
-      style={{
-        backgroundColor: theme.bg,
-        borderRadius: theme.radius + 8,
-        ...(fill ? null : { aspectRatio: "5 / 5.4" }),
-      }}
+      style={
+        fill
+          ? undefined
+          : { backgroundColor: theme.bg, borderRadius: theme.radius + 8, aspectRatio: "5 / 5.4" }
+      }
     >
       {/*
        * The padding lives one level in: container units resolve against the
        * nearest ANCESTOR container, so the box that declares `container-type`
        * cannot size itself with them.
+       *
+       * Per la stessa ragione qui stanno anche fondo, ombra e raggio: il raggio
+       * adesso è in `cqmin`, e sulla scatola che dichiara il contenitore non si
+       * risolverebbe contro la board.
        */}
       <div
-        className={`flex h-full w-full flex-col ${fill ? "p-[2.2cqmin]" : "p-2.5 sm:p-5"}`}
+        className={`flex h-full w-full flex-col ${fill ? "overflow-hidden p-[2.2cqmin] elev-2" : "p-2.5 sm:p-5"}`}
+        style={
+          fill ? { backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) } : undefined
+        }
       >
         <div
           className={`grid flex-1 grid-cols-5 grid-rows-[auto_repeat(5,1fr)] ${
@@ -101,7 +108,7 @@ export function BoardGrid({
                 /* Headers are the board colour shifted toward the accent so
                    they separate from the tiles by ~6% luminance. */
                 backgroundColor: `color-mix(in srgb, ${theme.card} 88%, ${theme.accent} 12%)`,
-                borderRadius: theme.radius * 0.6,
+                borderRadius: fill ? radiusCq(theme.radius, 0.6) : theme.radius * 0.6,
                 color: theme.accent,
                 ...headerFont,
               }}
@@ -120,7 +127,7 @@ export function BoardGrid({
               // l'annotazione dice questo, non nasconde niente.
               const tileStyle = {
                 backgroundColor: used ? "transparent" : theme.card,
-                borderRadius: theme.radius,
+                borderRadius: fill ? radiusCq(theme.radius) : theme.radius,
                 color: used ? "transparent" : theme.accent,
                 opacity: used ? 0.35 : 1,
                 ...tileFont,

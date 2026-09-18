@@ -16,8 +16,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "../integrations/supabase/client";
 import { initThemeMode } from "../lib/theme-mode";
-import { ThemeToggle } from "../components/ThemeToggle";
-import { SettingsButton } from "../components/SettingsDialog";
 import { useSettings } from "../lib/settings";
 
 function NotFoundComponent() {
@@ -172,7 +170,8 @@ function RootComponent() {
       */}
       <MotionConfig reducedMotion={reduceMotion ? "always" : "never"}>
         <AuthListener />
-        {!overlay && <TopContextBar />}
+        {/* Nessuna pillola globale in cima: ogni pagina ha la barra condivisa
+            (AppBar), con il profilo sempre nello stesso punto. */}
         <Outlet />
         {!overlay && <Toaster position="top-center" richColors closeButton />}
       </MotionConfig>
@@ -180,50 +179,3 @@ function RootComponent() {
   );
 }
 
-function TopContextBar() {
-  const location = useLocation();
-  const path = location.pathname;
-  // OBS browser-source overlays render with no chrome at all.
-  if (path.startsWith("/overlay/")) return null;
-  // Studio, Host console ed Edit hanno una barra loro: questa pillola ci
-  // finiva sopra, in alto a destra, e diventava un secondo posto dove cercare
-  // le impostazioni. Un solo posto per pagina — il bottone vive nella barra.
-  if (
-    path === "/studio" ||
-    path.startsWith("/host/") ||
-    path.startsWith("/play/") ||
-    path.startsWith("/edit/")
-  )
-    return null;
-
-
-  const label = screenLabel(path);
-  // La console ha il proprio interruttore giorno/notte nella sua barra.
-  const showThemeToggleHere = !path.startsWith("/host/");
-
-  return (
-    <div className="pointer-events-none fixed right-3 top-3 z-[80] flex max-w-[calc(100vw-1.5rem)] justify-end sm:right-5 sm:top-5">
-      <div className="pointer-events-auto flex min-w-0 items-center gap-3 rounded-full bg-card/90 p-1.5 pl-4 elev-2 backdrop-blur-md">
-        <div className="min-w-0 text-right">
-          <p className="truncate text-[10px] font-black uppercase tracking-wider text-muted-foreground sm:text-xs">
-            {label.kicker}
-          </p>
-          <p className="hidden truncate text-xs font-bold text-foreground sm:block">{label.title}</p>
-        </div>
-        {/* Divider keeps the mode switch visually separate from the page label */}
-        <span aria-hidden className="h-7 w-px shrink-0 rounded-full bg-foreground/10" />
-        {showThemeToggleHere && <ThemeToggle />}
-        <SettingsButton />
-      </div>
-    </div>
-  );
-}
-
-function screenLabel(path: string): { kicker: string; title: string } {
-  if (path.startsWith("/edit/")) return { kicker: "Edit Board", title: "Canvas editor" };
-  if (path.startsWith("/host/")) return { kicker: "Play", title: "Host console · scoreboard" };
-  if (path.startsWith("/play/")) return { kicker: "Player", title: "Buzzer · scoreboard" };
-  if (path === "/studio") return { kicker: "Studio", title: "Boards and live games" };
-  if (path === "/auth") return { kicker: "Account", title: "Host sign in" };
-  return { kicker: "Home", title: "Join or host" };
-}

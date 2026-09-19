@@ -19,8 +19,12 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Roboto Flex", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  /* `--font-locale` è il Noto dell'alfabeto scelto (cinese, giapponese, hindi,
+     arabo), impostato da src/i18n/runtime.ts. Sta dopo i nostri caratteri:
+     copre solo i glifi che loro non hanno. Il valore di riserva è un
+     doppione innocuo, perché un elenco di font con un buco non vale. */
+  --font-sans: "Plus Jakarta Sans", var(--font-locale, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Roboto Flex", "Plus Jakarta Sans", var(--font-locale, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

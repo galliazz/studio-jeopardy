@@ -1,7 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -40,7 +48,6 @@ import {
   openTile,
   closeTile,
   clearQueue,
-
   resetBoard,
   judgeAnswer,
   revealAnswer,
@@ -95,9 +102,15 @@ export const Route = createFileRoute("/_authenticated/host/$sessionId")({
   head: () => ({
     meta: [
       { title: "Host Console — JEOPARDESTINY" },
-      { name: "description", content: "Live host console: board, buzzer queue, timers and scoring." },
+      {
+        name: "description",
+        content: "Live host console: board, buzzer queue, timers and scoring.",
+      },
       { property: "og:title", content: "Host Console — JEOPARDESTINY" },
-      { property: "og:description", content: "Live host console: board, buzzer queue, timers and scoring." },
+      {
+        property: "og:description",
+        content: "Live host console: board, buzzer queue, timers and scoring.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -134,7 +147,6 @@ export interface HostActions {
   closeTile: () => void;
   clearQueue: () => void;
 }
-
 
 /* ------------------------------ Confirmation ------------------------------ */
 
@@ -228,7 +240,9 @@ function HostPage() {
     staleTime: 60_000,
     retry: false,
   });
-  const profile = (account as { profile?: { username?: string; avatar_url?: string | null } } | undefined)?.profile;
+  const profile = (
+    account as { profile?: { username?: string; avatar_url?: string | null } } | undefined
+  )?.profile;
 
   const state = data as unknown as HostState | undefined;
   const [ddOpen, setDdOpen] = useState(false);
@@ -240,7 +254,6 @@ function HostPage() {
   const [menuPanel, setMenuPanel] = useState<null | "join" | "overlays">(null);
   /** Below 1200px the right column becomes a togglable slide-over panel. */
   const [panelOpen, setPanelOpen] = useState(false);
-
 
   const setHostState = useCallback(
     (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
@@ -428,15 +441,17 @@ function HostPage() {
   /** players[].connected — the only signal for "live" status and join-card collapse. */
   const connectedCount = players.filter((p) => !p.locked_out).length;
   const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
-  const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
+  const currentCategory = currentTile
+    ? categories.find((c) => c.id === currentTile.category_id)
+    : null;
   /** The board's distinct point values, used as quick picks in the custom-score popover. */
   const pointValues = Array.from(new Set(tiles.map((t) => t.points))).sort((a, b) => a - b);
 
-
-
   const bumpScore = (team: Team, delta: number) => {
     setHostSession(
-      team === "alpha" ? { score_alpha: session.score_alpha + delta } : { score_bravo: session.score_bravo + delta },
+      team === "alpha"
+        ? { score_alpha: session.score_alpha + delta }
+        : { score_bravo: session.score_bravo + delta },
     );
     settle(adjustScore({ data: { sessionId, team, delta } }));
   };
@@ -469,7 +484,9 @@ function HostPage() {
               onClick={() => {
                 if (
                   session.status === "live" &&
-                  !window.confirm("Leave the live game? Players stay connected and you can rejoin from Studio.")
+                  !window.confirm(
+                    "Leave the live game? Players stay connected and you can rejoin from Studio.",
+                  )
                 )
                   return;
                 leaveSession();
@@ -479,7 +496,10 @@ function HostPage() {
             >
               <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
             </button>
-            <h1 className="min-w-0 truncate font-display text-lg font-semibold leading-tight" title={game.title}>
+            <h1
+              className="min-w-0 truncate font-display text-lg font-semibold leading-tight"
+              title={game.title}
+            >
               {game.title}
             </h1>
           </div>
@@ -522,7 +542,11 @@ function HostPage() {
               onOpenSettings={() => setSettingsOpen(true)}
               items={[
                 { icon: QrCode, label: "Join code & QR", onSelect: () => setMenuPanel("join") },
-                { icon: Radio, label: "Broadcast overlays", onSelect: () => setMenuPanel("overlays") },
+                {
+                  icon: Radio,
+                  label: "Broadcast overlays",
+                  onSelect: () => setMenuPanel("overlays"),
+                },
                 { icon: Sparkles, label: "Daily Double tiles", onSelect: () => setDdOpen(true) },
                 { icon: BarChart3, label: "Analytics", onSelect: () => setAnalyticsOpen(true) },
                 { icon: Flag, label: "Final Jeopardy", onSelect: () => setFinalOpen(true) },
@@ -550,8 +574,6 @@ function HostPage() {
         </div>
       </header>
 
-
-
       {/*
        * Body. From 840px up it is exactly one viewport tall and only the side
        * columns scroll; below that the whole body scrolls, so nothing is ever
@@ -573,8 +595,13 @@ function HostPage() {
            * `--board-offset` è l'aria sopra di lei, che a schermo stretto non
            * esiste perché non ci sono colonne a fianco.
            */
-          style={{ "--board-side": `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))` } as CSSProperties}
-          className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[840px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[840px]:[--board-reserve:23rem] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1200px]:[--board-reserve:46rem]">
+          style={
+            {
+              "--board-side": `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))`,
+            } as CSSProperties
+          }
+          className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[840px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[840px]:[--board-reserve:23rem] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1200px]:[--board-reserve:46rem]"
+        >
           {/*
            * SINISTRA: stato, giocatori, soundboard e — in fondo — i comandi
            * della domanda. Stavano a destra, lontani dalla board e a fianco
@@ -584,7 +611,9 @@ function HostPage() {
             <SessionStatus
               remaining={tiles.length - played}
               total={tiles.length}
-              dailyDoublesLeft={session.daily_double_tile_ids.filter((id) => !usedSet.has(id)).length}
+              dailyDoublesLeft={
+                session.daily_double_tile_ids.filter((id) => !usedSet.has(id)).length
+              }
             />
             <PlayerRoster
               players={players}
@@ -592,7 +621,9 @@ function HostPage() {
               onSwitchTeam={(playerId) => {
                 setHostState({
                   players: players.map((p) =>
-                    p.id === playerId ? { ...p, team: (p.team === "alpha" ? "bravo" : "alpha") as Team } : p,
+                    p.id === playerId
+                      ? { ...p, team: (p.team === "alpha" ? "bravo" : "alpha") as Team }
+                      : p,
                   ),
                 });
                 settle(switchPlayerTeam({ data: { sessionId, playerId } }));
@@ -680,19 +711,31 @@ function HostPage() {
                 : "hidden"
             }`}
           >
-            <BuzzerPanel session={session} players={players} queue={queue} onClearQueue={actions.clearQueue} />
+            <BuzzerPanel
+              session={session}
+              players={players}
+              queue={queue}
+              onClearQueue={actions.clearQueue}
+            />
             {session.status === "final" && (
-              <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
+              <FinalPanel
+                session={session}
+                finalAnswers={finalAnswers}
+                players={players}
+                theme={theme}
+              />
             )}
           </div>
-
         </div>
       </div>
 
-
       <AnimatePresence>
         {menuPanel === "join" && (
-          <Dialog onClose={() => setMenuPanel(null)} title="Join" subtitle="Inquadra il codice o manda il link">
+          <Dialog
+            onClose={() => setMenuPanel(null)}
+            title="Join"
+            subtitle="Inquadra il codice o manda il link"
+          >
             <MenuJoinBlock joinCode={game.join_code} />
           </Dialog>
         )}
@@ -702,15 +745,22 @@ function HostPage() {
             title="Broadcast overlays"
             subtitle="Sorgenti browser per OBS, 1920×1080"
           >
-            <MenuObsLinks overlayToken={game.overlay_token} onRegenerate={() => setConfirm("rotate")} />
+            <MenuObsLinks
+              overlayToken={game.overlay_token}
+              onRegenerate={() => setConfirm("rotate")}
+            />
           </Dialog>
         )}
       </AnimatePresence>
-      <AnimatePresence>{ddOpen && <DDTilesDialog state={state} onClose={() => setDdOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {ddOpen && <DDTilesDialog state={state} onClose={() => setDdOpen(false)} />}
+      </AnimatePresence>
       <AnimatePresence>
         {analyticsOpen && <AnalyticsDialog state={state} onClose={() => setAnalyticsOpen(false)} />}
       </AnimatePresence>
-      <AnimatePresence>{finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}
+      </AnimatePresence>
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
       <AnimatePresence>
         {confirm === "reset" && (
@@ -775,7 +825,6 @@ function HostPage() {
     </div>
   );
 }
-
 
 /* ----------------------------- Session status ----------------------------- */
 
@@ -865,14 +914,15 @@ function PlayerRoster({
           aria-hidden
         />
         <span className={live ? "text-success-ink" : "text-muted-foreground"}>
-          {live ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}` : "In lobby"}
+          {live
+            ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}`
+            : "In lobby"}
         </span>
       </h3>
       {players.length === 0 && (
         <p className="py-3 text-center text-sm text-muted-foreground">Nobody has joined yet.</p>
       )}
       {players.length > 0 && (
-
         <ul className="space-y-1">
           {players.map((p) => {
             const connected = !p.locked_out;
@@ -923,7 +973,6 @@ function PlayerRoster({
   );
 }
 
-
 /* ------------------------------ OBS overlays ------------------------------ */
 
 /*
@@ -944,7 +993,13 @@ const OBS_VIEWS: { path: string; label: string; hint: string }[] = [
  * The overlay links. Ogni riga copia il proprio link; l'icona in coda apre
  * l'anteprima in una scheda nuova, per controllare che la sorgente si veda.
  */
-function MenuObsLinks({ overlayToken, onRegenerate }: { overlayToken: string; onRegenerate: () => void }) {
+function MenuObsLinks({
+  overlayToken,
+  onRegenerate,
+}: {
+  overlayToken: string;
+  onRegenerate: () => void;
+}) {
   const origin = useOrigin();
 
   return (
@@ -1028,7 +1083,10 @@ function LiveControlPanel({
   const keys = resolveShortcuts(useSettings().shortcuts);
   const activePlayer = players.find((p) => p.id === session.active_player_id) ?? null;
   const tileQueue = queue
-    .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
+    .filter(
+      (q) =>
+        q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+    )
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const hasNext = tileQueue.some((q) => q.status === "queued");
   const isDD = tile ? session.daily_double_tile_ids.includes(tile.id) : false;
@@ -1045,18 +1103,25 @@ function LiveControlPanel({
         <h3 className="text-center text-sm font-semibold text-muted-foreground">Live control</h3>
         {tile && (
           <span className="truncate rounded-full border border-foreground/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {category?.title ?? "Clue"} · {value}{isDD ? " · DD" : ""}
+            {category?.title ?? "Clue"} · {value}
+            {isDD ? " · DD" : ""}
           </span>
         )}
       </div>
 
       {!tile || phase === "idle" ? (
-        <p className="py-2 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
+        <p className="py-2 text-center text-sm text-muted-foreground">
+          Open a tile to arm the buzzers
+        </p>
       ) : phase === "reveal" ? (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-foreground/15 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Answer</p>
-            <p className="mt-1 font-display text-xl font-black text-ink-gold">{tile.answer || "—"}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Answer
+            </p>
+            <p className="mt-1 font-display text-xl font-black text-ink-gold">
+              {tile.answer || "—"}
+            </p>
           </div>
           <p className="text-center text-sm text-muted-foreground">
             {activePlayer ? `Scored for ${activePlayer.name}` : "No score change"}
@@ -1103,7 +1168,8 @@ function LiveControlPanel({
               onClick={actions.judgeCorrect}
               className="flex min-h-12 items-center justify-center rounded-full bg-success px-4 font-display text-base font-black text-success-ink elev-2"
             >
-              <Check className="mr-1.5 h-5 w-5" /> +{value} <KeyHint k={keyLabel(keys.judgeCorrect)} />
+              <Check className="mr-1.5 h-5 w-5" /> +{value}{" "}
+              <KeyHint k={keyLabel(keys.judgeCorrect)} />
             </button>
             <button
               onClick={actions.judgeWrong}
@@ -1125,10 +1191,10 @@ function LiveControlPanel({
               onClick={actions.restartTimer}
               className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
             >
-              <RotateCcw className="mr-1.5 h-4 w-4" /> Timer <KeyHint k={keyLabel(keys.restartTimer)} />
+              <RotateCcw className="mr-1.5 h-4 w-4" /> Timer{" "}
+              <KeyHint k={keyLabel(keys.restartTimer)} />
             </button>
           </div>
-
         </div>
       ) : (
         <div className="space-y-3">
@@ -1136,9 +1202,15 @@ function LiveControlPanel({
             {tile.question.replace(/<[^>]*>/g, "") || "…"}
           </p>
           <div className="rounded-[24px] border border-dashed border-foreground/30 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Host only · answer</p>
-            <p className="mt-1 font-display text-lg font-black text-ink-gold">{tile.answer || "—"}</p>
-            {tile.hint && <p className="mt-1 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              Host only · answer
+            </p>
+            <p className="mt-1 font-display text-lg font-black text-ink-gold">
+              {tile.answer || "—"}
+            </p>
+            {tile.hint && (
+              <p className="mt-1 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>
+            )}
           </div>
           <button
             onClick={actions.reveal}
@@ -1173,7 +1245,8 @@ function BuzzerPanel({
   const armed = session.phase === "question_open" || session.phase === "answering";
   const lockedOut = players.filter((p) => p.locked_out).length;
   const waiting = queue.filter(
-    (q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+    (q) =>
+      q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
   );
 
   return (
@@ -1222,13 +1295,9 @@ function BuzzerPanel({
 
 /* ---------------------------- Question overlay ---------------------------- */
 
-
 /* --------------------------- Daily Double wager --------------------------- */
 
-
 /* ------------------------------- Queue list ------------------------------- */
-
-
 
 /* ------------------------- Daily Double tiles dialog ----------------------- */
 
@@ -1237,14 +1306,23 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
   const [selected, setSelected] = useState<string[]>(session.daily_double_tile_ids);
 
   const toggle = (id: string) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : prev.length < 2 ? [...prev, id] : prev));
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : prev.length < 2 ? [...prev, id] : prev,
+    );
   };
 
   return (
-    <Dialog onClose={onClose} title="Daily Double tiles" subtitle="Pick up to 2 tiles to become Daily Doubles">
+    <Dialog
+      onClose={onClose}
+      title="Daily Double tiles"
+      subtitle="Pick up to 2 tiles to become Daily Doubles"
+    >
       <div className="grid max-h-80 grid-cols-5 gap-1.5 overflow-y-auto">
         {categories.map((cat) => (
-          <div key={cat.id} className="mb-1 truncate text-center text-[9px] font-bold uppercase text-muted-foreground">
+          <div
+            key={cat.id}
+            className="mb-1 truncate text-center text-[9px] font-bold uppercase text-muted-foreground"
+          >
             {cat.title}
           </div>
         ))}
@@ -1273,7 +1351,10 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
           // sopravviva alla partita: le prossime la ereditano.
           await setDailyDoubles({ data: { sessionId: session.id, tileIds: selected } });
           await updateGame({
-            data: { gameId: state.game.id, theme: { ...themeOf(state.game), dailyDoubleTileIds: selected } },
+            data: {
+              gameId: state.game.id,
+              theme: { ...themeOf(state.game), dailyDoubleTileIds: selected },
+            },
           });
           toast.success("Daily Doubles updated");
           onClose();
@@ -1323,9 +1404,16 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
   }, [queue, players, tiles]);
 
   return (
-    <Dialog onClose={onClose} title="Match analytics" subtitle="Score progression & buzzer activity" wide>
+    <Dialog
+      onClose={onClose}
+      title="Match analytics"
+      subtitle="Score progression & buzzer activity"
+      wide
+    >
       {series.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No judged answers yet — data appears as you play.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          No judged answers yet — data appears as you play.
+        </p>
       ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -1333,11 +1421,29 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
               <XAxis dataKey="n" stroke="currentColor" fontSize={10} tickLine={false} />
               <YAxis stroke="currentColor" fontSize={10} tickLine={false} width={40} />
               <Tooltip
-                contentStyle={{ background: "var(--card)", border: "none", borderRadius: 18, fontSize: 12, color: "var(--foreground)" }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "none",
+                  borderRadius: 18,
+                  fontSize: 12,
+                  color: "var(--foreground)",
+                }}
               />
               <Legend />
-              <Line type="monotone" dataKey="alpha" stroke="var(--team-alpha-ink)" strokeWidth={3} dot={false} />
-              <Line type="monotone" dataKey="bravo" stroke="var(--team-bravo-ink)" strokeWidth={3} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="alpha"
+                stroke="var(--team-alpha-ink)"
+                strokeWidth={3}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="bravo"
+                stroke="var(--team-bravo-ink)"
+                strokeWidth={3}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -1345,7 +1451,10 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
       {playerStats.length > 0 && (
         <div className="mt-4 space-y-1.5">
           {playerStats.map((s) => (
-            <div key={s.player.id} className="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-xs">
+            <div
+              key={s.player.id}
+              className="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-xs"
+            >
               <span>{s.player.avatar}</span>
               <span className="flex-1 font-bold">{s.player.name}</span>
               <span className="text-muted-foreground">{s.buzzes} buzzes</span>
@@ -1365,7 +1474,11 @@ function FinalDialog({ sessionId, onClose }: { sessionId: string; onClose: () =>
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   return (
-    <Dialog onClose={onClose} title="Final Jeopardy" subtitle="Set the final clue — teams will wager and answer">
+    <Dialog
+      onClose={onClose}
+      title="Final Jeopardy"
+      subtitle="Set the final clue — teams will wager and answer"
+    >
       <textarea
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
@@ -1382,7 +1495,9 @@ function FinalDialog({ sessionId, onClose }: { sessionId: string; onClose: () =>
       <button
         disabled={!question.trim() || !answer.trim()}
         onClick={async () => {
-          await startFinal({ data: { sessionId, question: question.trim(), answer: answer.trim() } });
+          await startFinal({
+            data: { sessionId, question: question.trim(), answer: answer.trim() },
+          });
           toast.success("Final Jeopardy started — teams are wagering");
           onClose();
         }}
@@ -1410,7 +1525,9 @@ function FinalPanel({
   const teams: Team[] = ["alpha", "bravo"];
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Final Jeopardy</h3>
+      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">
+        Final Jeopardy
+      </h3>
       {session.phase === "final_wager" && (
         <>
           <p className="mb-3 text-sm text-muted-foreground">Teams are placing wagers…</p>
@@ -1418,7 +1535,10 @@ function FinalPanel({
             {teams.map((t) => {
               const submitted = finalAnswers.some((f) => f.team === t);
               return (
-                <span key={t} className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase ${submitted ? "bg-success text-success-ink" : "bg-muted text-muted-foreground"}`}>
+                <span
+                  key={t}
+                  className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase ${submitted ? "bg-success text-success-ink" : "bg-muted text-muted-foreground"}`}
+                >
                   {teamName(theme, t)} {submitted ? "✓ wagered" : "…"}
                 </span>
               );
@@ -1434,16 +1554,27 @@ function FinalPanel({
       )}
       {session.phase === "final_answer" && (
         <div className="space-y-3">
-          <p className="rounded-[24px] bg-lilac p-4 text-sm font-semibold">{session.final_question}</p>
+          <p className="rounded-[24px] bg-lilac p-4 text-sm font-semibold">
+            {session.final_question}
+          </p>
           <p className="text-xs italic text-muted-foreground">Answer: {session.final_answer}</p>
           {teams.map((t) => {
             const entry = finalAnswers.find((f) => f.team === t);
-            const members = players.filter((p) => p.team === t).map((p) => p.avatar + " " + p.name).join(", ");
+            const members = players
+              .filter((p) => p.team === t)
+              .map((p) => p.avatar + " " + p.name)
+              .join(", ");
             return (
               <div key={t} className="rounded-[26px] bg-muted p-4">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha-ink" : "text-team-bravo-ink"}`}>{teamName(theme, t)}</span>
-                  <span className="text-[10px] text-muted-foreground">{members || "no players"}</span>
+                  <span
+                    className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha-ink" : "text-team-bravo-ink"}`}
+                  >
+                    {teamName(theme, t)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {members || "no players"}
+                  </span>
                 </div>
                 {entry ? (
                   <>
@@ -1454,7 +1585,9 @@ function FinalPanel({
                         <button
                           onClick={() => {
                             sfx.ding();
-                            void judgeFinal({ data: { sessionId: session.id, team: t, correct: true } });
+                            void judgeFinal({
+                              data: { sessionId: session.id, team: t, correct: true },
+                            });
                           }}
                           className="flex-1 rounded-full bg-success py-2 text-xs font-black text-success-ink"
                         >
@@ -1463,7 +1596,9 @@ function FinalPanel({
                         <button
                           onClick={() => {
                             sfx.wrong();
-                            void judgeFinal({ data: { sessionId: session.id, team: t, correct: false } });
+                            void judgeFinal({
+                              data: { sessionId: session.id, team: t, correct: false },
+                            });
                           }}
                           className="flex-1 rounded-full bg-danger py-2 text-xs font-black text-danger-ink"
                         >
@@ -1471,7 +1606,9 @@ function FinalPanel({
                         </button>
                       </div>
                     ) : (
-                      <p className={`text-xs font-bold ${entry.judged ? "text-success-ink" : "text-danger-ink"}`}>
+                      <p
+                        className={`text-xs font-bold ${entry.judged ? "text-success-ink" : "text-danger-ink"}`}
+                      >
                         Judged {entry.judged ? "correct" : "wrong"}
                       </p>
                     )}
@@ -1546,14 +1683,19 @@ function Podium({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-[36px] bg-card p-8 text-center elev-3"
       >
-        <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop"><Crown className="h-10 w-10 text-ink-gold" /></span>
+        <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop">
+          <Crown className="h-10 w-10 text-ink-gold" />
+        </span>
         <h2 className="font-display text-3xl font-black text-ink-gold text-glow-gold">
           {tie ? "It's a tie!" : `${teamName(theme, winner)} wins!`}
         </h2>
         <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">
           {winners.map((p) => (
-            <span key={p.id} className="rounded-full bg-butter px-3.5 py-1.5 text-xs font-bold text-ink-gold">
+            <span
+              key={p.id}
+              className="rounded-full bg-butter px-3.5 py-1.5 text-xs font-bold text-ink-gold"
+            >
               {p.avatar} {p.name}
             </span>
           ))}
@@ -1611,7 +1753,11 @@ function Dialog({
             <h2 className="font-display text-xl font-black">{title}</h2>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="rounded-full bg-muted p-2.5 text-muted-foreground hover:bg-lilac" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="rounded-full bg-muted p-2.5 text-muted-foreground hover:bg-lilac"
+            aria-label="Close"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>

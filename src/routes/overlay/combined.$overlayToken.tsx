@@ -1,16 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { OverlayBoard, OverlayCanvas, OverlayQueue, OverlayScores } from "@/components/overlay/OverlayPieces";
+import {
+  OverlayBoard,
+  OverlayCanvas,
+  OverlayQueue,
+  OverlayScores,
+} from "@/components/overlay/OverlayPieces";
 import { SAFE, useOverlayState, useTransparentPage } from "@/components/overlay/overlay-state";
 
 export const Route = createFileRoute("/overlay/combined/$overlayToken")({
   head: () => ({
     meta: [
       { title: "Combined overlay — JEOPARDESTINY" },
-      { name: "description", content: "Board, scores and buzzer queue on one transparent OBS canvas." },
+      {
+        name: "description",
+        content: "Board, scores and buzzer queue on one transparent OBS canvas.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Combined overlay — JEOPARDESTINY" },
-      { property: "og:description", content: "Board, scores and buzzer queue on one transparent OBS canvas." },
+      {
+        property: "og:description",
+        content: "Board, scores and buzzer queue on one transparent OBS canvas.",
+      },
     ],
   }),
   component: CombinedOverlay,
@@ -54,7 +65,11 @@ function CombinedOverlay() {
           justifyContent: "center",
         }}
       >
-        <OverlayBoard state={state} width={Math.round(boardHeight * (5 / 5.4))} height={boardHeight} />
+        <OverlayBoard
+          state={state}
+          width={Math.round(boardHeight * (5 / 5.4))}
+          height={boardHeight}
+        />
       </div>
 
       {/* Queue: right column, clear of the board so a crop isolates it. */}

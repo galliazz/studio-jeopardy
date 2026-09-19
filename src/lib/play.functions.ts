@@ -118,7 +118,8 @@ export const joinGame = createServerFn({ method: "POST" })
       .insert({ session_id: session.id, name: data.name, avatar: data.avatar, team: data.team })
       .select(PLAYER_PUBLIC_COLS)
       .single();
-    if (error || !player) return { error: "join_failed" as const, message: error?.message ?? "join failed" };
+    if (error || !player)
+      return { error: "join_failed" as const, message: error?.message ?? "join failed" };
     // Il token lo emette un trigger sull'insert; qui si legge soltanto.
     const { data: secret } = await db
       .from("player_secrets")
@@ -167,7 +168,11 @@ export const getPlayerState = createServerFn({ method: "GET" })
         .maybeSingle();
       finalQuestion = secrets?.final_question ?? null;
     }
-    return { session: { ...session, final_question: finalQuestion }, players: players ?? [], queue: queue ?? [] };
+    return {
+      session: { ...session, final_question: finalQuestion },
+      players: players ?? [],
+      queue: queue ?? [],
+    };
   });
 
 /** Public: slam the buzzer. Requires the player's private token; the DB trigger promotes the first buzzer. */
@@ -180,7 +185,11 @@ export const buzz = createServerFn({ method: "POST" })
     if (!player) return { ok: false as const, reason: "no_player" as const };
     if (player.locked_out) return { ok: false as const, reason: "closed" as const };
     const db = await admin();
-    const { data: session } = await db.from("sessions").select("*").eq("id", player.session_id).maybeSingle();
+    const { data: session } = await db
+      .from("sessions")
+      .select("*")
+      .eq("id", player.session_id)
+      .maybeSingle();
     if (!session) return { ok: false as const, reason: "no_session" as const };
     if (session.status !== "live" || !session.current_tile_id) {
       return { ok: false as const, reason: "closed" as const };
@@ -230,8 +239,13 @@ export const submitFinalAnswer = createServerFn({ method: "POST" })
     const player = await authenticatePlayer(data.playerId, data.token);
     if (!player) return { ok: false as const, reason: "no_player" as const };
     const db = await admin();
-    const { data: session } = await db.from("sessions").select("*").eq("id", player.session_id).maybeSingle();
-    if (!session || session.status !== "final") return { ok: false as const, reason: "closed" as const };
+    const { data: session } = await db
+      .from("sessions")
+      .select("*")
+      .eq("id", player.session_id)
+      .maybeSingle();
+    if (!session || session.status !== "final")
+      return { ok: false as const, reason: "closed" as const };
     if (session.phase !== "final_wager" && session.phase !== "final_answer") {
       return { ok: false as const, reason: "closed" as const };
     }
@@ -280,7 +294,10 @@ export const getOverlayState = createServerFn({ method: "GET" })
       .order("position");
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
-      ? await db.from("tiles").select("id, category_id, row_index, points").in("category_id", catIds)
+      ? await db
+          .from("tiles")
+          .select("id, category_id, row_index, points")
+          .in("category_id", catIds)
       : { data: [] };
     const { data: players } = await db
       .from("players")
@@ -293,7 +310,8 @@ export const getOverlayState = createServerFn({ method: "GET" })
       .eq("session_id", session.id)
       .order("created_at");
 
-    let clue: { category: string; points: number; question: string; answer: string | null } | null = null;
+    let clue: { category: string; points: number; question: string; answer: string | null } | null =
+      null;
     if (session.current_tile_id) {
       const { data: tile } = await db
         .from("tiles")

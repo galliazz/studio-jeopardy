@@ -7,13 +7,7 @@ import type { Category, Game, Player, QueueEntry, Session, Tile } from "@/lib/ty
  * session, player, queue and tile rows the backend already owns.
  */
 export type ContractPhase =
-  | "lobby"
-  | "board"
-  | "clue_open"
-  | "buzzed"
-  | "revealed"
-  | "final"
-  | "ended";
+  "lobby" | "board" | "clue_open" | "buzzed" | "revealed" | "final" | "ended";
 
 export type TimerState = "idle" | "running" | "expired" | "stopped";
 

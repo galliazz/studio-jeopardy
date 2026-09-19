@@ -30,12 +30,7 @@ import {
 } from "@/lib/shortcuts";
 import { AccountAvatar, setAvatarValue, useAvatarValue } from "@/lib/avatar";
 import { ChooseAvatarDialog } from "@/components/ChooseAvatarDialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
@@ -96,7 +91,9 @@ function ShortcutEditor({
         </div>
       ))}
       <div className="flex items-center justify-between gap-4 pt-1">
-        <span className="text-xs text-muted-foreground">Shortcuts pause while a field, dialog or menu has focus.</span>
+        <span className="text-xs text-muted-foreground">
+          Shortcuts pause while a field, dialog or menu has focus.
+        </span>
         <button
           onClick={() => onChange({})}
           className="flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-muted-foreground hover:bg-muted"
@@ -117,7 +114,6 @@ function ShortcutEditor({
     </div>
   );
 }
-
 
 /* ---------------- building blocks ---------------- */
 
@@ -192,7 +188,13 @@ function Segmented<T extends string>({
 /* ---------------- dialog ---------------- */
 
 /** `guest` drops Account and Performance: a phone player has no profile to edit. */
-export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => void; variant?: "full" | "guest" }) {
+export function SettingsDialog({
+  onClose,
+  variant = "full",
+}: {
+  onClose: () => void;
+  variant?: "full" | "guest";
+}) {
   const guest = variant === "guest";
   const settings = useSettings();
   const queryClient = useQueryClient();
@@ -256,9 +258,11 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
     if (!signedIn) return;
     if (syncTimer.current) clearTimeout(syncTimer.current);
     syncTimer.current = setTimeout(() => {
-      void updateProfile({ data: { preferences: syncablePreferences(getSettings()) } }).catch(() => {
-        /* offline — localStorage still holds the value */
-      });
+      void updateProfile({ data: { preferences: syncablePreferences(getSettings()) } }).catch(
+        () => {
+          /* offline — localStorage still holds the value */
+        },
+      );
     }, 600);
   };
 
@@ -297,64 +301,71 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
       <DialogContent className="max-h-[88svh] w-[calc(100vw-1.5rem)] max-w-[560px] gap-0 overflow-y-auto rounded-[32px] border p-0">
         <div className="space-y-5 p-5 sm:p-6">
           <div>
-            <DialogTitle className="font-display text-2xl font-black text-foreground">Settings</DialogTitle>
+            <DialogTitle className="font-display text-2xl font-black text-foreground">
+              Settings
+            </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               Changes apply immediately.
             </DialogDescription>
           </div>
 
           {/* 1. Account */}
-          {!guest && <Section title="Account">
-            <div className="flex items-center gap-3">
-              <button
-                ref={avatarBtnRef}
-                type="button"
-                onClick={() => setAvatarOpen(true)}
-                aria-label="Change avatar"
-                title="Change avatar"
-                className="relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <AccountAvatar
-                  value={avatarValue}
-                  initial={initial}
-                  className="h-12 w-12 text-lg"
-                  iconClassName="h-6 w-6"
-                />
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card text-foreground elev-1">
-                  <Pencil className="h-3 w-3" />
-                </span>
-              </button>
+          {!guest && (
+            <Section title="Account">
+              <div className="flex items-center gap-3">
+                <button
+                  ref={avatarBtnRef}
+                  type="button"
+                  onClick={() => setAvatarOpen(true)}
+                  aria-label="Change avatar"
+                  title="Change avatar"
+                  className="relative shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <AccountAvatar
+                    value={avatarValue}
+                    initial={initial}
+                    className="h-12 w-12 text-lg"
+                    iconClassName="h-6 w-6"
+                  />
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-card text-foreground elev-1">
+                    <Pencil className="h-3 w-3" />
+                  </span>
+                </button>
 
-              <div className="min-w-0 flex-1">
-                <label htmlFor="display-name" className="text-xs font-semibold text-muted-foreground">
-                  Display name
-                </label>
-                <input
-                  id="display-name"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onBlur={() => void saveName()}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") void saveName();
-                  }}
-                  maxLength={24}
-                  className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
-                />
-                {nameError && <p className="mt-1 text-xs text-destructive">{nameError}</p>}
+                <div className="min-w-0 flex-1">
+                  <label
+                    htmlFor="display-name"
+                    className="text-xs font-semibold text-muted-foreground"
+                  >
+                    Display name
+                  </label>
+                  <input
+                    id="display-name"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onBlur={() => void saveName()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void saveName();
+                    }}
+                    maxLength={24}
+                    className="h-11 w-full rounded-2xl border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  {nameError && <p className="mt-1 text-xs text-destructive">{nameError}</p>}
+                </div>
+                <button
+                  onClick={() => void saveName()}
+                  className="mt-4 h-11 shrink-0 rounded-full bg-muted px-4 text-sm font-bold text-foreground"
+                >
+                  Save
+                </button>
               </div>
-              <button
-                onClick={() => void saveName()}
-                className="mt-4 h-11 shrink-0 rounded-full bg-muted px-4 text-sm font-bold text-foreground"
-              >
-                Save
-              </button>
-            </div>
-            <Row label="Email">
-              <span className="max-w-[240px] truncate text-sm text-muted-foreground">
-                {email || "Not signed in"}
-              </span>
-            </Row>
-          </Section>}
+              <Row label="Email">
+                <span className="max-w-[240px] truncate text-sm text-muted-foreground">
+                  {email || "Not signed in"}
+                </span>
+              </Row>
+            </Section>
+          )}
 
           {/* 2. Appearance */}
           <Section title="Appearance">
@@ -420,26 +431,28 @@ export function SettingsDialog({ onClose, variant = "full" }: { onClose: () => v
           </Section>
 
           {/* 4. Performance */}
-          {!guest && <Section title="Performance">
-            <Row label="Graphics quality" hint="Blur, gradients and heavy animations">
-              <Segmented<GraphicsQuality>
-                ariaLabel="Graphics quality"
-                value={settings.graphics}
-                onChange={(v) => syncPrefs({ graphics: v })}
-                options={[
-                  { value: "high", label: "High" },
-                  { value: "medium", label: "Medium" },
-                  { value: "low", label: "Low" },
-                ]}
-              />
-            </Row>
-            <Row label="Background effects" hint="Ambient colored blobs">
-              <Switch
-                checked={settings.backgroundEffects}
-                onCheckedChange={(v) => syncPrefs({ backgroundEffects: v })}
-              />
-            </Row>
-          </Section>}
+          {!guest && (
+            <Section title="Performance">
+              <Row label="Graphics quality" hint="Blur, gradients and heavy animations">
+                <Segmented<GraphicsQuality>
+                  ariaLabel="Graphics quality"
+                  value={settings.graphics}
+                  onChange={(v) => syncPrefs({ graphics: v })}
+                  options={[
+                    { value: "high", label: "High" },
+                    { value: "medium", label: "Medium" },
+                    { value: "low", label: "Low" },
+                  ]}
+                />
+              </Row>
+              <Row label="Background effects" hint="Ambient colored blobs">
+                <Switch
+                  checked={settings.backgroundEffects}
+                  onCheckedChange={(v) => syncPrefs({ backgroundEffects: v })}
+                />
+              </Row>
+            </Section>
+          )}
 
           {/* 5. Keyboard shortcuts — chiuse, e riassegnabili. */}
           {!guest && (

@@ -5,7 +5,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Clock, Ban, Trophy, Hourglass, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { lookupSession, joinGame, getPlayerState, buzz, submitFinalAnswer } from "@/lib/play.functions";
+import {
+  lookupSession,
+  joinGame,
+  getPlayerState,
+  buzz,
+  submitFinalAnswer,
+} from "@/lib/play.functions";
 import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
 import { sfx, vibrate } from "@/lib/sfx";
@@ -26,9 +32,15 @@ export const Route = createFileRoute("/play/$code")({
   head: () => ({
     meta: [
       { title: "Join Game — JEOPARDESTINY" },
-      { name: "description", content: "Join a live JEOPARDESTINY game and buzz in from your phone." },
+      {
+        name: "description",
+        content: "Join a live JEOPARDESTINY game and buzz in from your phone.",
+      },
       { property: "og:title", content: "Join Game — JEOPARDESTINY" },
-      { property: "og:description", content: "Join a live JEOPARDESTINY game and buzz in from your phone." },
+      {
+        property: "og:description",
+        content: "Join a live JEOPARDESTINY game and buzz in from your phone.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -229,7 +241,10 @@ function JoinForm({
 
         {/* Name */}
         <div className="mb-5">
-          <label htmlFor="player-name" className="mb-1.5 block text-sm font-semibold text-muted-foreground">
+          <label
+            htmlFor="player-name"
+            className="mb-1.5 block text-sm font-semibold text-muted-foreground"
+          >
             Your name
           </label>
           <input
@@ -324,7 +339,6 @@ function JoinForm({
   );
 }
 
-
 /* ------------------------------- Live player ------------------------------ */
 
 interface PlayerState {
@@ -358,7 +372,7 @@ function LivePlayer({
   const state = data && !("error" in data) ? (data as unknown as PlayerState) : null;
   const session = state?.session ?? null;
   const players = state?.players ?? [];
-  const queue = state?.queue ?? [];
+  const queue = useMemo(() => state?.queue ?? [], [state]);
 
   const me = players.find((p) => p.id === identity.playerId);
   const myTeam: Team = me?.team ?? identity.team;
@@ -381,12 +395,18 @@ function LivePlayer({
     () =>
       session?.current_tile_id
         ? queue
-            .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
+            .filter(
+              (q) =>
+                q.tile_id === session.current_tile_id &&
+                (q.status === "queued" || q.status === "active"),
+            )
             .sort((a, b) => a.created_at.localeCompare(b.created_at))
         : [],
     [queue, session?.current_tile_id],
   );
-  const myPosition = myEntry ? tileQueue.findIndex((q) => q.player_id === identity.playerId) + 1 : 0;
+  const myPosition = myEntry
+    ? tileQueue.findIndex((q) => q.player_id === identity.playerId) + 1
+    : 0;
   const iAmActive = session?.active_player_id === identity.playerId;
 
   const countdown = useCountdown(session?.timer_ends_at);
@@ -425,7 +445,14 @@ function LivePlayer({
     queryClient.setQueryData(["play", sessionId], (old: unknown) => {
       const prev = old as PlayerState | undefined;
       if (!prev || "error" in prev) return old;
-      if (prev.queue.some((q) => q.tile_id === tileId && q.player_id === identity.playerId && (q.status === "queued" || q.status === "active"))) {
+      if (
+        prev.queue.some(
+          (q) =>
+            q.tile_id === tileId &&
+            q.player_id === identity.playerId &&
+            (q.status === "queued" || q.status === "active"),
+        )
+      ) {
         return old;
       }
       const hasActive = prev.queue.some((q) => q.tile_id === tileId && q.status === "active");
@@ -440,7 +467,9 @@ function LivePlayer({
       };
       return {
         ...prev,
-        session: hasActive ? prev.session : { ...prev.session, active_player_id: identity.playerId, phase: "answering" },
+        session: hasActive
+          ? prev.session
+          : { ...prev.session, active_player_id: identity.playerId, phase: "answering" },
         queue: [...prev.queue, optimistic],
       };
     });
@@ -463,7 +492,11 @@ function LivePlayer({
   const phase = session?.phase ?? "idle";
   const status = session?.status ?? "lobby";
   const locked = me?.locked_out ?? false;
-  const buzzerLive = status === "live" && (phase === "question_open" || phase === "answering") && !locked && !myEntry;
+  const buzzerLive =
+    status === "live" &&
+    (phase === "question_open" || phase === "answering") &&
+    !locked &&
+    !myEntry;
 
   return (
     <Shell title={gameTitle}>
@@ -472,14 +505,24 @@ function LivePlayer({
       <div className="flex w-full flex-col items-center" style={teamColorVars(theme)}>
         {/* Scoreboard strip */}
         <div className="mb-5 flex w-full items-center justify-between gap-2">
-          <TeamScore team="alpha" name={teamName(theme, "alpha")} score={session?.score_alpha ?? 0} mine={myTeam === "alpha"} />
+          <TeamScore
+            team="alpha"
+            name={teamName(theme, "alpha")}
+            score={session?.score_alpha ?? 0}
+            mine={myTeam === "alpha"}
+          />
           {/* Il titolo del gioco è salito nella barra: qui resta chi sei. */}
           <div className="min-w-0 flex-1 text-center">
             <p className="truncate text-sm font-semibold text-foreground">
               {identity.avatar} {identity.name}
             </p>
           </div>
-          <TeamScore team="bravo" name={teamName(theme, "bravo")} score={session?.score_bravo ?? 0} mine={myTeam === "bravo"} />
+          <TeamScore
+            team="bravo"
+            name={teamName(theme, "bravo")}
+            score={session?.score_bravo ?? 0}
+            mine={myTeam === "bravo"}
+          />
         </div>
 
         <AnimatePresence mode="wait">
@@ -493,7 +536,9 @@ function LivePlayer({
             >
               <Hourglass className="h-10 w-10 text-ink-gold" />
               <h2 className="mt-3 font-display text-xl font-black">You're in</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Waiting for the host to open the board…</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Waiting for the host to open the board…
+              </p>
 
               <div className="mt-6 flex w-full items-center gap-3 rounded-[28px] bg-muted p-3 text-left">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background text-2xl">
@@ -522,7 +567,11 @@ function LivePlayer({
           )}
 
           {status === "live" && phase === "idle" && (
-            <StatusCard key="idle" icon={<Clock className="h-10 w-10 text-muted-foreground" />} title="Get ready">
+            <StatusCard
+              key="idle"
+              icon={<Clock className="h-10 w-10 text-muted-foreground" />}
+              title="Get ready"
+            >
               Waiting for the next question.
             </StatusCard>
           )}
@@ -542,7 +591,9 @@ function LivePlayer({
                     transition={{ repeat: Infinity, duration: 1.2 }}
                     className="flex aspect-square w-[min(72vw,16rem)] flex-col items-center justify-center rounded-full bg-butter text-center elev-3"
                   >
-                    <span className="font-display text-2xl font-black text-foreground">YOU'RE UP!</span>
+                    <span className="font-display text-2xl font-black text-foreground">
+                      YOU'RE UP!
+                    </span>
                     <span className="mt-1 font-display text-4xl font-black text-foreground">
                       {countdown.seconds ?? "–"}s
                     </span>
@@ -553,7 +604,9 @@ function LivePlayer({
                       style={{ width: `${countdown.fraction * 100}%` }}
                     />
                   </div>
-                  <p className="mt-4 text-sm text-muted-foreground">Answer out loud — the host is listening!</p>
+                  <p className="mt-4 text-sm text-muted-foreground">
+                    Answer out loud — the host is listening!
+                  </p>
                 </div>
               ) : locked ? (
                 <StatusCard icon={<Ban className="h-10 w-10 text-danger-ink" />} title="Locked out">
@@ -562,8 +615,12 @@ function LivePlayer({
               ) : myEntry ? (
                 <div className="flex flex-col items-center">
                   <div className="flex aspect-square w-[min(72vw,16rem)] flex-col items-center justify-center bg-lilac elev-2 scallop">
-                    <span className="font-display text-lg font-bold text-muted-foreground">IN LINE</span>
-                    <span className="font-display text-6xl font-black text-ink-gold">#{myPosition}</span>
+                    <span className="font-display text-lg font-bold text-muted-foreground">
+                      IN LINE
+                    </span>
+                    <span className="font-display text-6xl font-black text-ink-gold">
+                      #{myPosition}
+                    </span>
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">Your buzz is locked in!</p>
                 </div>
@@ -606,9 +663,16 @@ function LivePlayer({
             </StatusCard>
           )}
 
-          {(status === "final" || phase === "final_wager" || phase === "final_answer") && status !== "finished" && (
-            <FinalForm key="final" session={session!} identity={identity} myTeam={myTeam} theme={theme} />
-          )}
+          {(status === "final" || phase === "final_wager" || phase === "final_answer") &&
+            status !== "finished" && (
+              <FinalForm
+                key="final"
+                session={session!}
+                identity={identity}
+                myTeam={myTeam}
+                theme={theme}
+              />
+            )}
 
           {status === "finished" && (
             <motion.div
@@ -666,7 +730,9 @@ function FinalForm({
 
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-      <h2 className="mb-1 text-center font-display text-2xl font-black text-ink-gold">Final Jeopardy</h2>
+      <h2 className="mb-1 text-center font-display text-2xl font-black text-ink-gold">
+        Final Jeopardy
+      </h2>
       <p className="mb-5 text-center text-xs text-muted-foreground">
         One submission per team — {teamName(theme, myTeam)} · max wager {maxWager}
       </p>
@@ -683,7 +749,9 @@ function FinalForm({
       </label>
       {session.phase === "final_answer" && (
         <label className="mb-3 block">
-          <span className="mb-1 block text-xs font-semibold text-muted-foreground">{session.final_question}</span>
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">
+            {session.final_question}
+          </span>
           <textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
@@ -698,7 +766,12 @@ function FinalForm({
         disabled={session.phase === "final_answer" && !answer.trim()}
         onClick={async () => {
           const res = await submitFinalAnswer({
-            data: { playerId: identity.playerId, token: identity.token, wager, answer: answer.trim() },
+            data: {
+              playerId: identity.playerId,
+              token: identity.token,
+              wager,
+              answer: answer.trim(),
+            },
           });
           if (res.ok) {
             vibrate([40, 40, 40]);
@@ -717,7 +790,17 @@ function FinalForm({
 
 /* --------------------------------- Pieces --------------------------------- */
 
-function TeamScore({ team, name, score, mine }: { team: Team; name: string; score: number; mine: boolean }) {
+function TeamScore({
+  team,
+  name,
+  score,
+  mine,
+}: {
+  team: Team;
+  name: string;
+  score: number;
+  mine: boolean;
+}) {
   return (
     <div
       className={`max-w-[8rem] shrink-0 rounded-[22px] px-3 py-2.5 text-center text-foreground elev-1 sm:px-4 ${team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"} ${
@@ -730,7 +813,15 @@ function TeamScore({ team, name, score, mine }: { team: Team; name: string; scor
   );
 }
 
-function StatusCard({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function StatusCard({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -766,7 +857,9 @@ function Shell({ children, title }: { children: React.ReactNode; title?: string 
         }
         center={
           title ? (
-            <span className="truncate font-display text-lg font-semibold tracking-tight">{title}</span>
+            <span className="truncate font-display text-lg font-semibold tracking-tight">
+              {title}
+            </span>
           ) : null
         }
         right={<GuestSettingsButton />}

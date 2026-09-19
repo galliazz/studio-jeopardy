@@ -20,17 +20,30 @@ export const startSession = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { data: game, error: gErr } = await supabase.from("games").select("*").eq("id", data.gameId).single();
+    const { data: game, error: gErr } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", data.gameId)
+      .single();
     if (gErr) throw new Error(gErr.message);
 
     const { error: finishErr } = await supabase
       .from("sessions")
-      .update({ status: "finished", phase: "idle", current_tile_id: null, active_player_id: null, timer_ends_at: null })
+      .update({
+        status: "finished",
+        phase: "idle",
+        current_tile_id: null,
+        active_player_id: null,
+        timer_ends_at: null,
+      })
       .eq("game_id", data.gameId)
       .in("status", ["lobby", "live", "final"]);
     if (finishErr) throw new Error(finishErr.message);
 
-    const { data: categories } = await supabase.from("categories").select("id").eq("game_id", data.gameId);
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("game_id", data.gameId);
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("id").in("category_id", catIds)
@@ -74,9 +87,17 @@ export const getHostState = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
-    const { data: game } = await supabase.from("games").select("*").eq("id", session.game_id).single();
+    const { data: game } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", session.game_id)
+      .single();
     const { data: categories } = await supabase
       .from("categories")
       .select("*")
@@ -140,7 +161,11 @@ export const openTile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     if (session.status === "finished") throw new Error("Session already finished");
     const isDD = (session.daily_double_tile_ids as string[]).includes(data.tileId);
@@ -184,10 +209,15 @@ export const judgeAnswer = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     // Corse dell'host (doppio click, stato già avanzato): niente errore, niente effetto.
-    if (!session.current_tile_id || !session.active_player_id) return { outcome: "noop" as const, delta: 0 };
+    if (!session.current_tile_id || !session.active_player_id)
+      return { outcome: "noop" as const, delta: 0 };
     if (session.active_player_id !== data.expectedPlayerId) {
       return { outcome: "noop" as const, delta: 0 };
     }
@@ -196,8 +226,16 @@ export const judgeAnswer = createServerFn({ method: "POST" })
     const openTileId: string = session.current_tile_id;
     const judgedPlayerId: string = session.active_player_id;
 
-    const { data: tile } = await supabase.from("tiles").select("*").eq("id", session.current_tile_id).single();
-    const { data: player } = await supabase.from("players").select("*").eq("id", session.active_player_id).single();
+    const { data: tile } = await supabase
+      .from("tiles")
+      .select("*")
+      .eq("id", session.current_tile_id)
+      .single();
+    const { data: player } = await supabase
+      .from("players")
+      .select("*")
+      .eq("id", session.active_player_id)
+      .single();
     if (!tile || !player) throw new Error("Missing tile or player");
 
     // Guard against double-judging: there must be an active queue row.
@@ -227,7 +265,8 @@ export const judgeAnswer = createServerFn({ method: "POST" })
     const value = tile.points * multiplier;
     const delta = data.correct ? value : -Math.round((tile.points / 2) * multiplier);
     const teamCol = player.team === "alpha" ? "score_alpha" : "score_bravo";
-    const newScore = (teamCol === "score_alpha" ? session.score_alpha : session.score_bravo) + delta;
+    const newScore =
+      (teamCol === "score_alpha" ? session.score_alpha : session.score_bravo) + delta;
 
     /*
      * Stesso ordine di `closeTile`: `sessions` PER PRIMA, poi coda e giocatori.
@@ -287,7 +326,11 @@ export const judgeAnswer = createServerFn({ method: "POST" })
     for (const entry of queued ?? []) {
       // Chi ha appena sbagliato non può essere ripescato dalla sua stessa coda.
       if (entry.player_id === judgedPlayerId) continue;
-      const { data: p } = await supabase.from("players").select("locked_out").eq("id", entry.player_id).single();
+      const { data: p } = await supabase
+        .from("players")
+        .select("locked_out")
+        .eq("id", entry.player_id)
+        .single();
       if (p && !p.locked_out) {
         nextEntryId = entry.id;
         nextPlayerId = entry.player_id;
@@ -355,14 +398,19 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       .update({
         ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
         ...(nextPlayerId
-          ? { phase: "answering" as const, active_player_id: nextPlayerId, timer_ends_at: timerEnd() }
+          ? {
+              phase: "answering" as const,
+              active_player_id: nextPlayerId,
+              timer_ends_at: timerEnd(),
+            }
           : { phase: "question_open" as const, active_player_id: null, timer_ends_at: null }),
       })
       .eq("id", data.sessionId);
     if (sErr) throw new Error(sErr.message);
 
     await markJudged();
-    if (nextEntryId) await supabase.from("buzzer_queue").update({ status: "active" }).eq("id", nextEntryId);
+    if (nextEntryId)
+      await supabase.from("buzzer_queue").update({ status: "active" }).eq("id", nextEntryId);
     await supabase.from("players").update({ locked_out: true }).eq("id", player.id);
     return { outcome: nextPlayerId ? ("promoted" as const) : ("reopened" as const), delta };
   });
@@ -386,7 +434,11 @@ export const closeTile = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     const tileId = session.current_tile_id;
     const used = new Set(session.used_tile_ids as string[]);
@@ -433,7 +485,11 @@ export const clearQueue = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     if (session.current_tile_id) {
       /*
@@ -463,7 +519,12 @@ export const clearQueue = createServerFn({ method: "POST" })
       .from("sessions")
       // `dd_wager` va azzerato: se resta impostato, la casella è un Daily
       // Double a cui nessuno può più rispondere.
-      .update({ phase: "question_open", active_player_id: null, timer_ends_at: null, dd_wager: null })
+      .update({
+        phase: "question_open",
+        active_player_id: null,
+        timer_ends_at: null,
+        dd_wager: null,
+      })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
     return { ok: true };
@@ -475,18 +536,31 @@ export const resetBoard = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
-    const { data: categories } = await supabase.from("categories").select("id").eq("game_id", session.game_id);
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("game_id", session.game_id);
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("id").in("category_id", catIds)
       : { data: [] };
     // Anche qui si rispettano le Daily Double scelte a mano nella pagina di Edit.
-    const { data: game } = await supabase.from("games").select("theme").eq("id", session.game_id).single();
+    const { data: game } = await supabase
+      .from("games")
+      .select("theme")
+      .eq("id", session.game_id)
+      .single();
     const tileIds = new Set((tiles ?? []).map((t) => t.id));
     const chosen = (themeDailyDoubles(game?.theme) ?? []).filter((id) => tileIds.has(id));
-    const dailyDoubles = chosen.length ? chosen.slice(0, 2) : shuffleIds([...tileIds]).slice(0, Math.min(2, tileIds.size));
+    const dailyDoubles = chosen.length
+      ? chosen.slice(0, 2)
+      : shuffleIds([...tileIds]).slice(0, Math.min(2, tileIds.size));
 
     // `sessions` per prima: l'host applica una modifica ottimistica enorme
     // (punteggi a zero, board vuota) e le ricariche innescate dalle altre
@@ -520,7 +594,9 @@ export const resetBoard = createServerFn({ method: "POST" })
 export const setDailyDoubles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ sessionId: z.string().uuid(), tileIds: z.array(z.string().uuid()).max(2) }).parse(data),
+    z
+      .object({ sessionId: z.string().uuid(), tileIds: z.array(z.string().uuid()).max(2) })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
@@ -536,7 +612,11 @@ export const startFinal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ sessionId: z.string().uuid(), question: z.string().min(1).max(4000), answer: z.string().max(2000) })
+      .object({
+        sessionId: z.string().uuid(),
+        question: z.string().min(1).max(4000),
+        answer: z.string().max(2000),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
@@ -582,12 +662,20 @@ export const judgeFinal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ sessionId: z.string().uuid(), team: z.enum(["alpha", "bravo"]), correct: z.boolean() })
+      .object({
+        sessionId: z.string().uuid(),
+        team: z.enum(["alpha", "bravo"]),
+        correct: z.boolean(),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     const { data: entry } = await supabase
       .from("final_answers")
@@ -710,7 +798,11 @@ export const passToNext = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     if (!session.current_tile_id) throw new Error("No open tile");
 
@@ -729,7 +821,11 @@ export const passToNext = createServerFn({ method: "POST" })
       .from("sessions")
       .update(
         next
-          ? { phase: "answering" as const, active_player_id: next.player_id, timer_ends_at: timerEnd() }
+          ? {
+              phase: "answering" as const,
+              active_player_id: next.player_id,
+              timer_ends_at: timerEnd(),
+            }
           : { phase: "question_open" as const, active_player_id: null, timer_ends_at: null },
       )
       .eq("id", data.sessionId);
@@ -793,7 +889,11 @@ export const removePlayer = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    await supabase.from("buzzer_queue").delete().eq("session_id", data.sessionId).eq("player_id", data.playerId);
+    await supabase
+      .from("buzzer_queue")
+      .delete()
+      .eq("session_id", data.sessionId)
+      .eq("player_id", data.playerId);
     const { error } = await supabase
       .from("players")
       .delete()

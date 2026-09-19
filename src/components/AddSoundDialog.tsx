@@ -2,13 +2,28 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Play, Square, Repeat, Check, UploadCloud, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { AUDIO_CAP_BYTES, uploadMedia } from "@/lib/media";
 import { PRESETS, decodeFile, playBufferSlice, type PresetDef } from "@/lib/soundboard-engine";
 
 const MAX_SELECTION_SEC = 8;
-const ACCEPTED = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/mp4", "audio/x-m4a", "audio/m4a"];
+const ACCEPTED = [
+  "audio/mpeg",
+  "audio/mp3",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/ogg",
+  "audio/mp4",
+  "audio/x-m4a",
+  "audio/m4a",
+];
 
 export interface NewClip {
   name: string;
@@ -59,7 +74,9 @@ export function AddSoundDialog({
             {file ? "Trim your sound" : "Add a sound"}
           </DialogTitle>
           <DialogDescription>
-            {file ? "Pick the part of the clip that plays on air." : "Choose a built-in preset or upload your own."}
+            {file
+              ? "Pick the part of the clip that plays on air."
+              : "Choose a built-in preset or upload your own."}
           </DialogDescription>
         </DialogHeader>
 
@@ -76,7 +93,11 @@ export function AddSoundDialog({
           />
         ) : (
           <>
-            <div role="tablist" aria-label="Add sound source" className="flex gap-2 rounded-full bg-muted p-1">
+            <div
+              role="tablist"
+              aria-label="Add sound source"
+              className="flex gap-2 rounded-full bg-muted p-1"
+            >
               {(["presets", "upload"] as const).map((t) => (
                 <button
                   key={t}
@@ -96,7 +117,14 @@ export function AddSoundDialog({
               <PresetList
                 added={addedPresetKeys}
                 onAdd={async (p) => {
-                  await onAdd({ name: p.name, source: "preset", presetKey: p.key, trimStartMs: 0, trimEndMs: 0, gain: 1 });
+                  await onAdd({
+                    name: p.name,
+                    source: "preset",
+                    presetKey: p.key,
+                    trimStartMs: 0,
+                    trimEndMs: 0,
+                    gain: 1,
+                  });
                 }}
               />
             ) : (
@@ -111,7 +139,13 @@ export function AddSoundDialog({
 
 /* --------------------------------- presets -------------------------------- */
 
-function PresetList({ added, onAdd }: { added: string[]; onAdd: (p: PresetDef) => Promise<void> | void }) {
+function PresetList({
+  added,
+  onAdd,
+}: {
+  added: string[];
+  onAdd: (p: PresetDef) => Promise<void> | void;
+}) {
   return (
     <ul className="flex flex-col gap-1.5">
       {PRESETS.map((p) => {
@@ -131,7 +165,9 @@ function PresetList({ added, onAdd }: { added: string[]; onAdd: (p: PresetDef) =
               onClick={() => void onAdd(p)}
               aria-label={isAdded ? `${p.name} already added` : `Add ${p.name}`}
               className={`flex h-9 items-center gap-1 rounded-full px-4 text-xs font-bold elev-1 ${
-                isAdded ? "cursor-not-allowed bg-muted text-muted-foreground" : "bg-primary text-foreground"
+                isAdded
+                  ? "cursor-not-allowed bg-muted text-muted-foreground"
+                  : "bg-primary text-foreground"
               }`}
             >
               {isAdded ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -229,9 +265,11 @@ function TrimStep({
   onDone: (clip: NewClip) => Promise<void> | void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const regionRef = useRef<{ start: number; end: number; setOptions: (o: { start: number; end: number }) => void } | null>(
-    null,
-  );
+  const regionRef = useRef<{
+    start: number;
+    end: number;
+    setOptions: (o: { start: number; end: number }) => void;
+  } | null>(null);
   const bufferRef = useRef<AudioBuffer | null>(null);
   const stopRef = useRef<(() => void) | null>(null);
 
@@ -283,14 +321,22 @@ function TrimStep({
         setReady(true);
       });
 
-      regions.on("region-updated", (region: { start: number; end: number; setOptions: (o: { start: number; end: number }) => void }) => {
-        let { start, end } = region;
-        if (end - start > MAX_SELECTION_SEC) {
-          end = start + MAX_SELECTION_SEC;
-          region.setOptions({ start, end });
-        }
-        setRange({ start, end });
-      });
+      regions.on(
+        "region-updated",
+        (region: {
+          start: number;
+          end: number;
+          setOptions: (o: { start: number; end: number }) => void;
+        }) => {
+          const { start } = region;
+          let { end } = region;
+          if (end - start > MAX_SELECTION_SEC) {
+            end = start + MAX_SELECTION_SEC;
+            region.setOptions({ start, end });
+          }
+          setRange({ start, end });
+        },
+      );
     })();
 
     void decodeFile(file)
@@ -346,7 +392,9 @@ function TrimStep({
         <span className="text-muted-foreground">
           Start {fmt(range.start)} · End {fmt(range.end)}
         </span>
-        <span>Selection {(range.end - range.start).toFixed(2)}s / {MAX_SELECTION_SEC}s max</span>
+        <span>
+          Selection {(range.end - range.start).toFixed(2)}s / {MAX_SELECTION_SEC}s max
+        </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -355,7 +403,8 @@ function TrimStep({
           aria-label={playing ? "Stop preview" : "Play selection"}
           className="flex h-10 items-center gap-2 rounded-full bg-card px-4 text-xs font-bold elev-1 transition-transform hover:scale-105"
         >
-          {playing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />} {playing ? "Stop" : "Play selection"}
+          {playing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}{" "}
+          {playing ? "Stop" : "Play selection"}
         </button>
         <button
           onClick={() => setLoop((v) => !v)}
@@ -400,12 +449,22 @@ function TrimStep({
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Gain {Math.round(gain * 100)}%</span>
-        <Slider value={[gain * 100]} min={0} max={200} step={5} onValueChange={([v]) => setGain((v ?? 100) / 100)} />
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Gain {Math.round(gain * 100)}%
+        </span>
+        <Slider
+          value={[gain * 100]}
+          min={0}
+          max={200}
+          step={5}
+          onValueChange={([v]) => setGain((v ?? 100) / 100)}
+        />
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Name</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          Name
+        </span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value.slice(0, 40))}

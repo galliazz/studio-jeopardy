@@ -7,12 +7,7 @@
  */
 
 export type ShortcutAction =
-  | "reveal"
-  | "judgeCorrect"
-  | "judgeWrong"
-  | "passToNext"
-  | "restartTimer"
-  | "closeTile";
+  "reveal" | "judgeCorrect" | "judgeWrong" | "passToNext" | "restartTimer" | "closeTile";
 
 export const SHORTCUT_ACTIONS: { id: ShortcutAction; label: string; fallback: string }[] = [
   { id: "reveal", label: "Reveal the answer", fallback: " " },
@@ -52,7 +47,9 @@ export function resolveShortcuts(
 }
 
 /** Tasto → azione, la direzione che serve al gestore dei `keydown`. */
-export function shortcutLookup(resolved: Record<ShortcutAction, string>): Record<string, ShortcutAction> {
+export function shortcutLookup(
+  resolved: Record<ShortcutAction, string>,
+): Record<string, ShortcutAction> {
   const map: Record<string, ShortcutAction> = {};
   for (const a of SHORTCUT_ACTIONS) map[resolved[a.id]] = a.id;
   return map;

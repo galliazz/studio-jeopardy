@@ -5,7 +5,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { getOverlayState } from "@/lib/play.functions";
 import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { forceDarkMode, darkBoardColors } from "@/lib/theme-mode";
-import { themeOf, type Category, type Game, type Player, type QueueEntry, type Session, type ThemeSettings, type Tile } from "@/lib/types";
+import {
+  themeOf,
+  type Category,
+  type Game,
+  type Player,
+  type QueueEntry,
+  type Session,
+  type ThemeSettings,
+  type Tile,
+} from "@/lib/types";
 
 export interface OverlayState {
   game: Game;
@@ -45,7 +54,10 @@ export function useOverlayState(token: string): OverlayState | null {
 /** Board palette for the mirror — always the dark-mode resolution. */
 export function useOverlayTheme(state: OverlayState | null): ThemeSettings {
   return useMemo(
-    () => (state ? darkBoardColors(themeOf(state.game), true) : darkBoardColors(themeOf({ theme: null } as unknown as Game), true)),
+    () =>
+      state
+        ? darkBoardColors(themeOf(state.game), true)
+        : darkBoardColors(themeOf({ theme: null } as unknown as Game), true),
     [state?.game],
   );
 }

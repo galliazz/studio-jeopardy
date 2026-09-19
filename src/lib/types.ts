@@ -101,7 +101,6 @@ export function textScopeCss(
   return css;
 }
 
-
 /**
  * Board/clue typography, container-relative. La dimensione salvata in Edit è un
  * MOLTIPLICATORE, non una misura fissa: qui moltiplica sia il termine che segue
@@ -296,15 +295,33 @@ export interface BoardData {
 }
 
 export const PLAYER_AVATARS = [
-  "🎩", "🦊", "🐼", "🚀", "🎸", "🦄", "🤖", "👾",
-  "🐙", "🦉", "🍕", "⚡", "🌵", "🐸", "💎", "🔥",
+  "🎩",
+  "🦊",
+  "🐼",
+  "🚀",
+  "🎸",
+  "🦄",
+  "🤖",
+  "👾",
+  "🐙",
+  "🦉",
+  "🍕",
+  "⚡",
+  "🌵",
+  "🐸",
+  "💎",
+  "🔥",
 ];
 
 /** Relative luminance of a #rrggbb / #rgb string (0 = black, 1 = white). */
 function hexLuma(hex?: string): number {
   if (!hex) return 1;
   let h = hex.replace("#", "").trim();
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
   if (h.length !== 6) return 1;
   const r = parseInt(h.slice(0, 2), 16) / 255;
   const g = parseInt(h.slice(2, 4), 16) / 255;
@@ -326,7 +343,6 @@ export function themeOf(game: Game): ThemeSettings {
   if (merged.radius < 16) merged.radius = 16;
   return merged;
 }
-
 
 export function teamName(theme: ThemeSettings, team: Team): string {
   const name = team === "alpha" ? theme.teamAlpha : theme.teamBravo;

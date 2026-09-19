@@ -99,11 +99,7 @@ export function AccountAvatar({
   }
   if (photoPath && photoUrl) {
     return (
-      <img
-        src={photoUrl}
-        alt="Your avatar"
-        className={`rounded-full object-cover ${className}`}
-      />
+      <img src={photoUrl} alt="Your avatar" className={`rounded-full object-cover ${className}`} />
     );
   }
   return (

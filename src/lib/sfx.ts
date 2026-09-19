@@ -13,7 +13,9 @@ let master: GainNode | null = null;
 function ac(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    const AC =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
   }
@@ -172,7 +174,12 @@ export const sfx = {
     kick(0.02, 0.22);
     const wah = (freq: number, delay: number, dur: number, slideTo?: number) => {
       tone(freq, dur, { type: "sawtooth", gain: 0.1, delay, ...(slideTo ? { slideTo } : {}) });
-      tone(freq / 2, dur, { type: "triangle", gain: 0.08, delay, ...(slideTo ? { slideTo: slideTo / 2 } : {}) });
+      tone(freq / 2, dur, {
+        type: "triangle",
+        gain: 0.08,
+        delay,
+        ...(slideTo ? { slideTo: slideTo / 2 } : {}),
+      });
     };
     wah(233.08, 0.12, 0.24);
     wah(220, 0.4, 0.24);
@@ -205,7 +212,6 @@ export const sfx = {
   },
   /** daily double reveal — drum roll + crash */
   dailyDouble() {
-
     drumRoll(0);
   },
   /** standalone accelerating drum roll ending on a crash */
@@ -216,7 +222,11 @@ export const sfx = {
   victory() {
     crash(0, 0.14);
     const riff: [number, number][] = [
-      [523.25, 0], [523.25, 0.18], [659.25, 0.34], [783.99, 0.52], [1046.5, 0.74],
+      [523.25, 0],
+      [523.25, 0.18],
+      [659.25, 0.34],
+      [783.99, 0.52],
+      [1046.5, 0.74],
     ];
     riff.forEach(([f, d]) => stab(f, d, 0.3, 0.13));
     kick(0, 0.24);

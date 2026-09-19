@@ -11,7 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { AddSoundDialog, type NewClip } from "@/components/AddSoundDialog";
-import { addClip, listClips, removeClip, reorderClips, updateClip, MAX_CLIPS } from "@/lib/soundboard.functions";
+import {
+  addClip,
+  listClips,
+  removeClip,
+  reorderClips,
+  updateClip,
+  MAX_CLIPS,
+} from "@/lib/soundboard.functions";
 import { shortcutsSuppressed } from "@/lib/shortcuts";
 import {
   getBoardVolume,
@@ -49,7 +56,10 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
     if (clips.length) void preloadAll(clips);
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ["soundboard", gameId] }), [qc, gameId]);
+  const refresh = useCallback(
+    () => qc.invalidateQueries({ queryKey: ["soundboard", gameId] }),
+    [qc, gameId],
+  );
 
   const fire = useCallback((clip: SoundboardClip) => {
     playClip(clip);
@@ -111,7 +121,6 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
         <Volume2 className="h-4 w-4" /> Soundboard
       </h3>
 
-
       {clips.length === 0 ? (
         <button
           ref={addButtonRef}
@@ -121,7 +130,9 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
           <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
             <Plus className="h-4 w-4" /> Add sound
           </span>
-          <span className="text-xs text-muted-foreground">No sounds yet — add presets or upload your own</span>
+          <span className="text-xs text-muted-foreground">
+            No sounds yet — add presets or upload your own
+          </span>
         </button>
       ) : (
         <>
@@ -196,7 +207,6 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
         </div>
       )}
 
-
       <AddSoundDialog
         open={addOpen}
         onOpenChange={(v) => {
@@ -268,7 +278,10 @@ function ClipChip({
         playing ? "bg-primary" : "bg-lilac"
       }`}
     >
-      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground" aria-hidden />
+      <GripVertical
+        className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground"
+        aria-hidden
+      />
       <button
         onClick={onPlay}
         aria-label={`Play ${clip.name}${key ? `, key ${key}` : ""}`}
@@ -302,7 +315,10 @@ function ClipChip({
           >
             Rename
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={clip.source !== "upload"} onSelect={() => setEditingTrim(true)}>
+          <DropdownMenuItem
+            disabled={clip.source !== "upload"}
+            onSelect={() => setEditingTrim(true)}
+          >
             Edit trim
           </DropdownMenuItem>
           <DropdownMenuItem className="text-destructive" onSelect={() => void onRemove()}>
@@ -352,7 +368,13 @@ function TrimEditor({
     <div className="absolute inset-x-0 top-full z-20 mt-1 flex flex-col gap-2 rounded-[22px] bg-card p-3 elev-2">
       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         Start {start.toFixed(2)}s
-        <Slider value={[start]} min={0} max={Math.max(end, 8)} step={0.05} onValueChange={([v]) => setStart(v ?? 0)} />
+        <Slider
+          value={[start]}
+          min={0}
+          max={Math.max(end, 8)}
+          step={0.05}
+          onValueChange={([v]) => setStart(v ?? 0)}
+        />
       </label>
       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         End {end.toFixed(2)}s
@@ -366,15 +388,28 @@ function TrimEditor({
       </label>
       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         Gain {Math.round(gain * 100)}%
-        <Slider value={[gain * 100]} min={0} max={200} step={5} onValueChange={([v]) => setGain((v ?? 100) / 100)} />
+        <Slider
+          value={[gain * 100]}
+          min={0}
+          max={200}
+          step={5}
+          onValueChange={([v]) => setGain((v ?? 100) / 100)}
+        />
       </label>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border-2 border-border px-3 py-1.5 text-[11px] font-bold">
+        <button
+          onClick={onClose}
+          className="rounded-full border-2 border-border px-3 py-1.5 text-[11px] font-bold"
+        >
           Cancel
         </button>
         <button
           onClick={() =>
-            void onSave({ trimStartMs: Math.round(start * 1000), trimEndMs: Math.round(end * 1000), gain })
+            void onSave({
+              trimStartMs: Math.round(start * 1000),
+              trimEndMs: Math.round(end * 1000),
+              gain,
+            })
           }
           className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-foreground"
         >

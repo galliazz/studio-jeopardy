@@ -84,14 +84,26 @@ function CropStep({
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs font-semibold text-muted-foreground">Zoom</span>
-        <Slider value={[zoom * 100]} min={100} max={300} step={1} onValueChange={([v]) => setZoom((v ?? 100) / 100)} />
+        <Slider
+          value={[zoom * 100]}
+          min={100}
+          max={300}
+          step={1}
+          onValueChange={([v]) => setZoom((v ?? 100) / 100)}
+        />
       </div>
       <p className="text-center text-xs text-muted-foreground">Drag the photo to reposition it.</p>
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className="h-11 rounded-full border border-border px-5 text-sm font-bold text-foreground">
+        <button
+          onClick={onCancel}
+          className="h-11 rounded-full border border-border px-5 text-sm font-bold text-foreground"
+        >
           Back
         </button>
-        <button onClick={confirm} className="h-11 rounded-full bg-coral px-6 text-sm font-black text-foreground elev-1">
+        <button
+          onClick={confirm}
+          className="h-11 rounded-full bg-coral px-6 text-sm font-black text-foreground elev-1"
+        >
           Use photo
         </button>
       </div>
@@ -172,13 +184,19 @@ export function ChooseAvatarDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90svh] w-full overflow-y-auto rounded-[32px] p-6 sm:max-w-[560px]">
-        <DialogTitle className="font-display text-2xl font-black text-foreground">Choose avatar</DialogTitle>
+        <DialogTitle className="font-display text-2xl font-black text-foreground">
+          Choose avatar
+        </DialogTitle>
         <DialogDescription className="text-sm text-muted-foreground">
           Pick a preset or upload your own photo.
         </DialogDescription>
 
         {pending ? (
-          <CropStep file={pending} onCancel={() => setPending(null)} onConfirm={(b) => void confirmCrop(b)} />
+          <CropStep
+            file={pending}
+            onCancel={() => setPending(null)}
+            onConfirm={(b) => void confirmCrop(b)}
+          />
         ) : (
           <div className="space-y-5">
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -246,7 +264,9 @@ export function ChooseAvatarDialog({
                   }`}
                 >
                   <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm font-semibold text-foreground">Drop an image or click to browse</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    Drop an image or click to browse
+                  </p>
                   <p className="text-xs text-muted-foreground">JPG, PNG or WebP · up to 5MB</p>
                 </div>
               </div>
@@ -272,7 +292,11 @@ export function ChooseAvatarDialog({
                 disabled={!choice || busy}
                 className="flex h-12 items-center gap-2 rounded-full bg-coral px-7 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-105 disabled:pointer-events-none disabled:opacity-40"
               >
-                {busy ? <Upload className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
+                {busy ? (
+                  <Upload className="h-4 w-4 animate-pulse" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
                 Select
               </button>
             </div>

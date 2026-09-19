@@ -30,7 +30,13 @@ export function StudioTopBar({
           </h1>
         </>
       }
-      right={<AccountMenu displayName={displayName} avatarUrl={avatarUrl} onOpenSettings={onOpenSettings} />}
+      right={
+        <AccountMenu
+          displayName={displayName}
+          avatarUrl={avatarUrl}
+          onOpenSettings={onOpenSettings}
+        />
+      }
     />
   );
 }

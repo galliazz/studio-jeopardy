@@ -86,7 +86,10 @@ export const updateClip = createServerFn({ method: "POST" })
     if (data.trimStartMs !== undefined) patch.trim_start_ms = data.trimStartMs;
     if (data.trimEndMs !== undefined) patch.trim_end_ms = data.trimEndMs;
     if (data.gain !== undefined) patch.gain = data.gain;
-    const { error } = await context.supabase.from("soundboard_clips").update(patch).eq("id", data.clipId);
+    const { error } = await context.supabase
+      .from("soundboard_clips")
+      .update(patch)
+      .eq("id", data.clipId);
 
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -95,7 +98,9 @@ export const updateClip = createServerFn({ method: "POST" })
 /** Removes a clip and compacts the remaining positions. */
 export const removeClip = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ clipId: z.string().uuid(), gameId: z.string().uuid() }).parse(data))
+  .inputValidator((data) =>
+    z.object({ clipId: z.string().uuid(), gameId: z.string().uuid() }).parse(data),
+  )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const { error } = await supabase.from("soundboard_clips").delete().eq("id", data.clipId);
@@ -106,7 +111,9 @@ export const removeClip = createServerFn({ method: "POST" })
       .eq("game_id", data.gameId)
       .order("position", { ascending: true });
     await Promise.all(
-      (rest ?? []).map((c, i) => supabase.from("soundboard_clips").update({ position: i }).eq("id", c.id)),
+      (rest ?? []).map((c, i) =>
+        supabase.from("soundboard_clips").update({ position: i }).eq("id", c.id),
+      ),
     );
     return { ok: true };
   });
@@ -114,11 +121,19 @@ export const removeClip = createServerFn({ method: "POST" })
 /** Persists a new clip order (number keys follow position). */
 export const reorderClips = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ gameId: z.string().uuid(), ids: z.array(z.string().uuid()).max(MAX_CLIPS) }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({ gameId: z.string().uuid(), ids: z.array(z.string().uuid()).max(MAX_CLIPS) })
+      .parse(data),
+  )
   .handler(async ({ context, data }) => {
     await Promise.all(
       data.ids.map((id, i) =>
-        context.supabase.from("soundboard_clips").update({ position: i }).eq("id", id).eq("game_id", data.gameId),
+        context.supabase
+          .from("soundboard_clips")
+          .update({ position: i })
+          .eq("id", id)
+          .eq("game_id", data.gameId),
       ),
     );
     return { ok: true };

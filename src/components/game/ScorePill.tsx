@@ -50,7 +50,10 @@ function TeamCountBadge({ team, count }: { team: Team; count: number }) {
       aria-label={`${count} players on this team`}
     >
       <svg viewBox="0 0 100 100" className="h-7 w-7">
-        <path d={COOKIE_PATH} className={team === "alpha" ? "fill-team-alpha-ink" : "fill-team-bravo-ink"} />
+        <path
+          d={COOKIE_PATH}
+          className={team === "alpha" ? "fill-team-alpha-ink" : "fill-team-bravo-ink"}
+        />
       </svg>
       <span
         className={`absolute inset-0 flex items-center justify-center pb-[1px] font-display text-[11px] font-black leading-none ${
@@ -88,12 +91,21 @@ function ScoreControls({
         mirrored ? "mr-2 flex-row" : "ml-2 flex-row-reverse"
       }`}
     >
-      <button onClick={() => onAdjust(-step)} aria-label={`Subtract ${step} from ${name}`} title={`−${step}`} className={btn}>
+      <button
+        onClick={() => onAdjust(-step)}
+        aria-label={`Subtract ${step} from ${name}`}
+        title={`−${step}`}
+        className={btn}
+      >
         <Minus className="h-4 w-4" />
       </button>
       <Popover>
         <PopoverTrigger asChild>
-          <button aria-label={`Custom score change for ${name}`} title="Custom amount" className={btn}>
+          <button
+            aria-label={`Custom score change for ${name}`}
+            title="Custom amount"
+            className={btn}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </PopoverTrigger>
@@ -146,7 +158,12 @@ function ScoreControls({
           </div>
         </PopoverContent>
       </Popover>
-      <button onClick={() => onAdjust(step)} aria-label={`Add ${step} to ${name}`} title={`+${step}`} className={btn}>
+      <button
+        onClick={() => onAdjust(step)}
+        aria-label={`Add ${step} to ${name}`}
+        title={`+${step}`}
+        className={btn}
+      >
         <Plus className="h-4 w-4" />
       </button>
     </div>
@@ -154,7 +171,15 @@ function ScoreControls({
 }
 
 /** The score value, editable in place on double click without shifting layout. */
-function EditableScore({ score, name, onSet }: { score: number; name: string; onSet?: ((value: number) => void) | undefined }) {
+function EditableScore({
+  score,
+  name,
+  onSet,
+}: {
+  score: number;
+  name: string;
+  onSet?: ((value: number) => void) | undefined;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(score));
   const inputRef = useRef<HTMLInputElement>(null);
@@ -273,7 +298,13 @@ export function ScorePill({
   );
 
   const adjust = onAdjust && (
-    <ScoreControls name={name} step={step} quickValues={quickValues} mirrored={mirrored} onAdjust={onAdjust} />
+    <ScoreControls
+      name={name}
+      step={step}
+      quickValues={quickValues}
+      mirrored={mirrored}
+      onAdjust={onAdjust}
+    />
   );
 
   const pill = (

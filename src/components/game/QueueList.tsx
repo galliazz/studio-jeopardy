@@ -23,7 +23,10 @@ export function QueueList({
   const tileQueue = useMemo(() => {
     if (!session.current_tile_id) return [];
     return queue
-      .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
+      .filter(
+        (q) =>
+          q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+      )
       .sort((a, b) => a.created_at.localeCompare(b.created_at));
   }, [queue, session.current_tile_id]);
   const firstAt = tileQueue[0] ? new Date(tileQueue[0].created_at).getTime() : 0;
@@ -47,49 +50,48 @@ export function QueueList({
           </button>
         )}
       </div>
-    <ol className="space-y-2">
-
-      {tileQueue.map((entry, i) => {
-        const player = players.find((p) => p.id === entry.player_id);
-        if (!player) return null;
-        const delta = new Date(entry.created_at).getTime() - firstAt;
-        const isActive = entry.status === "active";
-        return (
-          <motion.li
-            key={entry.id}
-            layout={animateLayout}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={SPRING_UI}
-            className={`flex items-center gap-3 rounded-[26px] px-3 py-2.5 ${
-              isActive ? "bg-butter elev-1" : "border border-foreground/10 bg-transparent"
-            }`}
-          >
-            <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center font-display text-xs font-black text-foreground scallop ${
-                isActive ? "bg-peach" : "bg-muted"
+      <ol className="space-y-2">
+        {tileQueue.map((entry, i) => {
+          const player = players.find((p) => p.id === entry.player_id);
+          if (!player) return null;
+          const delta = new Date(entry.created_at).getTime() - firstAt;
+          const isActive = entry.status === "active";
+          return (
+            <motion.li
+              key={entry.id}
+              layout={animateLayout}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={SPRING_UI}
+              className={`flex items-center gap-3 rounded-[26px] px-3 py-2.5 ${
+                isActive ? "bg-butter elev-1" : "border border-foreground/10 bg-transparent"
               }`}
             >
-              #{i + 1}
-            </span>
-            <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center text-base scallop ${
-                player.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
-              }`}
-            >
-              {player.avatar}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">{player.name}</p>
-              <p className="text-[10px] text-muted-foreground">
-                {i === 0 ? "first in" : formatDelta(delta)} · {player.team}
-              </p>
-            </div>
-            {isActive && <span className="h-3 w-3 animate-pulse rounded-full bg-ink-gold" />}
-          </motion.li>
-        );
-      })}
-    </ol>
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center font-display text-xs font-black text-foreground scallop ${
+                  isActive ? "bg-peach" : "bg-muted"
+                }`}
+              >
+                #{i + 1}
+              </span>
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center text-base scallop ${
+                  player.team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"
+                }`}
+              >
+                {player.avatar}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold">{player.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {i === 0 ? "first in" : formatDelta(delta)} · {player.team}
+                </p>
+              </div>
+              {isActive && <span className="h-3 w-3 animate-pulse rounded-full bg-ink-gold" />}
+            </motion.li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

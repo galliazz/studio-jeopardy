@@ -7,10 +7,16 @@ export const Route = createFileRoute("/overlay/board/$overlayToken")({
   head: () => ({
     meta: [
       { title: "Board overlay — JEOPARDESTINY" },
-      { name: "description", content: "Transparent board and clue mirror for OBS browser sources." },
+      {
+        name: "description",
+        content: "Transparent board and clue mirror for OBS browser sources.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Board overlay — JEOPARDESTINY" },
-      { property: "og:description", content: "Transparent board and clue mirror for OBS browser sources." },
+      {
+        property: "og:description",
+        content: "Transparent board and clue mirror for OBS browser sources.",
+      },
     ],
   }),
   component: BoardOverlay,

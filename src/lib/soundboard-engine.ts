@@ -60,7 +60,8 @@ function ac(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
     const AC =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
   }
@@ -69,7 +70,10 @@ function ac(): AudioContext | null {
 }
 
 const buffers = new Map<string, AudioBuffer>();
-const active = new Map<string, { source: AudioBufferSourceNode | null; endsAt: number; startedAt: number }>();
+const active = new Map<
+  string,
+  { source: AudioBufferSourceNode | null; endsAt: number; startedAt: number }
+>();
 
 /** Board-level volume (0..1), separate from the Settings SFX volume. */
 let boardVolume = 0.9;

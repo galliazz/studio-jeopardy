@@ -68,9 +68,15 @@ export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
     meta: [
       { title: "Studio — JEOPARDESTINY" },
-      { name: "description", content: "Your Jeopardy studio: create, edit and host live trivia boards." },
+      {
+        name: "description",
+        content: "Your Jeopardy studio: create, edit and host live trivia boards.",
+      },
       { property: "og:title", content: "Studio — JEOPARDESTINY" },
-      { property: "og:description", content: "Your Jeopardy studio: create, edit and host live trivia boards." },
+      {
+        property: "og:description",
+        content: "Your Jeopardy studio: create, edit and host live trivia boards.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -131,7 +137,9 @@ function StudioPage() {
     return () => document.removeEventListener("mousedown", handleDown, true);
   }, [searchOpen, search]);
   const games = useMemo(() => {
-    const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));
+    const all = ((data?.games ?? []) as unknown as Game[]).filter(
+      (g) => !pendingDelete.includes(g.id),
+    );
     if (!search.trim()) return all;
     return all.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()));
   }, [data, search, pendingDelete]);
@@ -146,7 +154,10 @@ function StudioPage() {
       const prefs = getSettings();
       if (prefs.teamAlpha.trim() || prefs.teamBravo.trim()) {
         await updateGame({
-          data: { gameId: game.id, theme: { teamAlpha: prefs.teamAlpha, teamBravo: prefs.teamBravo } },
+          data: {
+            gameId: game.id,
+            theme: { teamAlpha: prefs.teamAlpha, teamBravo: prefs.teamBravo },
+          },
         });
       }
       toast.success("Board created");
@@ -270,8 +281,14 @@ function StudioPage() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
-      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl"
+      />
 
       <StudioTopBar
         displayName={data?.profile?.username ?? "Host"}
@@ -363,8 +380,6 @@ function StudioPage() {
           />
         </div>
 
-
-
         {/* Create dialog (inline card) */}
         {creating && (
           <motion.div
@@ -402,7 +417,6 @@ function StudioPage() {
         {/* Game cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2000px]:grid-cols-6">
-
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
@@ -423,7 +437,6 @@ function StudioPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2000px]:grid-cols-6">
-
             {games.map((game, i) => (
               <GameCard
                 key={game.id}
@@ -477,7 +490,9 @@ function GameCard({
   useEffect(() => setDraftTitle(game.title), [game.title]);
 
   const joinUrl =
-    typeof window === "undefined" ? `/play/${game.join_code}` : `${window.location.origin}/play/${game.join_code}`;
+    typeof window === "undefined"
+      ? `/play/${game.join_code}`
+      : `${window.location.origin}/play/${game.join_code}`;
 
   const commitRename = () => {
     setRenaming(false);
@@ -570,13 +585,22 @@ function GameCard({
                 >
                   <Pencil className="mr-2 h-4 w-4" /> Rename
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onDuplicate}>
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={onDuplicate}
+                >
                   <Copy className="mr-2 h-4 w-4" /> Duplicate
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onExport}>
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={onExport}
+                >
                   <Download className="mr-2 h-4 w-4" /> Export JSON
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onExportXlsx}>
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={onExportXlsx}
+                >
                   <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -592,7 +616,10 @@ function GameCard({
         </div>
 
         {/* b) Board preview — three distinct surface levels, dashed cells when empty */}
-        <div className="mb-4 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3" style={{ backgroundColor: theme.bg }}>
+        <div
+          className="mb-4 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3"
+          style={{ backgroundColor: theme.bg }}
+        >
           {Array.from({ length: 5 }).map((_, col) => (
             <div
               key={col}
@@ -649,9 +676,13 @@ function GameCard({
         <DialogContent className="rounded-[32px] sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-display">Join code</DialogTitle>
-            <DialogDescription>Players can join with this code or by scanning the QR.</DialogDescription>
+            <DialogDescription>
+              Players can join with this code or by scanning the QR.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-center font-mono text-3xl font-black tracking-widest text-foreground">{game.join_code}</p>
+          <p className="text-center font-mono text-3xl font-black tracking-widest text-foreground">
+            {game.join_code}
+          </p>
           <div className="flex justify-center rounded-[18px] bg-white p-3">
             <QRCodeSVG value={joinUrl} size={160} />
           </div>

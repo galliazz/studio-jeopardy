@@ -7,7 +7,10 @@ export const Route = createFileRoute("/overlay/queue/$overlayToken")({
   head: () => ({
     meta: [
       { title: "Queue overlay — JEOPARDESTINY" },
-      { name: "description", content: "Transparent scores and buzzer queue mirror for OBS browser sources." },
+      {
+        name: "description",
+        content: "Transparent scores and buzzer queue mirror for OBS browser sources.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Queue overlay — JEOPARDESTINY" },
       {

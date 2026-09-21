@@ -1,1 +1,70 @@
-export const play = {};
+/** Il telefono del giocatore: ingresso in partita, buzzer, Final Jeopardy. */
+export const play = {
+  lookup: {
+    finding: "Finding your game…",
+    serverErrorTitle: "Server error",
+    serverErrorBody:
+      "The board is up but the server refused the request. This is not something you can fix from here — tell the host.",
+    notStartedTitle: "Game not started yet",
+    notStartedBody: "The host hasn't gone live with this board yet. Wait a moment and refresh.",
+    notFoundTitle: "Game not found",
+    notFoundBody: "No live game matches code “{code}”. Check the code and try again.",
+  },
+  join: {
+    intro: "No account needed — pick a name, avatar and team.",
+    nameLabel: "Your name",
+    nameLength: "Use {min} to {max} characters",
+    avatarLabel: "Your avatar",
+    avatarOption: "Avatar {avatar}",
+    teamLabel: "Your team",
+    notAccepting: "This game isn't accepting players right now.",
+    gameGone: "That game has finished or no longer exists.",
+    fullOrClosed: "The game is full or closed — ask the host.",
+    failed: "Could not join — try again.",
+    joining: "Joining…",
+    joinGame: "Join game",
+  },
+  lobby: {
+    title: "You're in",
+    waiting: "Waiting for the host to open the board…",
+    changeIdentity: "Change name, avatar or team",
+  },
+  idle: {
+    title: "Get ready",
+    body: "Waiting for the next question.",
+  },
+  buzzer: {
+    youreUp: "YOU'RE UP!",
+    secondsLeft: "{seconds}s",
+    answerOutLoud: "Answer out loud — the host is listening!",
+    lockedOutTitle: "Locked out",
+    lockedOutBody: "Incorrect — wait for the next question.",
+    inLine: "IN LINE",
+    position: "#{position}",
+    lockedIn: "Your buzz is locked in!",
+    buzz: "BUZZ",
+    closed: "Buzzers are closed",
+    rejected: "Buzz rejected",
+    failed: "Buzz failed — try again",
+  },
+  reveal: {
+    title: "Answer revealed",
+    body: "Watch the board — next tile coming up.",
+  },
+  finished: {
+    tie: "It's a tie!",
+    wins: "{team} wins!",
+    yourTeamScored: "Your team scored <b>{score}</b>",
+  },
+  final: {
+    title: "Final Jeopardy",
+    rules: "One submission per team — {team} · max wager {max}",
+    wager: "Wager",
+    answerPlaceholder: "Your team's answer…",
+    lockInWager: "Lock in wager",
+    submitAnswer: "Submit final answer",
+    rejected: "Submission rejected",
+    sentTitle: "Locked in",
+    sentBody: "Your team's final answer is in. Waiting for the host…",
+  },
+};

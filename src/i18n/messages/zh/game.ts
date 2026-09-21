@@ -1,0 +1,52 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · 分值翻倍",
+    fallbackCategory: "题目",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "题目媒体",
+    tileClosed: "题格已关闭",
+    buzzersOpen: "抢答已开放",
+  },
+  queue: {
+    title: "抢答队列",
+    clear: "清空队列",
+    clearConfirm: "清空抢答队列？所有排队的人都会被移除。",
+    position: "#{position}",
+    firstIn: "最快",
+    deltaMs: "+{ms}ms",
+    deltaSeconds: "+{seconds}s",
+  },
+  score: {
+    teamPlayers: { other: "{count} 名玩家" },
+    teamPlayersLabel: { other: "本队有 {count} 名玩家" },
+    subtractFrom: "给 {name} 减 {step}",
+    addTo: "给 {name} 加 {step}",
+    customChangeFor: "自定义 {name} 的分数变动",
+    customAmount: "自定义数值",
+    subtract: "减去",
+    teamScore: "{name} 的分数",
+    doubleClickToEdit: "双击编辑",
+  },
+  fontFamilies: {
+    display: "展示体",
+    sans: "无衬线",
+    system: "系统",
+    grotesk: "怪诞体",
+    rounded: "圆体",
+    serif: "衬线",
+    oldStyle: "旧式衬线",
+    slab: "粗衬线",
+    mono: "等宽",
+    condensed: "窄体",
+    handwriting: "手写体",
+  },
+  fontWeights: {
+    "300": "细体",
+    "400": "常规",
+    "500": "中等",
+    "700": "粗体",
+    "900": "特粗",
+  },
+};

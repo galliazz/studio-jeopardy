@@ -8,6 +8,7 @@ import { isPreviewSurface } from "@/lib/preview";
 import { AppBar, GuestSettingsButton } from "@/components/AppBar";
 import { AccountMenu } from "@/components/AccountMenu";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { useT } from "@/i18n";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
 
 export const Route = createFileRoute("/")({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  const t = useT();
   const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [signedIn, setSignedIn] = useState(false);
@@ -93,11 +95,11 @@ function LandingPage() {
         {/* Expressive blobs */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl"
+          className="pointer-events-none absolute -start-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-48 -right-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl"
+          className="pointer-events-none absolute -bottom-48 -end-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl"
         />
         <div
           aria-hidden
@@ -122,21 +124,19 @@ function LandingPage() {
           <h1 className="font-display text-5xl font-black tracking-tight text-foreground sm:text-6xl">
             JEOPARD<span className="text-ink-accent">E</span>STINY
           </h1>
-          <p className="mt-4 max-w-md text-lg text-muted-foreground">
-            Build a board. Share a code. Phones become buzzers. You become the host.
-          </p>
+          <p className="mt-4 max-w-md text-lg text-muted-foreground">{t("home.tagline")}</p>
 
           <div className="mt-10 w-full rounded-[36px] bg-card p-6 elev-2 sm:p-8">
             <label className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
               <Gamepad2 className="h-4 w-4 text-ink-accent" />
-              Join a live game
+              {t("home.join.label")}
             </label>
             <div className="flex gap-2">
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === "Enter" && join()}
-                placeholder="GAME CODE"
+                placeholder={t("home.join.placeholder")}
                 maxLength={8}
                 className="h-14 flex-1 rounded-full bg-muted px-6 text-center font-display text-xl font-bold tracking-[0.3em] text-foreground outline-none ring-2 ring-transparent transition-all placeholder:text-muted-foreground/50 focus:ring-ink-accent"
               />
@@ -145,7 +145,7 @@ function LandingPage() {
                 onClick={join}
                 className="h-14 rounded-full bg-coral px-8 font-display font-black text-foreground elev-2 transition-transform hover:scale-105"
               >
-                Join
+                {t("home.join.submit")}
               </motion.button>
             </div>
           </div>
@@ -156,7 +156,7 @@ function LandingPage() {
             className="mt-6 flex items-center gap-2 rounded-full bg-lilac px-8 py-4 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
           >
             <Radio className="h-5 w-5 text-ink-gold" />
-            {signedIn ? "Open your Studio" : "Host your own board"}
+            {signedIn ? t("home.openStudio") : t("home.hostYourOwn")}
           </motion.button>
         </motion.div>
       </div>

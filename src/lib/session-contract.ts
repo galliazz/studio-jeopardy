@@ -1,4 +1,4 @@
-import { DEFAULT_TIMER_DURATION_MS } from "@/hooks/use-countdown";
+import { TIMER_DURATION_MS } from "@/lib/game-rules";
 import type { Category, Game, Player, QueueEntry, Session, Tile } from "@/lib/types";
 
 /**
@@ -114,7 +114,7 @@ export function toSessionState({
   const playerName = new Map(players.map((p) => [p.id, p.name]));
   const playerTeam = new Map(players.map((p) => [p.id, p.team as string]));
 
-  const durationMs = DEFAULT_TIMER_DURATION_MS;
+  const durationMs = TIMER_DURATION_MS;
   const endsAt = session.timer_ends_at ? Date.parse(session.timer_ends_at) : null;
   const startedAt = endsAt !== null ? new Date(endsAt - durationMs).toISOString() : null;
   const timerState: TimerState =

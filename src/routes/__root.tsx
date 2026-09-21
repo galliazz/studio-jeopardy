@@ -17,7 +17,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "../integrations/supabase/client";
 import { initThemeMode } from "../lib/theme-mode";
 import { useSettings } from "../lib/settings";
-import { startLocaleSync, useT } from "../i18n";
+import { localeInfo, startLocaleSync, useT } from "../i18n";
 
 function NotFoundComponent() {
   const t = useT();
@@ -149,6 +149,20 @@ function AuthListener() {
   return null;
 }
 
+function AppToaster() {
+  const t = useT();
+  return (
+    <Toaster
+      position="top-center"
+      richColors
+      closeButton
+      dir={localeInfo(t.locale).dir}
+      containerAriaLabel={t("shell.toasts.region")}
+      toastOptions={{ closeButtonAriaLabel: t("shell.toasts.close") }}
+    />
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
@@ -175,7 +189,7 @@ function RootComponent() {
         {/* Nessuna pillola globale in cima: ogni pagina ha la barra condivisa
             (AppBar), con il profilo sempre nello stesso punto. */}
         <Outlet />
-        {!overlay && <Toaster position="top-center" richColors closeButton />}
+        {!overlay && <AppToaster />}
       </MotionConfig>
     </QueryClientProvider>
   );

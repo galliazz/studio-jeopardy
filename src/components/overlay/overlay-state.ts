@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
+import { isLocale, type Locale } from "@/i18n";
 import { getOverlayState } from "@/lib/play.functions";
 import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { forceDarkMode, darkBoardColors } from "@/lib/theme-mode";
@@ -30,6 +31,15 @@ export interface OverlayState {
 export const CANVAS_W = 1920;
 export const CANVAS_H = 1080;
 export const SAFE = 60;
+
+/**
+ * La lingua arriva nel link (`?lang=it`), perché una sorgente OBS non ha
+ * impostazioni da cui leggerla. Un codice sconosciuto si ignora.
+ */
+export function overlaySearch(search: Record<string, unknown>): { lang?: Locale } {
+  const lang = search["lang"];
+  return isLocale(lang) ? { lang } : {};
+}
 
 /**
  * Token-scoped overlay snapshot. Realtime is the only update mechanism: the

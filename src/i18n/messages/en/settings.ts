@@ -1,1 +1,48 @@
-export const settings = {};
+/** La finestra delle impostazioni, condivisa da tutte le pagine. */
+export const settings = {
+  description: "Changes apply immediately.",
+  account: {
+    title: "Account",
+    changeAvatar: "Change avatar",
+    displayName: "Display name",
+    email: "Email",
+    notSignedIn: "Not signed in",
+    nameLength: "Use 2 to 24 characters",
+    nameUpdated: "Display name updated",
+    nameSaveFailed: "Could not save name",
+  },
+  appearance: {
+    title: "Appearance",
+    theme: "Theme",
+    themeSystem: "System",
+    themeDay: "Day",
+    themeNight: "Night",
+    reduceMotion: "Reduce motion",
+    reduceMotionHint: "Disables non-essential animations",
+  },
+  audio: {
+    title: "Audio",
+    masterVolume: "Master volume",
+    soundEffects: "Sound effects",
+    muteAll: "Mute all",
+    testSound: "Test sound",
+    play: "Play",
+  },
+  performance: {
+    title: "Performance",
+    graphicsQuality: "Graphics quality",
+    graphicsQualityHint: "Blur, gradients and heavy animations",
+    qualityHigh: "High",
+    qualityMedium: "Medium",
+    qualityLow: "Low",
+    backgroundEffects: "Background effects",
+    backgroundEffectsHint: "Ambient colored blobs",
+  },
+  keyboard: {
+    title: "Keyboard shortcuts",
+    customKeys: "Custom keys",
+    customKeysHint: "Saved to your profile — same keys on any computer",
+    hide: "Hide",
+    customise: "Customise",
+  },
+};

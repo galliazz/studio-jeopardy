@@ -1,0 +1,55 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · अंक दोगुने",
+    fallbackCategory: "सवाल",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "सवाल का मीडिया",
+    tileClosed: "टाइल बंद",
+    buzzersOpen: "बज़र खुले",
+  },
+  queue: {
+    title: "बज़र की कतार",
+    clear: "कतार खाली करो",
+    clearConfirm: "बज़र की कतार खाली करनी है? इंतज़ार कर रहे सभी हट जाएँगे।",
+    position: "#{position}",
+    firstIn: "सबसे पहले",
+    deltaMs: "+{ms}ms",
+    deltaSeconds: "+{seconds}s",
+  },
+  score: {
+    teamPlayers: { one: "{count} खिलाड़ी", other: "{count} खिलाड़ी" },
+    teamPlayersLabel: {
+      one: "इस टीम में {count} खिलाड़ी",
+      other: "इस टीम में {count} खिलाड़ी",
+    },
+    subtractFrom: "{name} से {step} घटाओ",
+    addTo: "{name} को {step} जोड़ो",
+    customChangeFor: "{name} के स्कोर में मनचाहा बदलाव",
+    customAmount: "मनचाहे अंक",
+    subtract: "घटाओ",
+    teamScore: "{name} का स्कोर",
+    doubleClickToEdit: "बदलने के लिए डबल-क्लिक",
+  },
+  fontFamilies: {
+    display: "डिस्प्ले",
+    sans: "सैंस",
+    system: "सिस्टम",
+    grotesk: "ग्रोटेस्क",
+    rounded: "राउंडेड",
+    serif: "सेरिफ़",
+    oldStyle: "ओल्ड स्टाइल",
+    slab: "स्लैब",
+    mono: "मोनो",
+    condensed: "कंडेंस्ड",
+    handwriting: "हैंडराइटिंग",
+  },
+  fontWeights: {
+    "300": "लाइट",
+    "400": "रेगुलर",
+    "500": "मीडियम",
+    "700": "बोल्ड",
+    "900": "ब्लैक",
+  },
+};

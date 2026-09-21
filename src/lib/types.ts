@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react";
+import type { MessageKey } from "@/i18n/messages/en/index";
+import type { Vars } from "@/i18n/types";
 
 export type Team = "alpha" | "bravo";
 
@@ -55,29 +57,62 @@ export const DEFAULT_THEME: ThemeSettings = {
  * Solo caratteri già presenti sulla macchina o già caricati dall'app: una
  * famiglia che va scaricata comparirebbe dopo, e sulla trasmissione OBS
  * significa vedere la board cambiare forma in diretta.
+ *
+ * Il nome da mostrare è `labelKey`, tradotto: sono nomi di stile, non i nomi
+ * veri dei caratteri.
  */
-export const BOARD_FONTS: { label: string; value: string }[] = [
-  { label: "Display", value: "" },
-  { label: "Sans", value: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif" },
-  { label: "System", value: "system-ui, -apple-system, 'Segoe UI', sans-serif" },
-  { label: "Grotesk", value: "'Helvetica Neue', Helvetica, Arial, sans-serif" },
-  { label: "Rounded", value: "'Trebuchet MS', 'Segoe UI', sans-serif" },
-  { label: "Serif", value: "Georgia, 'Times New Roman', serif" },
-  { label: "Old Style", value: "'Palatino Linotype', Palatino, 'Book Antiqua', serif" },
-  { label: "Slab", value: "Rockwell, 'Courier Bold', Courier, Georgia, serif" },
-  { label: "Mono", value: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" },
-  { label: "Condensed", value: "'Arial Narrow', 'Helvetica Neue Condensed', sans-serif" },
-  { label: "Handwriting", value: "'Bradley Hand', 'Segoe Script', cursive" },
+export const BOARD_FONTS: { labelKey: MessageKey; value: string }[] = [
+  { labelKey: "game.fontFamilies.display", value: "" },
+  {
+    labelKey: "game.fontFamilies.sans",
+    value: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif",
+  },
+  {
+    labelKey: "game.fontFamilies.system",
+    value: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  },
+  {
+    labelKey: "game.fontFamilies.grotesk",
+    value: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  },
+  {
+    labelKey: "game.fontFamilies.rounded",
+    value: "'Trebuchet MS', 'Segoe UI', sans-serif",
+  },
+  {
+    labelKey: "game.fontFamilies.serif",
+    value: "Georgia, 'Times New Roman', serif",
+  },
+  {
+    labelKey: "game.fontFamilies.oldStyle",
+    value: "'Palatino Linotype', Palatino, 'Book Antiqua', serif",
+  },
+  {
+    labelKey: "game.fontFamilies.slab",
+    value: "Rockwell, 'Courier Bold', Courier, Georgia, serif",
+  },
+  {
+    labelKey: "game.fontFamilies.mono",
+    value: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+  },
+  {
+    labelKey: "game.fontFamilies.condensed",
+    value: "'Arial Narrow', 'Helvetica Neue Condensed', sans-serif",
+  },
+  {
+    labelKey: "game.fontFamilies.handwriting",
+    value: "'Bradley Hand', 'Segoe Script', cursive",
+  },
 ];
 
 /** I pesi offerti dal menu del carattere. Non tutte le famiglie li hanno tutti:
  *  dove manca il taglio, il browser lo sintetizza o si avvicina. */
-export const FONT_WEIGHTS: { label: string; value: number }[] = [
-  { label: "Light", value: 300 },
-  { label: "Book", value: 400 },
-  { label: "Medium", value: 500 },
-  { label: "Bold", value: 700 },
-  { label: "Black", value: 900 },
+export const FONT_WEIGHTS: { labelKey: MessageKey; value: number }[] = [
+  { labelKey: "game.fontWeights.300", value: 300 },
+  { labelKey: "game.fontWeights.400", value: 400 },
+  { labelKey: "game.fontWeights.500", value: 500 },
+  { labelKey: "game.fontWeights.700", value: 700 },
+  { labelKey: "game.fontWeights.900", value: 900 },
 ];
 
 /**
@@ -349,7 +384,8 @@ export function teamName(theme: ThemeSettings, team: Team): string {
   return name?.trim() || (team === "alpha" ? "Alpha" : "Bravo");
 }
 
-export function formatDelta(ms: number): string {
-  if (ms < 1000) return `+${Math.round(ms)}ms`;
-  return `+${(ms / 1000).toFixed(2)}s`;
+/** Il ritardo di un buzz sul primo. Le unità passano da `t`: "ms" e "s" non si scrivono così ovunque. */
+export function formatDelta(ms: number, t: (key: MessageKey, vars?: Vars) => string): string {
+  if (ms < 1000) return t("game.queue.deltaMs", { ms: Math.round(ms) });
+  return t("game.queue.deltaSeconds", { seconds: (ms / 1000).toFixed(2) });
 }

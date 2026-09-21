@@ -92,7 +92,9 @@ let started = false;
 export function startLocaleSync() {
   if (started || typeof window === "undefined") return;
   started = true;
-  void switchLocale(getSettings().language);
+  // Gli effetti dei figli girano prima di quello della radice: un overlay può
+  // aver già imposto la sua lingua, e qui non va scavalcata.
+  void switchLocale(forced ?? getSettings().language);
   subscribeSettings((s) => {
     if (!forced) void switchLocale(s.language);
   });
@@ -119,8 +121,7 @@ export function useForcedLocale(code: string | null | undefined) {
  * com'è: meglio un messaggio in inglese che uno generico che non dice niente.
  */
 export function localizeError(err: unknown, fallback: MessageKey = "common.somethingWentWrong") {
-  const message =
-    err instanceof Error ? err.message : typeof err === "string" ? err : "";
+  const message = err instanceof Error ? err.message : typeof err === "string" ? err : "";
   const key = SERVER_ERRORS[message.trim()];
   if (key) return t(key);
   return message || t(fallback);

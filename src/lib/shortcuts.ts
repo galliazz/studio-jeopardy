@@ -6,34 +6,44 @@
  * profilo, così le ritrova su qualunque computer.
  */
 
+import { t, type MessageKey } from "@/i18n";
+
 export type ShortcutAction =
   "reveal" | "judgeCorrect" | "judgeWrong" | "passToNext" | "restartTimer" | "closeTile";
 
-export const SHORTCUT_ACTIONS: { id: ShortcutAction; label: string; fallback: string }[] = [
-  { id: "reveal", label: "Reveal the answer", fallback: " " },
-  { id: "judgeCorrect", label: "Judge correct", fallback: "c" },
-  { id: "judgeWrong", label: "Judge wrong", fallback: "x" },
-  { id: "passToNext", label: "Pass to next player", fallback: "n" },
-  { id: "restartTimer", label: "Restart the timer", fallback: "r" },
-  { id: "closeTile", label: "Close the open tile", fallback: "Escape" },
+export const SHORTCUT_ACTIONS: { id: ShortcutAction; labelKey: MessageKey; fallback: string }[] = [
+  { id: "reveal", labelKey: "shortcuts.actions.reveal", fallback: " " },
+  { id: "judgeCorrect", labelKey: "shortcuts.actions.judgeCorrect", fallback: "c" },
+  { id: "judgeWrong", labelKey: "shortcuts.actions.judgeWrong", fallback: "x" },
+  { id: "passToNext", labelKey: "shortcuts.actions.passToNext", fallback: "n" },
+  { id: "restartTimer", labelKey: "shortcuts.actions.restartTimer", fallback: "r" },
+  { id: "closeTile", labelKey: "shortcuts.actions.closeTile", fallback: "Escape" },
 ];
 
 /** Tasti di sistema: si mostrano, non si riassegnano. */
-export const FIXED_SHORTCUTS: [key: string, description: string][] = [
-  ["1 – 9", "Trigger soundboard clip"],
-  ["?", "Open settings"],
+export const FIXED_SHORTCUTS: [key: string, descriptionKey: MessageKey][] = [
+  ["1 – 9", "shortcuts.fixed.soundboard"],
+  ["?", "shortcuts.fixed.settings"],
 ];
+
+const ARROW_KEYS: Record<string, MessageKey> = {
+  ArrowUp: "shortcuts.keys.arrowUp",
+  ArrowDown: "shortcuts.keys.arrowDown",
+  ArrowLeft: "shortcuts.keys.arrowLeft",
+  ArrowRight: "shortcuts.keys.arrowRight",
+};
 
 /** Confronto e memorizzazione avvengono sempre sulla forma normalizzata. */
 export function normalizeKey(key: string): string {
   return key.length === 1 ? key.toLowerCase() : key;
 }
 
-/** Come il tasto va scritto a schermo. */
+/** Come il tasto va scritto a schermo, nella lingua attiva. */
 export function keyLabel(key: string): string {
-  if (key === " ") return "Space";
-  if (key === "Escape") return "Esc";
-  if (key.startsWith("Arrow")) return key.slice(5);
+  if (key === " ") return t("shortcuts.keys.space");
+  if (key === "Escape") return t("shortcuts.keys.esc");
+  const arrow = ARROW_KEYS[key];
+  if (arrow) return t(arrow);
   return key.length === 1 ? key.toUpperCase() : key;
 }
 

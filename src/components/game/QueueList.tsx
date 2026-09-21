@@ -5,6 +5,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Trash2 } from "lucide-react";
+import { useT } from "@/i18n";
 import { formatDelta, type Player, type QueueEntry, type Session } from "@/lib/types";
 import { SPRING_UI, useLayoutAnimation } from "@/lib/motion";
 
@@ -19,6 +20,7 @@ export function QueueList({
   queue: QueueEntry[];
   onClear?: () => void;
 }) {
+  const t = useT();
   const animateLayout = useLayoutAnimation();
   const tileQueue = useMemo(() => {
     if (!session.current_tile_id) return [];
@@ -36,14 +38,14 @@ export function QueueList({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <h4 className="text-sm font-semibold text-muted-foreground">Buzzer queue</h4>
+        <h4 className="text-sm font-semibold text-muted-foreground">{t("game.queue.title")}</h4>
         {onClear && (
           <button
             onClick={() => {
-              if (window.confirm("Clear the buzzer queue? Everyone waiting is removed.")) onClear();
+              if (window.confirm(t("game.queue.clearConfirm"))) onClear();
             }}
-            aria-label="Clear queue"
-            title="Clear queue"
+            aria-label={t("game.queue.clear")}
+            title={t("game.queue.clear")}
             className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Trash2 className="h-4 w-4" />
@@ -72,7 +74,7 @@ export function QueueList({
                   isActive ? "bg-peach" : "bg-muted"
                 }`}
               >
-                #{i + 1}
+                {t("game.queue.position", { position: i + 1 })}
               </span>
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center text-base scallop ${
@@ -84,7 +86,7 @@ export function QueueList({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold">{player.name}</p>
                 <p className="text-[10px] text-muted-foreground">
-                  {i === 0 ? "first in" : formatDelta(delta)} · {player.team}
+                  {i === 0 ? t("game.queue.firstIn") : formatDelta(delta, t)} · {player.team}
                 </p>
               </div>
               {isActive && <span className="h-3 w-3 animate-pulse rounded-full bg-ink-gold" />}

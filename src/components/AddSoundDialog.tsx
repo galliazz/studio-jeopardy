@@ -10,6 +10,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import { localizeError, useT } from "@/i18n";
 import { AUDIO_CAP_BYTES, uploadMedia } from "@/lib/media";
 import { PRESETS, decodeFile, playBufferSlice, type PresetDef } from "@/lib/soundboard-engine";
 
@@ -56,6 +57,7 @@ export function AddSoundDialog({
   addedPresetKeys: string[];
   onAdd: (clip: NewClip) => Promise<void> | void;
 }) {
+  const t = useT();
   const [tab, setTab] = useState<"presets" | "upload">("presets");
   const [file, setFile] = useState<File | null>(null);
 
@@ -71,12 +73,10 @@ export function AddSoundDialog({
       <DialogContent className="max-h-[92vh] overflow-y-auto rounded-[32px] sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-black">
-            {file ? "Trim your sound" : "Add a sound"}
+            {file ? t("sound.trim.title") : t("sound.add.title")}
           </DialogTitle>
           <DialogDescription>
-            {file
-              ? "Pick the part of the clip that plays on air."
-              : "Choose a built-in preset or upload your own."}
+            {file ? t("sound.trim.description") : t("sound.add.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -95,20 +95,20 @@ export function AddSoundDialog({
           <>
             <div
               role="tablist"
-              aria-label="Add sound source"
+              aria-label={t("sound.add.sourceTabs")}
               className="flex gap-2 rounded-full bg-muted p-1"
             >
-              {(["presets", "upload"] as const).map((t) => (
+              {(["presets", "upload"] as const).map((id) => (
                 <button
-                  key={t}
+                  key={id}
                   role="tab"
-                  aria-selected={tab === t}
-                  onClick={() => setTab(t)}
+                  aria-selected={tab === id}
+                  onClick={() => setTab(id)}
                   className={`flex-1 rounded-full px-4 py-2 text-xs font-bold transition-colors ${
-                    tab === t ? "bg-card text-foreground elev-1" : "text-muted-foreground"
+                    tab === id ? "bg-card text-foreground elev-1" : "text-muted-foreground"
                   }`}
                 >
-                  {t === "presets" ? "Presets" : "Upload your own"}
+                  {id === "presets" ? t("sound.add.presetsTab") : t("sound.add.uploadTab")}
                 </button>
               ))}
             </div>
@@ -118,7 +118,7 @@ export function AddSoundDialog({
                 added={addedPresetKeys}
                 onAdd={async (p) => {
                   await onAdd({
-                    name: p.name,
+                    name: t(p.nameKey),
                     source: "preset",
                     presetKey: p.key,
                     trimStartMs: 0,
@@ -146,16 +146,18 @@ function PresetList({
   added: string[];
   onAdd: (p: PresetDef) => Promise<void> | void;
 }) {
+  const t = useT();
   return (
     <ul className="flex flex-col gap-1.5">
       {PRESETS.map((p) => {
         const isAdded = added.includes(p.key);
+        const name = t(p.nameKey);
         return (
           <li key={p.key} className="flex items-center gap-2 rounded-[22px] bg-muted px-3 py-2">
-            <span className="min-w-0 flex-1 truncate text-sm font-bold">{p.name}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-bold">{name}</span>
             <button
               onClick={() => p.play()}
-              aria-label={`Preview ${p.name}`}
+              aria-label={t("sound.add.preview", { name })}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground elev-1 transition-transform hover:scale-105"
             >
               <Play className="h-4 w-4" />
@@ -163,7 +165,9 @@ function PresetList({
             <button
               disabled={isAdded}
               onClick={() => void onAdd(p)}
-              aria-label={isAdded ? `${p.name} already added` : `Add ${p.name}`}
+              aria-label={
+                isAdded ? t("sound.add.alreadyAdded", { name }) : t("sound.add.addNamed", { name })
+              }
               className={`flex h-9 items-center gap-1 rounded-full px-4 text-xs font-bold elev-1 ${
                 isAdded
                   ? "cursor-not-allowed bg-muted text-muted-foreground"
@@ -171,7 +175,7 @@ function PresetList({
               }`}
             >
               {isAdded ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-              {isAdded ? "Added" : "Add"}
+              {isAdded ? t("sound.add.added") : t("common.add")}
             </button>
           </li>
         );
@@ -183,18 +187,19 @@ function PresetList({
 /* -------------------------------- drop zone ------------------------------- */
 
 function DropZone({ onFile }: { onFile: (f: File) => void }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<"unsupported" | "tooLarge" | null>(null);
   const [over, setOver] = useState(false);
 
   const accept = (f: File) => {
     const okType = ACCEPTED.includes(f.type) || /\.(mp3|wav|ogg|m4a)$/i.test(f.name);
     if (!okType) {
-      setError("Unsupported format — use MP3, WAV, OGG or M4A");
+      setError("unsupported");
       return;
     }
     if (f.size > AUDIO_CAP_BYTES) {
-      setError("File is too large — 10MB maximum");
+      setError("tooLarge");
       return;
     }
     setError(null);
@@ -206,7 +211,7 @@ function DropZone({ onFile }: { onFile: (f: File) => void }) {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Upload an audio file"
+        aria-label={t("sound.upload.dropZone")}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -230,10 +235,14 @@ function DropZone({ onFile }: { onFile: (f: File) => void }) {
         }`}
       >
         <UploadCloud className="h-7 w-7 text-muted-foreground" />
-        <p className="text-sm font-bold">Drop an audio file or click to browse</p>
-        <p className="text-xs text-muted-foreground">MP3, WAV, OGG or M4A · up to 10MB</p>
+        <p className="text-sm font-bold">{t("sound.upload.dropTitle")}</p>
+        <p className="text-xs text-muted-foreground">{t("sound.upload.dropHint")}</p>
       </div>
-      {error && <p className="mt-2 text-xs font-bold text-destructive">{error}</p>}
+      {error && (
+        <p className="mt-2 text-xs font-bold text-destructive">
+          {error === "unsupported" ? t("sound.upload.unsupported") : t("sound.upload.tooLarge")}
+        </p>
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -264,6 +273,7 @@ function TrimStep({
   onCancel: () => void;
   onDone: (clip: NewClip) => Promise<void> | void;
 }) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const regionRef = useRef<{
     start: number;
@@ -386,71 +396,76 @@ function TrimStep({
 
   return (
     <div className="flex flex-col gap-4">
-      <div ref={containerRef} className="overflow-hidden rounded-[24px] bg-muted p-2" />
+      {/* La forma d'onda è un asse del tempo: resta da sinistra a destra anche in arabo. */}
+      <div ref={containerRef} dir="ltr" className="overflow-hidden rounded-[24px] bg-muted p-2" />
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
         <span className="text-muted-foreground">
-          Start {fmt(range.start)} · End {fmt(range.end)}
+          {t("sound.trim.range", { start: fmt(range.start), end: fmt(range.end) })}
         </span>
         <span>
-          Selection {(range.end - range.start).toFixed(2)}s / {MAX_SELECTION_SEC}s max
+          {t("sound.trim.selection", {
+            length: (range.end - range.start).toFixed(2),
+            max: MAX_SELECTION_SEC,
+          })}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={playing ? stop : preview}
-          aria-label={playing ? "Stop preview" : "Play selection"}
+          aria-label={playing ? t("sound.trim.stopPreview") : t("sound.trim.playSelection")}
           className="flex h-10 items-center gap-2 rounded-full bg-card px-4 text-xs font-bold elev-1 transition-transform hover:scale-105"
         >
           {playing ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}{" "}
-          {playing ? "Stop" : "Play selection"}
+          {playing ? t("sound.trim.stop") : t("sound.trim.playSelection")}
         </button>
         <button
           onClick={() => setLoop((v) => !v)}
           aria-pressed={loop}
-          aria-label="Loop preview"
+          aria-label={t("sound.trim.loopPreview")}
           className={`flex h-10 items-center gap-2 rounded-full px-4 text-xs font-bold elev-1 ${
             loop ? "bg-primary text-foreground" : "bg-card"
           }`}
         >
-          <Repeat className="h-4 w-4" /> Loop
+          <Repeat className="h-4 w-4" /> {t("sound.trim.loop")}
         </button>
-        <div className="flex items-center gap-1">
+        {/* Stesso verso della forma d'onda: "prima" è a sinistra in ogni lingua. */}
+        <div dir="ltr" className="flex items-center gap-1">
           <button
             onClick={() => nudge("start", -0.1)}
             className="h-10 rounded-full bg-card px-3 text-xs font-bold elev-1"
-            aria-label="Move selection start earlier"
+            aria-label={t("sound.trim.startEarlier")}
           >
-            ⟨ start
+            {t("sound.trim.startEarlierShort")}
           </button>
           <button
             onClick={() => nudge("start", 0.1)}
             className="h-10 rounded-full bg-card px-3 text-xs font-bold elev-1"
-            aria-label="Move selection start later"
+            aria-label={t("sound.trim.startLater")}
           >
-            start ⟩
+            {t("sound.trim.startLaterShort")}
           </button>
           <button
             onClick={() => nudge("end", -0.1)}
             className="h-10 rounded-full bg-card px-3 text-xs font-bold elev-1"
-            aria-label="Move selection end earlier"
+            aria-label={t("sound.trim.endEarlier")}
           >
-            ⟨ end
+            {t("sound.trim.endEarlierShort")}
           </button>
           <button
             onClick={() => nudge("end", 0.1)}
             className="h-10 rounded-full bg-card px-3 text-xs font-bold elev-1"
-            aria-label="Move selection end later"
+            aria-label={t("sound.trim.endLater")}
           >
-            end ⟩
+            {t("sound.trim.endLaterShort")}
           </button>
         </div>
       </div>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Gain {Math.round(gain * 100)}%
+          {t("sound.trim.gain", { percent: Math.round(gain * 100) })}
         </span>
         <Slider
           value={[gain * 100]}
@@ -463,7 +478,7 @@ function TrimStep({
 
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-          Name
+          {t("sound.trim.name")}
         </span>
         <input
           value={name}
@@ -480,7 +495,7 @@ function TrimStep({
           }}
           className="h-11 rounded-full border-2 border-border px-5 text-sm font-bold"
         >
-          Cancel
+          {t("common.cancel")}
         </button>
         <motion.button
           whileTap={{ scale: 0.96 }}
@@ -499,14 +514,14 @@ function TrimStep({
                 gain,
               });
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Upload failed");
+              toast.error(localizeError(err, "sound.upload.failed"));
             } finally {
               setSaving(false);
             }
           }}
           className="h-11 rounded-full bg-primary px-5 text-sm font-bold text-foreground elev-1 disabled:opacity-50"
         >
-          {saving ? "Adding…" : "Add to soundboard"}
+          {saving ? t("sound.trim.adding") : t("sound.trim.addToSoundboard")}
         </motion.button>
       </div>
     </div>

@@ -1,0 +1,71 @@
+import type { Messages } from "../en/index";
+
+export const play: Messages["play"] = {
+  lookup: {
+    finding: "Cerco la tua partita…",
+    serverErrorTitle: "Errore del server",
+    serverErrorBody:
+      "Il tabellone c'è, ma il server ha rifiutato la richiesta. Da qui non puoi farci niente — avvisa l'host.",
+    notStartedTitle: "Partita non ancora iniziata",
+    notStartedBody: "L'host non ha ancora avviato questo tabellone. Aspetta un attimo e ricarica.",
+    notFoundTitle: "Partita non trovata",
+    notFoundBody: "Nessuna partita in corso con il codice “{code}”. Controlla il codice e riprova.",
+  },
+  join: {
+    intro: "Niente account — scegli nome, avatar e squadra.",
+    nameLabel: "Il tuo nome",
+    nameLength: "Da {min} a {max} caratteri",
+    avatarLabel: "Il tuo avatar",
+    avatarOption: "Avatar {avatar}",
+    teamLabel: "La tua squadra",
+    notAccepting: "Questa partita non accetta giocatori al momento.",
+    gameGone: "La partita è finita o non esiste più.",
+    fullOrClosed: "La partita è piena o chiusa — chiedi all'host.",
+    failed: "Impossibile entrare — riprova.",
+    joining: "Sto entrando…",
+    joinGame: "Entra in partita",
+  },
+  lobby: {
+    title: "Ci sei!",
+    waiting: "Aspetta che l'host apra il tabellone…",
+    changeIdentity: "Cambia nome, avatar o squadra",
+  },
+  idle: {
+    title: "Preparati",
+    body: "In attesa della prossima domanda.",
+  },
+  buzzer: {
+    youreUp: "TOCCA A TE!",
+    secondsLeft: "{seconds}s",
+    answerOutLoud: "Rispondi ad alta voce — l'host ti ascolta!",
+    lockedOutTitle: "Buzzer bloccato",
+    lockedOutBody: "Risposta sbagliata — aspetta la prossima domanda.",
+    inLine: "IN CODA",
+    position: "#{position}",
+    lockedIn: "Prenotazione registrata!",
+    buzz: "PRENOTATI",
+    closed: "I buzzer sono chiusi",
+    rejected: "Prenotazione rifiutata",
+    failed: "Prenotazione non riuscita — riprova",
+  },
+  reveal: {
+    title: "Risposta svelata",
+    body: "Guarda il tabellone — arriva la prossima casella.",
+  },
+  finished: {
+    tie: "Pareggio!",
+    wins: "Vince {team}!",
+    yourTeamScored: "La tua squadra ha totalizzato <b>{score}</b>",
+  },
+  final: {
+    title: "Final Jeopardy",
+    rules: "Una risposta per squadra — {team} · puntata max {max}",
+    wager: "Puntata",
+    answerPlaceholder: "La risposta della tua squadra…",
+    lockInWager: "Conferma puntata",
+    submitAnswer: "Invia risposta finale",
+    rejected: "Invio rifiutato",
+    sentTitle: "Risposta inviata",
+    sentBody: "La risposta finale della tua squadra è arrivata. In attesa dell'host…",
+  },
+};

@@ -1,0 +1,71 @@
+import type { Messages } from "../en/index";
+
+export const play: Messages["play"] = {
+  lookup: {
+    finding: "Ищем игру…",
+    serverErrorTitle: "Ошибка сервера",
+    serverErrorBody:
+      "Табло на месте, но сервер отклонил запрос. Отсюда это не исправить — скажи ведущему.",
+    notStartedTitle: "Игра ещё не началась",
+    notStartedBody: "Ведущий ещё не запустил это табло. Подожди немного и обнови страницу.",
+    notFoundTitle: "Игра не найдена",
+    notFoundBody: "Нет активной игры с кодом «{code}». Проверь код и попробуй снова.",
+  },
+  join: {
+    intro: "Аккаунт не нужен — выбери имя, аватар и команду.",
+    nameLabel: "Твоё имя",
+    nameLength: "От {min} до {max} символов",
+    avatarLabel: "Твой аватар",
+    avatarOption: "Аватар {avatar}",
+    teamLabel: "Твоя команда",
+    notAccepting: "Сейчас в эту игру нельзя войти.",
+    gameGone: "Эта игра закончилась или больше не существует.",
+    fullOrClosed: "Игра заполнена или закрыта — спроси ведущего.",
+    failed: "Не удалось войти — попробуй ещё раз.",
+    joining: "Входим…",
+    joinGame: "Войти в игру",
+  },
+  lobby: {
+    title: "Ты в игре",
+    waiting: "Ждём, пока ведущий откроет табло…",
+    changeIdentity: "Сменить имя, аватар или команду",
+  },
+  idle: {
+    title: "Приготовься",
+    body: "Ждём следующий вопрос.",
+  },
+  buzzer: {
+    youreUp: "ОТВЕЧАЙ!",
+    secondsLeft: "{seconds} с",
+    answerOutLoud: "Отвечай вслух — ведущий слушает!",
+    lockedOutTitle: "Кнопка заблокирована",
+    lockedOutBody: "Неверно — жди следующий вопрос.",
+    inLine: "В ОЧЕРЕДИ",
+    position: "№{position}",
+    lockedIn: "Нажатие принято!",
+    buzz: "ЖМИ",
+    closed: "Кнопки закрыты",
+    rejected: "Нажатие не принято",
+    failed: "Не сработало — попробуй ещё раз",
+  },
+  reveal: {
+    title: "Ответ открыт",
+    body: "Смотри на табло — скоро следующая клетка.",
+  },
+  finished: {
+    tie: "Ничья!",
+    wins: "{team} побеждает!",
+    yourTeamScored: "Твоя команда набрала <b>{score}</b>",
+  },
+  final: {
+    title: "Final Jeopardy",
+    rules: "Один ответ на команду — {team} · макс. ставка {max}",
+    wager: "Ставка",
+    answerPlaceholder: "Ответ твоей команды…",
+    lockInWager: "Сделать ставку",
+    submitAnswer: "Отправить ответ",
+    rejected: "Отправка не принята",
+    sentTitle: "Принято",
+    sentBody: "Финальный ответ твоей команды принят. Ждём ведущего…",
+  },
+};

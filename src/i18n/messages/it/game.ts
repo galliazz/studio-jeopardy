@@ -1,0 +1,55 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · vale doppio",
+    fallbackCategory: "Domanda",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "Media della domanda",
+    tileClosed: "Casella conclusa",
+    buzzersOpen: "Buzzer aperti",
+  },
+  queue: {
+    title: "Coda dei buzzer",
+    clear: "Svuota la coda",
+    clearConfirm: "Svuotare la coda dei buzzer? Chi è in attesa viene tolto.",
+    position: "#{position}",
+    firstIn: "primo",
+    deltaMs: "+{ms}ms",
+    deltaSeconds: "+{seconds}s",
+  },
+  score: {
+    teamPlayers: { one: "{count} giocatore", other: "{count} giocatori" },
+    teamPlayersLabel: {
+      one: "{count} giocatore in questa squadra",
+      other: "{count} giocatori in questa squadra",
+    },
+    subtractFrom: "Togli {step} a {name}",
+    addTo: "Aggiungi {step} a {name}",
+    customChangeFor: "Cambio punti personalizzato per {name}",
+    customAmount: "Valore personalizzato",
+    subtract: "Togli",
+    teamScore: "Punteggio di {name}",
+    doubleClickToEdit: "Doppio clic per modificare",
+  },
+  fontFamilies: {
+    display: "Display",
+    sans: "Sans",
+    system: "Sistema",
+    grotesk: "Grottesco",
+    rounded: "Arrotondato",
+    serif: "Serif",
+    oldStyle: "Antico",
+    slab: "Egiziano",
+    mono: "Mono",
+    condensed: "Condensato",
+    handwriting: "Manoscritto",
+  },
+  fontWeights: {
+    "300": "Leggero",
+    "400": "Normale",
+    "500": "Medio",
+    "700": "Grassetto",
+    "900": "Nero",
+  },
+};

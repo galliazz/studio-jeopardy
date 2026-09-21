@@ -3,6 +3,7 @@ import { Settings as SettingsIcon } from "lucide-react";
 
 import { APP_BAR, APP_BAR_INNER } from "@/components/app-bar";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { useT } from "@/i18n";
 import { sfx } from "@/lib/sfx";
 
 /**
@@ -50,6 +51,7 @@ export function AppBar({
  * Studio il cerchio in alto a destra cade esattamente nello stesso punto.
  */
 export function GuestSettingsButton({ variant = "guest" }: { variant?: "full" | "guest" }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -59,8 +61,8 @@ export function GuestSettingsButton({ variant = "guest" }: { variant?: "full" | 
           sfx.pop();
           setOpen(true);
         }}
-        aria-label="Settings"
-        title="Settings"
+        aria-label={t("common.settings")}
+        title={t("common.settings")}
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ink-accent"
       >
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-lilac text-foreground">

@@ -1,0 +1,77 @@
+import type { Messages } from "../en/index";
+
+export const studio: Messages["studio"] = {
+  topBar: {
+    title: "Studio",
+  },
+  defaultHostName: "司会者",
+  header: {
+    welcomeBack: "おかえりなさい、{name}さん",
+    welcomeBackGuest: "おかえりなさい",
+    loadingBoards: "ボードを読み込み中…",
+    signInToLoad: "ログインするとボードを読み込めます",
+    boardCount: { other: "ボード{count}件" },
+  },
+  actions: {
+    createGame: "新しいゲームを作成",
+    importJson: "JSON をインポート",
+    searchBoards: "ボードを検索",
+    searchPlaceholder: "ボードを検索…",
+  },
+  create: {
+    title: "ボードの名前",
+    placeholder: "例：金曜夜のクイズ大会",
+    submit: "作成",
+  },
+  signedOut: {
+    body: "ボードの読み込みと作成にはログインが必要です。",
+    signIn: "ログイン",
+  },
+  empty: "ボードはまだありません。最初のボードを作りましょう！",
+  card: {
+    openInEditor: "エディターで開く",
+    options: "ボードのオプション",
+    joinCode: "参加コード",
+    rename: "名前を変更",
+    duplicate: "複製",
+    exportJson: "JSON でエクスポート",
+    exportExcel: "Excel でエクスポート",
+    readyToPlay: "準備完了",
+    tilesReady: { other: "{count}マス中{ready}マス完成" },
+    play: "プレイ",
+  },
+  joinDialog: {
+    title: "参加コード",
+    description: "プレイヤーはこのコードか、QRコードの読み取りで参加できます。",
+    linkCopied: "参加リンクをコピーしました",
+  },
+  deleteDialog: {
+    title: "「{title}」を削除しますか？",
+    description: "ボードとすべての問題が削除されます。削除した直後なら元に戻せます。",
+    confirm: "ボードを削除",
+  },
+  toast: {
+    created: "ボードを作成しました",
+    createFailed: "ボードを作成できませんでした",
+    duplicated: "ボードを複製しました",
+    duplicateFailed: "複製に失敗しました",
+    deleted: "「{title}」を削除しました",
+    deleteFailed: "削除に失敗しました",
+    exportedJson: "JSON でエクスポートしました",
+    exportedExcel: "Excel でエクスポートしました",
+    exportFailed: "エクスポートに失敗しました",
+    startFailed: "セッションを開始できませんでした",
+    renamed: "ボード名を変更しました",
+    renameFailed: "名前を変更できませんでした",
+    imported: "ボードをインポートしました",
+    importFailed: "インポートに失敗しました。ファイルが無効です",
+  },
+  excel: {
+    sheet: "ボード",
+    category: "カテゴリー",
+    points: "点数",
+    clue: "問題",
+    answer: "答え",
+    hint: "ヒント",
+  },
+};

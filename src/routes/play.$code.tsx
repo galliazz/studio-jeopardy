@@ -27,6 +27,7 @@ import {
 } from "@/lib/types";
 import { SPRING_UI } from "@/lib/motion";
 import { AppBar, GuestSettingsButton } from "@/components/AppBar";
+import { localizeError, useT } from "@/i18n";
 
 export const Route = createFileRoute("/play/$code")({
   head: () => ({
@@ -57,6 +58,7 @@ interface StoredIdentity {
 }
 
 function PlayerPage() {
+  const t = useT();
   const { code } = Route.useParams();
   const lookup = useServerFn(lookupSession);
   const { data, isLoading } = useQuery({
@@ -70,7 +72,7 @@ function PlayerPage() {
       <Shell>
         <div className="flex flex-col items-center gap-4">
           <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
-          <p className="text-sm text-muted-foreground">Finding your game…</p>
+          <p className="text-sm text-muted-foreground">{t("play.lookup.finding")}</p>
         </div>
       </Shell>
     );
@@ -83,17 +85,17 @@ function PlayerPage() {
           <Ban className="h-12 w-12 text-muted-foreground" />
           <h1 className="font-display text-xl font-bold">
             {data && "error" in data && data.error === "unavailable"
-              ? "Server error"
+              ? t("play.lookup.serverErrorTitle")
               : data && "error" in data && data.error === "not_started"
-                ? "Game not started yet"
-                : "Game not found"}
+                ? t("play.lookup.notStartedTitle")
+                : t("play.lookup.notFoundTitle")}
           </h1>
           <p className="text-sm text-muted-foreground">
             {data && "error" in data && data.error === "unavailable"
-              ? "The board is up but the server refused the request. This is not something you can fix from here — tell the host."
+              ? t("play.lookup.serverErrorBody")
               : data && "error" in data && data.error === "not_started"
-                ? "The host hasn't gone live with this board yet. Wait a moment and refresh."
-                : `No live game matches code “${code}”. Check the code and try again.`}
+                ? t("play.lookup.notStartedBody")
+                : t("play.lookup.notFoundBody", { code })}
           </p>
         </div>
       </Shell>
@@ -179,11 +181,12 @@ function JoinForm({
   theme: ThemeSettings;
   onJoined: (id: StoredIdentity) => void;
 }) {
+  const t = useT();
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [team, setTeam] = useState<Team>("alpha");
   const [busy, setBusy] = useState(false);
-  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
 
   const trimmed = name.trim();
@@ -193,10 +196,10 @@ function JoinForm({
   const join = async () => {
     if (!avatar || busy) return;
     if (!nameOk) {
-      setNameError(`Use ${NAME_MIN} to ${NAME_MAX} characters`);
+      setNameError(true);
       return;
     }
-    setNameError(null);
+    setNameError(false);
     setJoinError(null);
     setBusy(true);
     try {
@@ -204,10 +207,10 @@ function JoinForm({
       if ("error" in res) {
         setJoinError(
           res.error === "not_started"
-            ? "This game isn't accepting players right now."
+            ? t("play.join.notAccepting")
             : res.error === "not_found"
-              ? "That game has finished or no longer exists."
-              : "The game is full or closed — ask the host.",
+              ? t("play.join.gameGone")
+              : t("play.join.fullOrClosed"),
         );
         return;
       }
@@ -220,7 +223,7 @@ function JoinForm({
         team: res.player.team as Team,
       });
     } catch (err) {
-      setJoinError(err instanceof Error ? err.message : "Could not join — try again.");
+      setJoinError(localizeError(err, "play.join.failed"));
     } finally {
       setBusy(false);
     }
@@ -235,9 +238,7 @@ function JoinForm({
         className="w-full"
       >
         <h1 className="mb-1 text-center font-display text-2xl font-black">{gameTitle}</h1>
-        <p className="mb-6 text-center text-sm text-muted-foreground">
-          No account needed — pick a name, avatar and team.
-        </p>
+        <p className="mb-6 text-center text-sm text-muted-foreground">{t("play.join.intro")}</p>
 
         {/* Name */}
         <div className="mb-5">
@@ -245,29 +246,31 @@ function JoinForm({
             htmlFor="player-name"
             className="mb-1.5 block text-sm font-semibold text-muted-foreground"
           >
-            Your name
+            {t("play.join.nameLabel")}
           </label>
           <input
             id="player-name"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
-              if (nameError) setNameError(null);
+              if (nameError) setNameError(false);
             }}
             onBlur={() => {
               const v = name.trim();
-              setNameError(v && !nameOk ? `Use ${NAME_MIN} to ${NAME_MAX} characters` : null);
+              setNameError(!!v && !nameOk);
             }}
             onKeyDown={(e) => e.key === "Enter" && void join()}
             maxLength={NAME_MAX}
             autoComplete="off"
-            aria-invalid={!!nameError}
+            aria-invalid={nameError}
             className={`h-14 w-full rounded-2xl border bg-background px-4 text-base font-semibold text-foreground outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background ${
               nameError ? "border-destructive" : "border-border"
             }`}
           />
           <div className="mt-1 flex min-h-4 items-center justify-between gap-3">
-            <span className="text-xs text-destructive">{nameError}</span>
+            <span className="text-xs text-destructive">
+              {nameError ? t("play.join.nameLength", { min: NAME_MIN, max: NAME_MAX }) : null}
+            </span>
             {name.length > 20 && (
               <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
                 {name.length}/{NAME_MAX}
@@ -277,13 +280,15 @@ function JoinForm({
         </div>
 
         {/* Avatar */}
-        <p className="mb-2 text-sm font-semibold text-muted-foreground">Your avatar</p>
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">
+          {t("play.join.avatarLabel")}
+        </p>
         <div className="mb-5 grid grid-cols-6 gap-2 sm:grid-cols-8">
           {PLAYER_AVATARS.map((a) => (
             <button
               key={a}
               type="button"
-              aria-label={`Avatar ${a}`}
+              aria-label={t("play.join.avatarOption", { avatar: a })}
               aria-pressed={avatar === a}
               onClick={() => setAvatar(a)}
               className={`flex aspect-square min-h-12 min-w-12 items-center justify-center rounded-full bg-muted text-2xl outline-none transition-transform active:scale-95 ${
@@ -296,23 +301,25 @@ function JoinForm({
         </div>
 
         {/* Team */}
-        <p className="mb-2 text-sm font-semibold text-muted-foreground">Your team</p>
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">
+          {t("play.join.teamLabel")}
+        </p>
         <div className="mb-6 grid grid-cols-2 gap-3">
-          {(["alpha", "bravo"] as const).map((t) => {
-            const selected = team === t;
+          {(["alpha", "bravo"] as const).map((option) => {
+            const selected = team === option;
             return (
               <button
-                key={t}
+                key={option}
                 type="button"
                 aria-pressed={selected}
-                onClick={() => setTeam(t)}
+                onClick={() => setTeam(option)}
                 className={`min-h-12 rounded-full px-3 py-3 font-display text-sm font-black uppercase tracking-wider outline-none transition-colors ${
                   selected
-                    ? `text-foreground elev-2 ${t === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`
+                    ? `text-foreground elev-2 ${option === "alpha" ? "bg-team-alpha" : "bg-team-bravo"}`
                     : "border-2 border-border bg-transparent text-muted-foreground"
                 }`}
               >
-                {teamName(theme, t)}
+                {teamName(theme, option)}
               </button>
             );
           })}
@@ -332,7 +339,7 @@ function JoinForm({
           className="flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 disabled:shadow-none"
         >
           {busy && <Loader2 className="h-5 w-5 animate-spin" />}
-          {busy ? "Joining…" : "Join game"}
+          {busy ? t("play.join.joining") : t("play.join.joinGame")}
         </motion.button>
       </motion.div>
     </Shell>
@@ -360,6 +367,7 @@ function LivePlayer({
   theme: ThemeSettings;
   onChangeIdentity: () => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const fetchState = useServerFn(getPlayerState);
   const { data } = useQuery({
@@ -479,13 +487,13 @@ function LivePlayer({
         // Rifiutata: la casella torna libera, altrimenti "riprova" sarebbe una bugia.
         buzzSentFor.current = null;
         void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
-        if (res.reason === "closed") toast.error("Buzzers are closed");
-        else toast.error("Buzz rejected");
+        if (res.reason === "closed") toast.error(t("play.buzzer.closed"));
+        else toast.error(t("play.buzzer.rejected"));
       }
     } catch {
       buzzSentFor.current = null;
       void queryClient.invalidateQueries({ queryKey: ["play", sessionId] });
-      toast.error("Buzz failed — try again");
+      toast.error(t("play.buzzer.failed"));
     }
   };
 
@@ -535,12 +543,10 @@ function LivePlayer({
               className="flex w-full flex-col items-center rounded-[36px] bg-card px-6 py-9 text-center elev-2"
             >
               <Hourglass className="h-10 w-10 text-ink-gold" />
-              <h2 className="mt-3 font-display text-xl font-black">You're in</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Waiting for the host to open the board…
-              </p>
+              <h2 className="mt-3 font-display text-xl font-black">{t("play.lobby.title")}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{t("play.lobby.waiting")}</p>
 
-              <div className="mt-6 flex w-full items-center gap-3 rounded-[28px] bg-muted p-3 text-left">
+              <div className="mt-6 flex w-full items-center gap-3 rounded-[28px] bg-muted p-3 text-start">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background text-2xl">
                   {identity.avatar}
                 </span>
@@ -561,7 +567,7 @@ function LivePlayer({
                 onClick={onChangeIdentity}
                 className="mt-3 min-h-12 w-full rounded-full border-2 border-border px-4 text-sm font-bold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                Change name, avatar or team
+                {t("play.lobby.changeIdentity")}
               </button>
             </motion.div>
           )}
@@ -570,9 +576,9 @@ function LivePlayer({
             <StatusCard
               key="idle"
               icon={<Clock className="h-10 w-10 text-muted-foreground" />}
-              title="Get ready"
+              title={t("play.idle.title")}
             >
-              Waiting for the next question.
+              {t("play.idle.body")}
             </StatusCard>
           )}
 
@@ -592,10 +598,10 @@ function LivePlayer({
                     className="flex aspect-square w-[min(72vw,16rem)] flex-col items-center justify-center rounded-full bg-butter text-center elev-3"
                   >
                     <span className="font-display text-2xl font-black text-foreground">
-                      YOU'RE UP!
+                      {t("play.buzzer.youreUp")}
                     </span>
                     <span className="mt-1 font-display text-4xl font-black text-foreground">
-                      {countdown.seconds ?? "–"}s
+                      {t("play.buzzer.secondsLeft", { seconds: countdown.seconds ?? "–" })}
                     </span>
                   </motion.div>
                   <div className="mt-6 h-2.5 w-full overflow-hidden rounded-full bg-muted">
@@ -605,24 +611,27 @@ function LivePlayer({
                     />
                   </div>
                   <p className="mt-4 text-sm text-muted-foreground">
-                    Answer out loud — the host is listening!
+                    {t("play.buzzer.answerOutLoud")}
                   </p>
                 </div>
               ) : locked ? (
-                <StatusCard icon={<Ban className="h-10 w-10 text-danger-ink" />} title="Locked out">
-                  Incorrect — wait for the next question.
+                <StatusCard
+                  icon={<Ban className="h-10 w-10 text-danger-ink" />}
+                  title={t("play.buzzer.lockedOutTitle")}
+                >
+                  {t("play.buzzer.lockedOutBody")}
                 </StatusCard>
               ) : myEntry ? (
                 <div className="flex flex-col items-center">
                   <div className="flex aspect-square w-[min(72vw,16rem)] flex-col items-center justify-center bg-lilac elev-2 scallop">
                     <span className="font-display text-lg font-bold text-muted-foreground">
-                      IN LINE
+                      {t("play.buzzer.inLine")}
                     </span>
                     <span className="font-display text-6xl font-black text-ink-gold">
-                      #{myPosition}
+                      {t("play.buzzer.position", { position: myPosition })}
                     </span>
                   </div>
-                  <p className="mt-4 text-sm text-muted-foreground">Your buzz is locked in!</p>
+                  <p className="mt-4 text-sm text-muted-foreground">{t("play.buzzer.lockedIn")}</p>
                 </div>
               ) : (
                 <motion.button
@@ -651,15 +660,17 @@ function LivePlayer({
                   }`}
                 >
                   <Zap className="mb-1 h-12 w-12 text-foreground" />
-                  <span className="text-4xl font-black tracking-tight text-foreground">BUZZ</span>
+                  <span className="text-4xl font-black tracking-tight text-foreground">
+                    {t("play.buzzer.buzz")}
+                  </span>
                 </motion.button>
               )}
             </motion.div>
           )}
 
           {status === "live" && phase === "reveal" && (
-            <StatusCard key="reveal" icon={<Check2 />} title="Answer revealed">
-              Watch the board — next tile coming up.
+            <StatusCard key="reveal" icon={<Check2 />} title={t("play.reveal.title")}>
+              {t("play.reveal.body")}
             </StatusCard>
           )}
 
@@ -684,11 +695,22 @@ function LivePlayer({
               <Trophy className="mb-3 h-14 w-14 text-ink-gold" />
               <h2 className="font-display text-2xl font-black">
                 {(session?.score_alpha ?? 0) === (session?.score_bravo ?? 0)
-                  ? "It's a tie!"
-                  : `${teamName(theme, (session?.score_alpha ?? 0) > (session?.score_bravo ?? 0) ? "alpha" : "bravo")} wins!`}
+                  ? t("play.finished.tie")
+                  : t("play.finished.wins", {
+                      team: teamName(
+                        theme,
+                        (session?.score_alpha ?? 0) > (session?.score_bravo ?? 0)
+                          ? "alpha"
+                          : "bravo",
+                      ),
+                    })}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Your team scored <span className="font-bold text-ink-gold">{myScore ?? 0}</span>
+                {t.rich(
+                  "play.finished.yourTeamScored",
+                  { score: myScore ?? 0 },
+                  { b: (chunk) => <span className="font-bold text-ink-gold">{chunk}</span> },
+                )}
               </p>
             </motion.div>
           )}
@@ -715,6 +737,7 @@ function FinalForm({
   myTeam: Team;
   theme: ThemeSettings;
 }) {
+  const t = useT();
   const [wager, setWager] = useState(0);
   const [answer, setAnswer] = useState("");
   const [sent, setSent] = useState(false);
@@ -722,8 +745,11 @@ function FinalForm({
 
   if (sent) {
     return (
-      <StatusCard icon={<Hourglass className="h-10 w-10 text-ink-gold" />} title="Locked in">
-        Your team's final answer is in. Waiting for the host…
+      <StatusCard
+        icon={<Hourglass className="h-10 w-10 text-ink-gold" />}
+        title={t("play.final.sentTitle")}
+      >
+        {t("play.final.sentBody")}
       </StatusCard>
     );
   }
@@ -731,13 +757,15 @@ function FinalForm({
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="w-full">
       <h2 className="mb-1 text-center font-display text-2xl font-black text-ink-gold">
-        Final Jeopardy
+        {t("play.final.title")}
       </h2>
       <p className="mb-5 text-center text-xs text-muted-foreground">
-        One submission per team — {teamName(theme, myTeam)} · max wager {maxWager}
+        {t("play.final.rules", { team: teamName(theme, myTeam), max: maxWager })}
       </p>
       <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-semibold text-muted-foreground">Wager</span>
+        <span className="mb-1 block text-xs font-semibold text-muted-foreground">
+          {t("play.final.wager")}
+        </span>
         <input
           type="number"
           min={0}
@@ -755,7 +783,7 @@ function FinalForm({
           <textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Your team's answer…"
+            placeholder={t("play.final.answerPlaceholder")}
             rows={3}
             className="w-full rounded-[26px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
@@ -777,12 +805,14 @@ function FinalForm({
             vibrate([40, 40, 40]);
             setSent(true);
           } else {
-            toast.error("Submission rejected");
+            toast.error(t("play.final.rejected"));
           }
         }}
         className="h-14 w-full rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 disabled:opacity-40"
       >
-        {session.phase === "final_wager" ? "Lock in wager" : "Submit final answer"}
+        {session.phase === "final_wager"
+          ? t("play.final.lockInWager")
+          : t("play.final.submitAnswer")}
       </motion.button>
     </motion.div>
   );

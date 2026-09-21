@@ -1,9 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useForcedLocale } from "@/i18n";
 import { OverlayBoard, OverlayCanvas } from "@/components/overlay/OverlayPieces";
-import { SAFE, useOverlayState, useTransparentPage } from "@/components/overlay/overlay-state";
+import {
+  SAFE,
+  overlaySearch,
+  useOverlayState,
+  useTransparentPage,
+} from "@/components/overlay/overlay-state";
 
 export const Route = createFileRoute("/overlay/board/$overlayToken")({
+  validateSearch: overlaySearch,
   head: () => ({
     meta: [
       { title: "Board overlay — JEOPARDESTINY" },
@@ -24,6 +31,8 @@ export const Route = createFileRoute("/overlay/board/$overlayToken")({
 
 function BoardOverlay() {
   const { overlayToken } = Route.useParams();
+  const { lang } = Route.useSearch();
+  useForcedLocale(lang);
   useTransparentPage();
   const state = useOverlayState(overlayToken);
   if (!state) return null;

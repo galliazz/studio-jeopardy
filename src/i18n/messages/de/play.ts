@@ -1,0 +1,71 @@
+import type { Messages } from "../en/index";
+
+export const play: Messages["play"] = {
+  lookup: {
+    finding: "Suche dein Spiel…",
+    serverErrorTitle: "Serverfehler",
+    serverErrorBody:
+      "Das Spielfeld ist da, aber der Server hat die Anfrage abgelehnt. Das kannst du von hier aus nicht beheben — sag dem Host Bescheid.",
+    notStartedTitle: "Spiel noch nicht gestartet",
+    notStartedBody: "Der Host ist mit diesem Spielfeld noch nicht live. Warte kurz und lade neu.",
+    notFoundTitle: "Spiel nicht gefunden",
+    notFoundBody: "Kein Live-Spiel passt zum Code „{code}“. Prüf den Code und versuch es erneut.",
+  },
+  join: {
+    intro: "Kein Konto nötig — wähl Namen, Avatar und Team.",
+    nameLabel: "Dein Name",
+    nameLength: "{min} bis {max} Zeichen",
+    avatarLabel: "Dein Avatar",
+    avatarOption: "Avatar {avatar}",
+    teamLabel: "Dein Team",
+    notAccepting: "Dieses Spiel nimmt gerade keine Spieler auf.",
+    gameGone: "Das Spiel ist vorbei oder existiert nicht mehr.",
+    fullOrClosed: "Das Spiel ist voll oder geschlossen — frag den Host.",
+    failed: "Beitritt fehlgeschlagen — versuch es erneut.",
+    joining: "Trete bei…",
+    joinGame: "Mitspielen",
+  },
+  lobby: {
+    title: "Du bist dabei",
+    waiting: "Warte, bis der Host das Spielfeld öffnet…",
+    changeIdentity: "Name, Avatar oder Team ändern",
+  },
+  idle: {
+    title: "Mach dich bereit",
+    body: "Warte auf die nächste Frage.",
+  },
+  buzzer: {
+    youreUp: "DU BIST DRAN!",
+    secondsLeft: "{seconds}s",
+    answerOutLoud: "Antworte laut — der Host hört zu!",
+    lockedOutTitle: "Gesperrt",
+    lockedOutBody: "Falsch — warte auf die nächste Frage.",
+    inLine: "IN DER REIHE",
+    position: "#{position}",
+    lockedIn: "Dein Buzz ist drin!",
+    buzz: "BUZZERN",
+    closed: "Die Buzzer sind geschlossen",
+    rejected: "Buzz abgelehnt",
+    failed: "Buzzern fehlgeschlagen — versuch es erneut",
+  },
+  reveal: {
+    title: "Antwort aufgedeckt",
+    body: "Schau aufs Spielfeld — gleich kommt das nächste Feld.",
+  },
+  finished: {
+    tie: "Unentschieden!",
+    wins: "{team} gewinnt!",
+    yourTeamScored: "Dein Team hat <b>{score}</b> Punkte geholt",
+  },
+  final: {
+    title: "Final Jeopardy",
+    rules: "Eine Abgabe pro Team — {team} · max. Einsatz {max}",
+    wager: "Einsatz",
+    answerPlaceholder: "Antwort deines Teams…",
+    lockInWager: "Einsatz festlegen",
+    submitAnswer: "Finale Antwort abgeben",
+    rejected: "Abgabe abgelehnt",
+    sentTitle: "Abgegeben",
+    sentBody: "Die finale Antwort deines Teams ist drin. Warte auf den Host…",
+  },
+};

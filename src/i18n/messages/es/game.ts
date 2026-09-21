@@ -1,0 +1,55 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · vale el doble",
+    fallbackCategory: "Pregunta",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "Multimedia de la pregunta",
+    tileClosed: "Casilla cerrada",
+    buzzersOpen: "Pulsadores abiertos",
+  },
+  queue: {
+    title: "Cola de pulsadores",
+    clear: "Vaciar cola",
+    clearConfirm: "¿Vaciar la cola de pulsadores? Se quita a todos los que esperan.",
+    position: "#{position}",
+    firstIn: "primero",
+    deltaMs: "+{ms}ms",
+    deltaSeconds: "+{seconds}s",
+  },
+  score: {
+    teamPlayers: { one: "{count} jugador", other: "{count} jugadores" },
+    teamPlayersLabel: {
+      one: "{count} jugador en este equipo",
+      other: "{count} jugadores en este equipo",
+    },
+    subtractFrom: "Restar {step} a {name}",
+    addTo: "Sumar {step} a {name}",
+    customChangeFor: "Cambio de puntos personalizado para {name}",
+    customAmount: "Cantidad personalizada",
+    subtract: "Restar",
+    teamScore: "Puntos de {name}",
+    doubleClickToEdit: "Doble clic para editar",
+  },
+  fontFamilies: {
+    display: "Display",
+    sans: "Sans",
+    system: "Sistema",
+    grotesk: "Grotesca",
+    rounded: "Redondeada",
+    serif: "Serif",
+    oldStyle: "Antigua",
+    slab: "Egipcia",
+    mono: "Mono",
+    condensed: "Condensada",
+    handwriting: "Manuscrita",
+  },
+  fontWeights: {
+    "300": "Ligera",
+    "400": "Normal",
+    "500": "Media",
+    "700": "Negrita",
+    "900": "Negra",
+  },
+};

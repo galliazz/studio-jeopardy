@@ -14,6 +14,7 @@
 import { useEffect, useRef } from "react";
 import { motion, type MotionStyle } from "framer-motion";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useT } from "@/i18n";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { useSignedUrl } from "@/lib/media";
@@ -45,6 +46,7 @@ export function QuestionOverlay({
    */
   ownContainer?: boolean;
 }) {
+  const t = useT();
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
   const activePlayer = players.find((p) => p.id === session.active_player_id) ?? null;
@@ -119,7 +121,7 @@ export function QuestionOverlay({
             style={{ fontSize: "clamp(0.6rem, 3cqmin, 1.35rem)" }}
             className="mb-[clamp(3px,1cqmin,8px)] shrink-0 rounded-full bg-butter py-[clamp(3px,1.2cqmin,10px)] text-center font-display font-black uppercase tracking-[0.25em] text-ink-gold"
           >
-            Daily Double · vale doppio
+            {t("game.clue.dailyDoubleBanner")}
           </motion.div>
         )}
 
@@ -178,13 +180,13 @@ export function QuestionOverlay({
             className="truncate font-bold uppercase tracking-[0.3em]"
             style={{ color: theme.accent, ...boardTextCss(theme, "categories", 0.75, 1.9) }}
           >
-            {category?.title ?? "Question"}
+            {category?.title ?? t("game.clue.fallbackCategory")}
           </p>
           <p
             className="shrink-0 font-display font-black"
             style={{ color: theme.accent, ...boardTextCss(theme, "numbers", 1.25, 3) }}
           >
-            {isDailyDouble ? `${tile.points} ×2` : tile.points}
+            {isDailyDouble ? t("game.clue.dailyDoubleValue", { points: tile.points }) : tile.points}
           </p>
         </div>
 
@@ -200,7 +202,7 @@ export function QuestionOverlay({
           {imageUrl && (
             <img
               src={imageUrl}
-              alt="Question media"
+              alt={t("game.clue.mediaAlt")}
               className="max-h-[28cqmin] rounded-[24px] object-contain"
             />
           )}
@@ -256,7 +258,7 @@ export function QuestionOverlay({
               style={{ fontSize: "clamp(0.55rem, 2.2cqmin, 0.95rem)" }}
               className="font-semibold uppercase tracking-[0.25em] text-muted-foreground"
             >
-              {session.phase === "reveal" ? "Casella conclusa" : "Buzzer aperti"}
+              {session.phase === "reveal" ? t("game.clue.tileClosed") : t("game.clue.buzzersOpen")}
             </span>
           )}
         </div>

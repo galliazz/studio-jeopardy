@@ -1,0 +1,71 @@
+import type { Messages } from "../en/index";
+
+export const play: Messages["play"] = {
+  lookup: {
+    finding: "तुम्हारा गेम ढूँढ रहे हैं…",
+    serverErrorTitle: "सर्वर में गड़बड़ी",
+    serverErrorBody:
+      "बोर्ड तो चालू है, पर सर्वर ने अनुरोध ठुकरा दिया। इसे यहाँ से ठीक नहीं किया जा सकता — होस्ट को बताओ।",
+    notStartedTitle: "गेम अभी शुरू नहीं हुआ",
+    notStartedBody: "होस्ट ने यह बोर्ड अभी लाइव नहीं किया है। थोड़ा रुककर पेज रीफ़्रेश करो।",
+    notFoundTitle: "गेम नहीं मिला",
+    notFoundBody: "कोड “{code}” वाला कोई लाइव गेम नहीं है। कोड जाँचकर फिर से कोशिश करो।",
+  },
+  join: {
+    intro: "अकाउंट की ज़रूरत नहीं — नाम, अवतार और टीम चुनो।",
+    nameLabel: "तुम्हारा नाम",
+    nameLength: "{min} से {max} अक्षर लिखो",
+    avatarLabel: "तुम्हारा अवतार",
+    avatarOption: "अवतार {avatar}",
+    teamLabel: "तुम्हारी टीम",
+    notAccepting: "यह गेम अभी नए खिलाड़ी नहीं ले रहा।",
+    gameGone: "वह गेम खत्म हो चुका है या अब मौजूद नहीं है।",
+    fullOrClosed: "गेम भर गया है या बंद है — होस्ट से पूछो।",
+    failed: "जुड़ नहीं पाए — फिर से कोशिश करो।",
+    joining: "जुड़ रहे हैं…",
+    joinGame: "गेम से जुड़ो",
+  },
+  lobby: {
+    title: "तुम गेम में हो!",
+    waiting: "होस्ट के बोर्ड खोलने का इंतज़ार…",
+    changeIdentity: "नाम, अवतार या टीम बदलो",
+  },
+  idle: {
+    title: "तैयार रहो",
+    body: "अगले सवाल का इंतज़ार।",
+  },
+  buzzer: {
+    youreUp: "तुम्हारी बारी!",
+    secondsLeft: "{seconds}s",
+    answerOutLoud: "ज़ोर से जवाब दो — होस्ट सुन रहे हैं!",
+    lockedOutTitle: "बज़र लॉक",
+    lockedOutBody: "गलत जवाब — अगले सवाल का इंतज़ार करो।",
+    inLine: "कतार में",
+    position: "#{position}",
+    lockedIn: "तुम्हारा बज़र दर्ज हो गया!",
+    buzz: "दबाओ!",
+    closed: "बज़र बंद हैं",
+    rejected: "बज़र नहीं माना गया",
+    failed: "बज़र नहीं दबा — फिर से कोशिश करो",
+  },
+  reveal: {
+    title: "जवाब खुल गया",
+    body: "बोर्ड देखते रहो — अगली टाइल आ रही है।",
+  },
+  finished: {
+    tie: "मुकाबला बराबर!",
+    wins: "{team} की जीत!",
+    yourTeamScored: "तुम्हारी टीम ने <b>{score}</b> अंक बनाए",
+  },
+  final: {
+    title: "Final Jeopardy",
+    rules: "हर टीम सिर्फ़ एक बार भेज सकती है — {team} · अधिकतम दाँव {max}",
+    wager: "दाँव",
+    answerPlaceholder: "तुम्हारी टीम का जवाब…",
+    lockInWager: "दाँव पक्का करो",
+    submitAnswer: "आखिरी जवाब भेजो",
+    rejected: "जवाब स्वीकार नहीं हुआ",
+    sentTitle: "पक्का हो गया",
+    sentBody: "तुम्हारी टीम का आखिरी जवाब पहुँच गया। होस्ट का इंतज़ार…",
+  },
+};

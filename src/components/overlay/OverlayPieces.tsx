@@ -200,10 +200,10 @@ export function OverlayScores({ state }: { state: OverlayState }) {
 
 export function OverlayQueue({
   state,
-  align = "right",
+  align = "end",
 }: {
   state: OverlayState;
-  align?: "left" | "right";
+  align?: "start" | "end";
 }) {
   const theme = useOverlayTheme(state);
   return (
@@ -217,7 +217,7 @@ export function OverlayQueue({
       style={{
         zoom: 1.6,
         width: 340,
-        marginLeft: align === "right" ? "auto" : undefined,
+        marginInlineStart: align === "end" ? "auto" : undefined,
         ...teamColorVars(theme),
       }}
     >

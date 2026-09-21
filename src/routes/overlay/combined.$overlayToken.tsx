@@ -1,14 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useForcedLocale } from "@/i18n";
 import {
   OverlayBoard,
   OverlayCanvas,
   OverlayQueue,
   OverlayScores,
 } from "@/components/overlay/OverlayPieces";
-import { SAFE, useOverlayState, useTransparentPage } from "@/components/overlay/overlay-state";
+import {
+  SAFE,
+  overlaySearch,
+  useOverlayState,
+  useTransparentPage,
+} from "@/components/overlay/overlay-state";
 
 export const Route = createFileRoute("/overlay/combined/$overlayToken")({
+  validateSearch: overlaySearch,
   head: () => ({
     meta: [
       { title: "Combined overlay — JEOPARDESTINY" },
@@ -29,6 +36,8 @@ export const Route = createFileRoute("/overlay/combined/$overlayToken")({
 
 function CombinedOverlay() {
   const { overlayToken } = Route.useParams();
+  const { lang } = Route.useSearch();
+  useForcedLocale(lang);
   useTransparentPage();
   const state = useOverlayState(overlayToken);
   if (!state) return null;
@@ -72,18 +81,18 @@ function CombinedOverlay() {
         />
       </div>
 
-      {/* Queue: right column, clear of the board so a crop isolates it. */}
+      {/* Queue: right column (left in Arabic), clear of the board so a crop isolates it. */}
       <div
         style={{
           position: "absolute",
           top: 270,
-          right: SAFE,
+          insetInlineEnd: SAFE,
           width: 544,
           maxHeight: 1080 - 270 - SAFE,
           overflow: "hidden",
         }}
       >
-        <OverlayQueue state={state} align="left" />
+        <OverlayQueue state={state} align="start" />
       </div>
     </OverlayCanvas>
   );

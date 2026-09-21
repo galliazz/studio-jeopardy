@@ -54,7 +54,10 @@ for (const { code } of LOCALES) {
         if (token === "{count}" && typeof source !== "string") continue;
         assert.ok(seen.has(token), `${code}: ${key} ha perso ${token}`);
       }
-      assert.ok(forms.every((f) => f.trim().length > 0), `${code}: ${key} è vuota`);
+      assert.ok(
+        forms.every((f) => f.trim().length > 0),
+        `${code}: ${key} è vuota`,
+      );
     }
   });
 }
@@ -72,6 +75,44 @@ test("una chiave che non esiste torna com'è, senza rompere la pagina", () => {
   assert.equal(translate("it", "nope.missing" as never), "nope.missing");
 });
 
-test("i segnaposto si sostituiscono, quelli sconosciuti restano visibili", () => {
+test("i segnaposto si sostituiscono, quelli senza valore restano visibili", () => {
+  // La frase si cerca nel dizionario invece di nominarla: il test non deve
+  // rompersi ogni volta che un testo cambia.
+  const withTwo = leaves(en as unknown as Tree).find(
+    (entry): entry is [string, string] =>
+      typeof entry[1] === "string" && new Set(entry[1].match(/\{\w+\}/g)).size >= 2,
+  );
+  assert.ok(withTwo, "nessuna frase inglese con due segnaposto");
+  const [key, source] = withTwo;
+  const [given, missing] = [...new Set(source.match(/\{\w+\}/g))] as [string, string];
+
+  const out = translate("en", key as never, { [given.slice(1, -1)]: "ZQX" });
+  assert.ok(out.includes("ZQX"), out);
+  assert.ok(!out.includes(given), `${given} non sostituito: ${out}`);
+  // Un valore dimenticato si vede a schermo, invece di sparire in silenzio.
+  assert.ok(out.includes(missing), `${missing} sparito: ${out}`);
+});
+
+test("il plurale sceglie la forma dal numero e ci scrive il numero", () => {
+  const plural = leaves(en as unknown as Tree).find(
+    (entry): entry is [string, Record<string, string>] =>
+      typeof entry[1] !== "string" &&
+      entry[1]["one"] !== undefined &&
+      entry[1]["other"] !== undefined &&
+      entry[1]["other"].includes("{count}"),
+  );
+  assert.ok(plural, "nessun plurale inglese con {count}");
+  const [key, forms] = plural;
+  assert.equal(
+    translate("en", key as never, { count: 7 }),
+    forms["other"]!.replace(/\{count\}/g, "7"),
+  );
+  assert.equal(
+    translate("en", key as never, { count: 1 }),
+    forms["one"]!.replace(/\{count\}/g, "1"),
+  );
+});
+
+test("un valore in più non rompe una frase che non lo usa", () => {
   assert.equal(translate("en", "common.cancel", { x: 1 }), "Cancel");
 });

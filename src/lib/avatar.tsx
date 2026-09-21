@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { useT, type MessageKey } from "@/i18n";
 import { useSignedUrl } from "@/lib/media";
 
 /**
@@ -23,17 +24,23 @@ import { useSignedUrl } from "@/lib/media";
  */
 export type AvatarValue = string | null;
 
-export const AVATAR_PRESETS: { id: string; icon: LucideIcon; bg: string; label: string }[] = [
-  { id: "star", icon: Star, bg: "bg-butter", label: "Avatar option 1: star" },
-  { id: "rocket", icon: Rocket, bg: "bg-sky", label: "Avatar option 2: rocket" },
-  { id: "cat", icon: Cat, bg: "bg-peach", label: "Avatar option 3: cat" },
-  { id: "dog", icon: Dog, bg: "bg-coral", label: "Avatar option 4: dog" },
-  { id: "ghost", icon: Ghost, bg: "bg-lilac", label: "Avatar option 5: ghost" },
-  { id: "crown", icon: Crown, bg: "bg-blush", label: "Avatar option 6: crown" },
-  { id: "sun", icon: Sun, bg: "bg-mint", label: "Avatar option 7: sun" },
-  { id: "bolt", icon: Zap, bg: "bg-butter", label: "Avatar option 8: lightning bolt" },
-  { id: "trophy", icon: Trophy, bg: "bg-peach", label: "Avatar option 9: trophy" },
-  { id: "sparkles", icon: Sparkles, bg: "bg-lilac", label: "Avatar option 10: sparkles" },
+/** Il nome letto dagli screen reader si traduce quando si mostra: qui c'è la chiave. */
+export const AVATAR_PRESETS: {
+  id: string;
+  icon: LucideIcon;
+  bg: string;
+  labelKey: MessageKey;
+}[] = [
+  { id: "star", icon: Star, bg: "bg-butter", labelKey: "avatar.presets.star" },
+  { id: "rocket", icon: Rocket, bg: "bg-sky", labelKey: "avatar.presets.rocket" },
+  { id: "cat", icon: Cat, bg: "bg-peach", labelKey: "avatar.presets.cat" },
+  { id: "dog", icon: Dog, bg: "bg-coral", labelKey: "avatar.presets.dog" },
+  { id: "ghost", icon: Ghost, bg: "bg-lilac", labelKey: "avatar.presets.ghost" },
+  { id: "crown", icon: Crown, bg: "bg-blush", labelKey: "avatar.presets.crown" },
+  { id: "sun", icon: Sun, bg: "bg-mint", labelKey: "avatar.presets.sun" },
+  { id: "bolt", icon: Zap, bg: "bg-butter", labelKey: "avatar.presets.bolt" },
+  { id: "trophy", icon: Trophy, bg: "bg-peach", labelKey: "avatar.presets.trophy" },
+  { id: "sparkles", icon: Sparkles, bg: "bg-lilac", labelKey: "avatar.presets.sparkles" },
 ];
 
 export function presetOf(value: AvatarValue) {
@@ -83,6 +90,7 @@ export function AccountAvatar({
   className?: string;
   iconClassName?: string;
 }) {
+  const t = useT();
   const preset = presetOf(value);
   const photoPath = value && !value.startsWith("preset:") ? value : null;
   const photoUrl = useSignedUrl("avatars", photoPath);
@@ -99,7 +107,11 @@ export function AccountAvatar({
   }
   if (photoPath && photoUrl) {
     return (
-      <img src={photoUrl} alt="Your avatar" className={`rounded-full object-cover ${className}`} />
+      <img
+        src={photoUrl}
+        alt={t("avatar.yours")}
+        className={`rounded-full object-cover ${className}`}
+      />
     );
   }
   return (

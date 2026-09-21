@@ -78,15 +78,23 @@ function hexToRgb(hex: string): [number, number, number] | null {
   const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return null;
   let h = m[1]!;
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
   const l = (max + min) / 2;
-  let h = 0, s = 0;
+  let h = 0,
+    s = 0;
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -98,7 +106,7 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
 }
 
 function hslToHex(h: number, s: number, l: number): string {
-  h = ((h % 360) + 360) % 360 / 360;
+  h = (((h % 360) + 360) % 360) / 360;
   const f = (p: number, q: number, t: number) => {
     if (t < 0) t += 1;
     if (t > 1) t -= 1;
@@ -112,9 +120,14 @@ function hslToHex(h: number, s: number, l: number): string {
   else {
     const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
     const p = 2 * l - q;
-    r = f(p, q, h + 1 / 3); g = f(p, q, h); b = f(p, q, h - 1 / 3);
+    r = f(p, q, h + 1 / 3);
+    g = f(p, q, h);
+    b = f(p, q, h - 1 / 3);
   }
-  const to = (v: number) => Math.round(v * 255).toString(16).padStart(2, "0");
+  const to = (v: number) =>
+    Math.round(v * 255)
+      .toString(16)
+      .padStart(2, "0");
   return `#${to(r)}${to(g)}${to(b)}`;
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Settings as SettingsIcon, LogOut, type LucideIcon } from "lucide-react";
 
+import { useT } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { AccountAvatar, useAvatarValue } from "@/lib/avatar";
 import {
@@ -45,6 +46,7 @@ export function AccountMenu({
   /** Widen the panel for content that needs more than a row of text. */
   wide?: boolean;
 }) {
+  const t = useT();
   const [email, setEmail] = useState("");
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function AccountMenu({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          aria-label="Account menu"
+          aria-label={t("account.menu")}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full outline-none transition-colors hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ink-accent"
         >
           <AccountAvatar value={avatarValue} initial={initial} className="h-10 w-10 text-base" />
@@ -88,7 +90,7 @@ export function AccountMenu({
       >
         <div className="px-3 py-2">
           <p className="truncate text-sm font-bold text-foreground">{displayName}</p>
-          <p className="truncate text-xs text-muted-foreground">{email || "Signed in"}</p>
+          <p className="truncate text-xs text-muted-foreground">{email || t("account.signedIn")}</p>
         </div>
         <DropdownMenuSeparator className={sepClass} />
         {items && items.length > 0 && (
@@ -101,7 +103,7 @@ export function AccountMenu({
                   className={`${rowClass} ${it.className ?? ""}`}
                   onSelect={it.onSelect}
                 >
-                  <Icon className="mr-2 h-4 w-4" /> {it.label}
+                  <Icon className="me-2 h-4 w-4" /> {it.label}
                 </DropdownMenuItem>
               );
             })}
@@ -109,7 +111,7 @@ export function AccountMenu({
           </>
         )}
         <DropdownMenuItem className={rowClass} onSelect={onOpenSettings}>
-          <SettingsIcon className="mr-2 h-4 w-4" /> Settings
+          <SettingsIcon className="me-2 h-4 w-4" /> {t("common.settings")}
         </DropdownMenuItem>
         <DropdownMenuItem
           className={rowClass}
@@ -117,7 +119,7 @@ export function AccountMenu({
             void supabase.auth.signOut().then(() => (window.location.href = "/auth"));
           }}
         >
-          <LogOut className="mr-2 h-4 w-4" /> Sign out
+          <LogOut className="me-2 h-4 w-4" /> {t("account.signOut")}
         </DropdownMenuItem>
         {dangerItems && dangerItems.length > 0 && (
           <>
@@ -130,7 +132,7 @@ export function AccountMenu({
                   className={`${rowClass} text-danger-ink focus:text-danger-ink ${it.className ?? ""}`}
                   onSelect={it.onSelect}
                 >
-                  <Icon className="mr-2 h-4 w-4" /> {it.label}
+                  <Icon className="me-2 h-4 w-4" /> {it.label}
                 </DropdownMenuItem>
               );
             })}
@@ -140,4 +142,3 @@ export function AccountMenu({
     </DropdownMenu>
   );
 }
-

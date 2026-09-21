@@ -1,0 +1,60 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · compte double",
+    fallbackCategory: "Question",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "Média de la question",
+    tileClosed: "Case fermée",
+    buzzersOpen: "Buzzers ouverts",
+  },
+  queue: {
+    title: "File des buzzers",
+    clear: "Vider la file",
+    clearConfirm: "Vider la file des buzzers ? Tous ceux qui attendent sont retirés.",
+    position: "#{position}",
+    firstIn: "premier",
+    deltaMs: "+{ms} ms",
+    deltaSeconds: "+{seconds} s",
+  },
+  score: {
+    teamPlayers: {
+      one: "{count} joueur",
+      many: "{count} de joueurs",
+      other: "{count} joueurs",
+    },
+    teamPlayersLabel: {
+      one: "{count} joueur dans cette équipe",
+      many: "{count} de joueurs dans cette équipe",
+      other: "{count} joueurs dans cette équipe",
+    },
+    subtractFrom: "Retirer {step} à {name}",
+    addTo: "Ajouter {step} à {name}",
+    customChangeFor: "Changement de score personnalisé pour {name}",
+    customAmount: "Valeur personnalisée",
+    subtract: "Retirer",
+    teamScore: "Score de {name}",
+    doubleClickToEdit: "Double-clique pour modifier",
+  },
+  fontFamilies: {
+    display: "Display",
+    sans: "Sans",
+    system: "Système",
+    grotesk: "Grotesque",
+    rounded: "Arrondie",
+    serif: "Serif",
+    oldStyle: "Ancienne",
+    slab: "Égyptienne",
+    mono: "Mono",
+    condensed: "Condensée",
+    handwriting: "Manuscrite",
+  },
+  fontWeights: {
+    "300": "Maigre",
+    "400": "Normale",
+    "500": "Moyenne",
+    "700": "Grasse",
+    "900": "Noire",
+  },
+};

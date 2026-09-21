@@ -36,6 +36,7 @@ import { darkBoardColors } from "@/lib/theme-mode";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { StudioTopBar } from "@/components/StudioTopBar";
 import { APP_GUTTER } from "@/components/app-bar";
+import { localizeError, useT } from "@/i18n";
 
 import { getSettings } from "@/lib/settings";
 import {
@@ -68,9 +69,15 @@ export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({
     meta: [
       { title: "Studio — JEOPARDESTINY" },
-      { name: "description", content: "Your Jeopardy studio: create, edit and host live trivia boards." },
+      {
+        name: "description",
+        content: "Your Jeopardy studio: create, edit and host live trivia boards.",
+      },
       { property: "og:title", content: "Studio — JEOPARDESTINY" },
-      { property: "og:description", content: "Your Jeopardy studio: create, edit and host live trivia boards." },
+      {
+        property: "og:description",
+        content: "Your Jeopardy studio: create, edit and host live trivia boards.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -78,6 +85,7 @@ export const Route = createFileRoute("/_authenticated/studio")({
 });
 
 function StudioPage() {
+  const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const bootstrap = useServerFn(bootstrapStudio);
@@ -115,8 +123,8 @@ function StudioPage() {
   // the user clicks outside while the field is empty.
   useEffect(() => {
     if (searchOpen) {
-      const t = setTimeout(() => searchRef.current?.focus(), 0);
-      return () => clearTimeout(t);
+      const id = setTimeout(() => searchRef.current?.focus(), 0);
+      return () => clearTimeout(id);
     }
     return undefined;
   }, [searchOpen]);
@@ -131,7 +139,9 @@ function StudioPage() {
     return () => document.removeEventListener("mousedown", handleDown, true);
   }, [searchOpen, search]);
   const games = useMemo(() => {
-    const all = ((data?.games ?? []) as unknown as Game[]).filter((g) => !pendingDelete.includes(g.id));
+    const all = ((data?.games ?? []) as unknown as Game[]).filter(
+      (g) => !pendingDelete.includes(g.id),
+    );
     if (!search.trim()) return all;
     return all.filter((g) => g.title.toLowerCase().includes(search.toLowerCase()));
   }, [data, search, pendingDelete]);
@@ -146,23 +156,26 @@ function StudioPage() {
       const prefs = getSettings();
       if (prefs.teamAlpha.trim() || prefs.teamBravo.trim()) {
         await updateGame({
-          data: { gameId: game.id, theme: { teamAlpha: prefs.teamAlpha, teamBravo: prefs.teamBravo } },
+          data: {
+            gameId: game.id,
+            theme: { teamAlpha: prefs.teamAlpha, teamBravo: prefs.teamBravo },
+          },
         });
       }
-      toast.success("Board created");
+      toast.success(t("studio.toast.created"));
       void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not create board");
+      toast.error(localizeError(err, "studio.toast.createFailed"));
     }
   };
 
   const handleDuplicate = async (gameId: string) => {
     try {
       await duplicateGame({ data: { gameId } });
-      toast.success("Board duplicated");
+      toast.success(t("studio.toast.duplicated"));
       void refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Duplicate failed");
+      toast.error(localizeError(err, "studio.toast.duplicateFailed"));
     }
   };
 
@@ -180,13 +193,13 @@ function StudioPage() {
         .then(() => refresh())
         .catch((err: unknown) => {
           setPendingDelete((prev) => prev.filter((id) => id !== gameId));
-          toast.error(err instanceof Error ? err.message : "Delete failed");
+          toast.error(localizeError(err, "studio.toast.deleteFailed"));
         });
     }, 6000);
-    toast.success(`“${title}” deleted`, {
+    toast.success(t("studio.toast.deleted", { title }), {
       duration: 6000,
       action: {
-        label: "Undo",
+        label: t("common.undo"),
         onClick: () => {
           undone = true;
           clearTimeout(timer);
@@ -206,9 +219,9 @@ function StudioPage() {
       a.download = `${payload.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Exported as JSON");
+      toast.success(t("studio.toast.exportedJson"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed");
+      toast.error(localizeError(err, "studio.toast.exportFailed"));
     }
   };
 
@@ -217,20 +230,20 @@ function StudioPage() {
       const payload = await exportGame({ data: { gameId } });
       const XLSX = await import("xlsx");
       const rows = payload.categories.flatMap((cat) =>
-        cat.tiles.map((t) => ({
-          Category: cat.title,
-          Points: t.points,
-          Clue: t.question,
-          Answer: t.answer,
-          Hint: t.hint ?? "",
+        cat.tiles.map((tile) => ({
+          [t("studio.excel.category")]: cat.title,
+          [t("studio.excel.points")]: tile.points,
+          [t("studio.excel.clue")]: tile.question,
+          [t("studio.excel.answer")]: tile.answer,
+          [t("studio.excel.hint")]: tile.hint ?? "",
         })),
       );
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Board");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), t("studio.excel.sheet"));
       XLSX.writeFile(wb, `${payload.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.xlsx`);
-      toast.success("Exported as Excel");
+      toast.success(t("studio.toast.exportedExcel"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed");
+      toast.error(localizeError(err, "studio.toast.exportFailed"));
     }
   };
 
@@ -240,17 +253,17 @@ function StudioPage() {
       const { session } = await start({ data: { gameId } });
       void navigate({ to: "/host/$sessionId", params: { sessionId: session.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not start session");
+      toast.error(localizeError(err, "studio.toast.startFailed"));
     }
   };
 
   const handleRename = async (gameId: string, title: string) => {
     try {
       await updateGame({ data: { gameId, title } });
-      toast.success("Board renamed");
+      toast.success(t("studio.toast.renamed"));
       void refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Rename failed");
+      toast.error(localizeError(err, "studio.toast.renameFailed"));
     }
   };
 
@@ -258,23 +271,29 @@ function StudioPage() {
     try {
       const parsed = JSON.parse(await file.text()) as unknown;
       const game = await importGame({ data: parsed as never });
-      toast.success("Board imported");
+      toast.success(t("studio.toast.imported"));
       void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Import failed — invalid file");
+      toast.error(localizeError(err, "studio.toast.importFailed"));
     }
   };
 
-  const displayName = data?.profile?.username ?? "there";
+  const username = data?.profile?.username;
   const boardCount = (data?.games ?? []).length;
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
-      <div aria-hidden className="pointer-events-none absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute -bottom-48 -right-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -start-40 -top-40 h-[420px] w-[420px] rounded-full bg-lilac opacity-70 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-48 -end-32 h-[460px] w-[460px] rounded-full bg-peach opacity-70 blur-3xl"
+      />
 
       <StudioTopBar
-        displayName={data?.profile?.username ?? "Host"}
+        displayName={username ?? t("studio.defaultHostName")}
         avatarUrl={data?.profile?.avatar_url ?? null}
         onOpenSettings={() => setSettingsOpen(true)}
       />
@@ -285,14 +304,16 @@ function StudioPage() {
         {/* Page header — plain text, no card */}
         <header className="mb-8">
           <h2 className="font-display text-[28px] font-black leading-9 tracking-tight text-foreground sm:text-[32px]">
-            Welcome back, {displayName}
+            {username == null
+              ? t("studio.header.welcomeBackGuest")
+              : t("studio.header.welcomeBack", { name: username })}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {isLoading
-              ? "Loading boards…"
+              ? t("studio.header.loadingBoards")
               : error
-                ? "Sign in to load your boards"
-                : `${boardCount} board${boardCount === 1 ? "" : "s"}`}
+                ? t("studio.header.signInToLoad")
+                : t("studio.header.boardCount", { count: boardCount })}
           </p>
         </header>
 
@@ -305,13 +326,13 @@ function StudioPage() {
             onClick={() => setCreating(true)}
             className="flex h-12 items-center gap-2 rounded-full bg-coral px-7 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-[1.03]"
           >
-            <Plus className="h-5 w-5" /> Create a new game
+            <Plus className="h-5 w-5" /> {t("studio.actions.createGame")}
           </motion.button>
           <button
             onClick={() => importRef.current?.click()}
             className="flex h-12 items-center gap-2 rounded-full border-2 border-foreground/20 bg-transparent px-6 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
           >
-            <Upload className="h-4 w-4" /> Import JSON
+            <Upload className="h-4 w-4" /> {t("studio.actions.importJson")}
           </button>
           <div className="flex-1" />
           {/* Search grows leftward over the buttons, keeping the spring feel */}
@@ -325,7 +346,7 @@ function StudioPage() {
             }`}
           >
             <button
-              aria-label="Search boards"
+              aria-label={t("studio.actions.searchBoards")}
               onClick={() => setSearchOpen(true)}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/5"
             >
@@ -346,8 +367,8 @@ function StudioPage() {
                 }
               }}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search boards…"
-              className="h-10 w-full min-w-0 bg-transparent pr-4 text-sm outline-none placeholder:text-muted-foreground/60"
+              placeholder={t("studio.actions.searchPlaceholder")}
+              className="h-10 w-full min-w-0 bg-transparent pe-4 text-sm outline-none placeholder:text-muted-foreground/60"
             />
           </motion.div>
           <input
@@ -363,8 +384,6 @@ function StudioPage() {
           />
         </div>
 
-
-
         {/* Create dialog (inline card) */}
         {creating && (
           <motion.div
@@ -372,14 +391,14 @@ function StudioPage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             className="mb-8 rounded-[32px] bg-butter p-6 elev-2"
           >
-            <h2 className="mb-3 font-display text-lg font-black">Name your board</h2>
+            <h2 className="mb-3 font-display text-lg font-black">{t("studio.create.title")}</h2>
             <div className="flex flex-wrap gap-2">
               <input
                 autoFocus
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && void handleCreate()}
-                placeholder="e.g. Friday Night Trivia"
+                placeholder={t("studio.create.placeholder")}
                 maxLength={80}
                 className="h-12 min-w-48 flex-1 rounded-full bg-card px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
               />
@@ -387,13 +406,13 @@ function StudioPage() {
                 onClick={() => void handleCreate()}
                 className="rounded-full bg-coral px-7 py-3 text-sm font-bold text-foreground elev-1"
               >
-                Create
+                {t("studio.create.submit")}
               </button>
               <button
                 onClick={() => setCreating(false)}
                 className="rounded-full bg-card px-6 py-3 text-sm font-semibold text-muted-foreground"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </motion.div>
@@ -402,28 +421,26 @@ function StudioPage() {
         {/* Game cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2000px]:grid-cols-6">
-
             {[0, 1, 2].map((i) => (
               <div key={i} className="h-56 animate-pulse rounded-[32px] bg-muted" />
             ))}
           </div>
         ) : error ? (
           <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
-            <p className="mb-4">You need to be signed in to load and create boards.</p>
+            <p className="mb-4">{t("studio.signedOut.body")}</p>
             <button
               onClick={() => void navigate({ to: "/auth" })}
               className="rounded-full bg-coral px-7 py-3 text-sm font-bold text-foreground elev-1"
             >
-              Sign in
+              {t("studio.signedOut.signIn")}
             </button>
           </div>
         ) : games.length === 0 ? (
           <div className="rounded-[36px] bg-card p-12 text-center text-muted-foreground elev-1">
-            No boards yet — create your first one!
+            {t("studio.empty")}
           </div>
         ) : (
           <div className="grid grid-cols-1 items-stretch gap-4 min-[600px]:grid-cols-2 min-[600px]:gap-6 min-[840px]:grid-cols-3 min-[1200px]:grid-cols-4 min-[1600px]:grid-cols-5 min-[2000px]:grid-cols-6">
-
             {games.map((game, i) => (
               <GameCard
                 key={game.id}
@@ -468,6 +485,7 @@ function GameCard({
   onExportXlsx: () => void;
   onDelete: () => void;
 }) {
+  const t = useT();
   const navigate = useNavigate();
   const theme = darkBoardColors(themeOf(game), useThemeMode() === "dark");
   const [renaming, setRenaming] = useState(false);
@@ -477,7 +495,9 @@ function GameCard({
   useEffect(() => setDraftTitle(game.title), [game.title]);
 
   const joinUrl =
-    typeof window === "undefined" ? `/play/${game.join_code}` : `${window.location.origin}/play/${game.join_code}`;
+    typeof window === "undefined"
+      ? `/play/${game.join_code}`
+      : `${window.location.origin}/play/${game.join_code}`;
 
   const commitRename = () => {
     setRenaming(false);
@@ -504,7 +524,7 @@ function GameCard({
         transition={{ ...SPRING_UI, delay: index * 0.05 }}
         role="button"
         tabIndex={0}
-        title="Open in editor"
+        title={t("studio.card.openInEditor")}
         onClick={openEditor}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -549,7 +569,7 @@ function GameCard({
                 <span
                   role="button"
                   tabIndex={0}
-                  aria-label="Board options"
+                  aria-label={t("studio.card.options")}
                   className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2"
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/10">
@@ -562,29 +582,38 @@ function GameCard({
                   className="rounded-full px-4 py-2.5 text-sm font-semibold"
                   onSelect={() => setJoinOpen(true)}
                 >
-                  <QrCode className="mr-2 h-4 w-4" /> Join code
+                  <QrCode className="me-2 h-4 w-4" /> {t("studio.card.joinCode")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="rounded-full px-4 py-2.5 text-sm font-semibold"
                   onSelect={() => setRenaming(true)}
                 >
-                  <Pencil className="mr-2 h-4 w-4" /> Rename
+                  <Pencil className="me-2 h-4 w-4" /> {t("studio.card.rename")}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onDuplicate}>
-                  <Copy className="mr-2 h-4 w-4" /> Duplicate
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={onDuplicate}
+                >
+                  <Copy className="me-2 h-4 w-4" /> {t("studio.card.duplicate")}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onExport}>
-                  <Download className="mr-2 h-4 w-4" /> Export JSON
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={onExport}
+                >
+                  <Download className="me-2 h-4 w-4" /> {t("studio.card.exportJson")}
                 </DropdownMenuItem>
-                <DropdownMenuItem className="rounded-full px-4 py-2.5 text-sm font-semibold" onSelect={onExportXlsx}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+                <DropdownMenuItem
+                  className="rounded-full px-4 py-2.5 text-sm font-semibold"
+                  onSelect={onExportXlsx}
+                >
+                  <FileSpreadsheet className="me-2 h-4 w-4" /> {t("studio.card.exportExcel")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="rounded-full px-4 py-2.5 text-sm font-semibold text-danger-ink focus:text-danger-ink"
                   onSelect={() => setConfirmDelete(true)}
                 >
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                  <Trash2 className="me-2 h-4 w-4" /> {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -592,7 +621,10 @@ function GameCard({
         </div>
 
         {/* b) Board preview — three distinct surface levels, dashed cells when empty */}
-        <div className="mb-4 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3" style={{ backgroundColor: theme.bg }}>
+        <div
+          className="mb-4 grid flex-1 grid-cols-5 gap-1.5 rounded-[26px] p-3"
+          style={{ backgroundColor: theme.bg }}
+        >
           {Array.from({ length: 5 }).map((_, col) => (
             <div
               key={col}
@@ -620,7 +652,9 @@ function GameCard({
 
         {/* c) Status row */}
         <p className="mb-3 text-xs font-semibold text-foreground/70">
-          {complete ? "Ready to play" : `${ready} of ${total || 25} tiles ready`}
+          {complete
+            ? t("studio.card.readyToPlay")
+            : t("studio.card.tilesReady", { ready, count: total || 25 })}
         </p>
 
         {/* d) Full-width CTA */}
@@ -640,7 +674,7 @@ function GameCard({
           }}
           className="relative z-20 flex h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full bg-coral font-display text-lg font-black text-foreground elev-2 outline-none transition-transform hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2"
         >
-          <Play className="h-5 w-5" /> Play
+          <Play className="h-5 w-5" /> {t("studio.card.play")}
         </div>
       </motion.div>
 
@@ -648,21 +682,23 @@ function GameCard({
       <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
         <DialogContent className="rounded-[32px] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display">Join code</DialogTitle>
-            <DialogDescription>Players can join with this code or by scanning the QR.</DialogDescription>
+            <DialogTitle className="font-display">{t("studio.joinDialog.title")}</DialogTitle>
+            <DialogDescription>{t("studio.joinDialog.description")}</DialogDescription>
           </DialogHeader>
-          <p className="text-center font-mono text-3xl font-black tracking-widest text-foreground">{game.join_code}</p>
+          <p className="text-center font-mono text-3xl font-black tracking-widest text-foreground">
+            {game.join_code}
+          </p>
           <div className="flex justify-center rounded-[18px] bg-white p-3">
             <QRCodeSVG value={joinUrl} size={160} />
           </div>
           <button
             onClick={() => {
               void navigator.clipboard.writeText(joinUrl);
-              toast.success("Join link copied");
+              toast.success(t("studio.joinDialog.linkCopied"));
             }}
             className="flex items-center justify-center gap-2 rounded-full bg-lilac px-5 py-3 text-sm font-bold text-foreground elev-1"
           >
-            <LinkIcon className="h-4 w-4" /> Copy link
+            <LinkIcon className="h-4 w-4" /> {t("common.copyLink")}
           </button>
         </DialogContent>
       </Dialog>
@@ -671,15 +707,15 @@ function GameCard({
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent className="rounded-[32px]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display">Delete “{game.title}”?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This removes the board and all of its clues. You can undo right after deleting.
-            </AlertDialogDescription>
+            <AlertDialogTitle className="font-display">
+              {t("studio.deleteDialog.title", { title: game.title })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>{t("studio.deleteDialog.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction className="rounded-full bg-coral text-foreground" onClick={onDelete}>
-              Delete board
+              {t("studio.deleteDialog.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

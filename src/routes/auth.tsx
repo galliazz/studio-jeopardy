@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPRING_UI } from "@/lib/motion";
 import { AppBar, GuestSettingsButton } from "@/components/AppBar";
 import { NAV_BUTTON } from "@/components/app-bar";
+import { localizeError, useT, type TFunction } from "@/i18n";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -27,7 +28,46 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+/**
+ * Gli errori di accesso arrivano dal server di Supabase, non dal nostro:
+ * traduciamo quelli che su questa pagina capitano davvero, col testo esatto
+ * che manda Supabase. Gli altri passano da localizeError.
+ */
+const AUTH_ERRORS: [RegExp, (t: TFunction, m: RegExpExecArray) => string][] = [
+  [/^Invalid login credentials$/, (t) => t("auth.errors.invalidCredentials")],
+  [/^Email not confirmed$/, (t) => t("auth.errors.emailNotConfirmed")],
+  [/^User already registered$/, (t) => t("auth.errors.userAlreadyRegistered")],
+  [
+    /^Password should be at least (\d+) characters\.$/,
+    (t, m) => t("auth.errors.passwordTooShort", { count: Number(m[1]) }),
+  ],
+  [
+    /^Email address "(.+)" is invalid$/,
+    (t, m) => t("auth.errors.emailInvalid", { email: m[1] ?? "" }),
+  ],
+  [
+    /^Unable to validate email address: invalid format$/,
+    (t) => t("auth.errors.emailInvalidFormat"),
+  ],
+  [/^email rate limit exceeded$/i, (t) => t("auth.errors.emailRateLimit")],
+  [
+    /^For security purposes, you can only request this after (\d+) seconds\.$/,
+    (t, m) => t("auth.errors.retryAfter", { count: Number(m[1]) }),
+  ],
+  [/^Signups not allowed for this instance$/, (t) => t("auth.errors.signupsDisabled")],
+];
+
+function authErrorMessage(err: unknown, t: TFunction): string {
+  const message = err instanceof Error ? err.message.trim() : "";
+  for (const [re, render] of AUTH_ERRORS) {
+    const m = re.exec(message);
+    if (m) return render(t, m);
+  }
+  return localizeError(err, "auth.errors.failed");
+}
+
 function AuthPage() {
+  const t = useT();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -57,7 +97,7 @@ function AuthPage() {
         setCheckEmail(true);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Authentication failed");
+      toast.error(authErrorMessage(err, t));
     } finally {
       setBusy(false);
     }
@@ -67,20 +107,20 @@ function AuthPage() {
     <div className="relative flex min-h-screen flex-col overflow-hidden">
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl"
+        className="pointer-events-none absolute -end-40 -top-40 h-[480px] w-[480px] rounded-full bg-lilac opacity-70 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-48 -left-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl"
+        className="pointer-events-none absolute -bottom-48 -start-32 h-[520px] w-[520px] rounded-full bg-sky opacity-70 blur-3xl"
       />
 
       {/* La barra condivisa: "← Home" a sinistra come "← Studio" nell'editor,
           le impostazioni nello stesso punto dell'avatar. */}
       <AppBar
         left={
-          <Link to="/" className={NAV_BUTTON} aria-label="Back to home">
-            <ArrowLeft className="h-5 w-5" />
-            <span className="hidden sm:inline">Home</span>
+          <Link to="/" className={NAV_BUTTON} aria-label={t("auth.backToHome")}>
+            <ArrowLeft className="h-5 w-5 rtl:-scale-x-100" />
+            <span className="hidden sm:inline">{t("common.home")}</span>
           </Link>
         }
         right={<GuestSettingsButton />}
@@ -99,18 +139,20 @@ function AuthPage() {
             </div>
             <div>
               <h1 className="font-display text-xl font-black tracking-tight">JEOPARDESTINY</h1>
-              <p className="text-sm text-muted-foreground">Host console access</p>
+              <p className="text-sm text-muted-foreground">{t("auth.subtitle")}</p>
             </div>
           </div>
 
           {checkEmail ? (
             <div className="flex flex-col items-center py-6 text-center">
               <MailCheck className="mb-3 h-12 w-12 text-ink-accent" />
-              <h2 className="font-display text-lg font-bold">Check your inbox</h2>
+              <h2 className="font-display text-lg font-bold">{t("auth.checkEmail.title")}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                We sent a confirmation link to{" "}
-                <span className="font-semibold text-foreground">{email}</span>. Click it to activate
-                your host account, then sign in.
+                {t.rich(
+                  "auth.checkEmail.body",
+                  { email },
+                  { b: (chunk) => <span className="font-semibold text-foreground">{chunk}</span> },
+                )}
               </p>
               <button
                 onClick={() => {
@@ -119,7 +161,7 @@ function AuthPage() {
                 }}
                 className="mt-6 rounded-full bg-lilac px-6 py-3 text-sm font-bold text-foreground elev-1"
               >
-                Back to sign in
+                {t("auth.checkEmail.backToSignIn")}
               </button>
             </div>
           ) : (
@@ -133,7 +175,7 @@ function AuthPage() {
                       mode === m ? "bg-coral text-foreground elev-1" : "text-muted-foreground"
                     }`}
                   >
-                    {m === "signin" ? "Sign in" : "Create account"}
+                    {m === "signin" ? t("auth.tabs.signIn") : t("auth.tabs.signUp")}
                   </button>
                 ))}
               </div>
@@ -143,7 +185,7 @@ function AuthPage() {
                   <input
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Host name"
+                    placeholder={t("auth.fields.hostName")}
                     maxLength={24}
                     className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
                   />
@@ -152,7 +194,7 @@ function AuthPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
+                  placeholder={t("auth.fields.email")}
                   className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
                 />
                 <input
@@ -160,7 +202,7 @@ function AuthPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && void submit()}
-                  placeholder="Password (6+ characters)"
+                  placeholder={t("auth.fields.password")}
                   className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
                 />
                 <motion.button
@@ -169,12 +211,16 @@ function AuthPage() {
                   onClick={() => void submit()}
                   className="h-12 w-full rounded-full bg-coral font-display font-black text-foreground elev-2 transition-transform hover:scale-[1.02] disabled:opacity-50"
                 >
-                  {busy ? "Working…" : mode === "signin" ? "Sign in" : "Create host account"}
+                  {busy
+                    ? t("auth.submit.working")
+                    : mode === "signin"
+                      ? t("auth.submit.signIn")
+                      : t("auth.submit.signUp")}
                 </motion.button>
               </div>
 
               <p className="mt-5 text-center text-xs text-muted-foreground">
-                Players never need an account — they join with a game code.
+                {t("auth.playersNoAccount")}
               </p>
             </>
           )}

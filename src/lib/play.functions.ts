@@ -1,6 +1,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createPublicClient } from "@/lib/public-client.server";
+import {
+  buzzInsertRejected,
+  buzzReply,
+  canJoinSession,
+  finalAnswerRow,
+  finalQuestionVisible,
+  finalSubmissionOpen,
+  joinCodeInput,
+  joinGameInput,
+  mayBuzz,
+  normalizeJoinCode,
+  overlayClue,
+} from "@/lib/game-rules";
 
 /** Columns of `sessions` that are safe to hand to a guest device. */
 const SESSION_PUBLIC_COLS =
@@ -52,10 +65,10 @@ async function authenticatePlayer(playerId: string, token: string) {
 
 /** Public: look up an active session by the game's join code. */
 export const lookupSession = createServerFn({ method: "GET" })
-  .inputValidator((data) => z.object({ code: z.string().trim().min(4).max(10) }).parse(data))
+  .inputValidator((data) => z.object({ code: joinCodeInput }).parse(data))
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const code = data.code.toUpperCase();
+    const code = normalizeJoinCode(data.code);
     const { data: game, error: gErr } = await client
       .from("games")
       .select("id, title, join_code, theme")
@@ -78,19 +91,10 @@ export const lookupSession = createServerFn({ method: "GET" })
 
 /** Public: join a live session as a contestant. Returns a private token bound to the new player. */
 export const joinGame = createServerFn({ method: "POST" })
-  .inputValidator((data) =>
-    z
-      .object({
-        code: z.string().trim().min(4).max(10),
-        name: z.string().trim().min(2).max(25),
-        avatar: z.string().min(1).max(8),
-        team: z.enum(["alpha", "bravo"]),
-      })
-      .parse(data),
-  )
+  .inputValidator((data) => joinGameInput.parse(data))
   .handler(async ({ data }) => {
     const client = createPublicClient();
-    const code = data.code.toUpperCase();
+    const code = normalizeJoinCode(data.code);
     const { data: game, error: gErr } = await client
       .from("games")
       .select("id, title")
@@ -108,7 +112,7 @@ export const joinGame = createServerFn({ method: "POST" })
       .maybeSingle();
     if (logDbError("joinGame/sessions", sErr)) return { error: "unavailable" as const };
     if (!session) return { error: "not_started" as const };
-    if (session.status !== "lobby" && session.status !== "live") {
+    if (!canJoinSession(session.status)) {
       return { error: "not_started" as const };
     }
 
@@ -118,7 +122,8 @@ export const joinGame = createServerFn({ method: "POST" })
       .insert({ session_id: session.id, name: data.name, avatar: data.avatar, team: data.team })
       .select(PLAYER_PUBLIC_COLS)
       .single();
-    if (error || !player) return { error: "join_failed" as const, message: error?.message ?? "join failed" };
+    if (error || !player)
+      return { error: "join_failed" as const, message: error?.message ?? "join failed" };
     // Il token lo emette un trigger sull'insert; qui si legge soltanto.
     const { data: secret } = await db
       .from("player_secrets")
@@ -158,7 +163,7 @@ export const getPlayerState = createServerFn({ method: "GET" })
      * servizio e si consegna solo nella fase giusta.
      */
     let finalQuestion: string | null = null;
-    if (session.phase === "final_answer") {
+    if (finalQuestionVisible(session.phase)) {
       const db = await admin();
       const { data: secrets } = await db
         .from("session_secrets")
@@ -167,7 +172,11 @@ export const getPlayerState = createServerFn({ method: "GET" })
         .maybeSingle();
       finalQuestion = secrets?.final_question ?? null;
     }
-    return { session: { ...session, final_question: finalQuestion }, players: players ?? [], queue: queue ?? [] };
+    return {
+      session: { ...session, final_question: finalQuestion },
+      players: players ?? [],
+      queue: queue ?? [],
+    };
   });
 
 /** Public: slam the buzzer. Requires the player's private token; the DB trigger promotes the first buzzer. */
@@ -180,14 +189,13 @@ export const buzz = createServerFn({ method: "POST" })
     if (!player) return { ok: false as const, reason: "no_player" as const };
     if (player.locked_out) return { ok: false as const, reason: "closed" as const };
     const db = await admin();
-    const { data: session } = await db.from("sessions").select("*").eq("id", player.session_id).maybeSingle();
+    const { data: session } = await db
+      .from("sessions")
+      .select("*")
+      .eq("id", player.session_id)
+      .maybeSingle();
     if (!session) return { ok: false as const, reason: "no_session" as const };
-    if (session.status !== "live" || !session.current_tile_id) {
-      return { ok: false as const, reason: "closed" as const };
-    }
-    if (session.phase !== "question_open" && session.phase !== "answering") {
-      return { ok: false as const, reason: "closed" as const };
-    }
+    if (!mayBuzz(player, session)) return { ok: false as const, reason: "closed" as const };
     const tileId = session.current_tile_id;
 
     const { error } = await db.from("buzzer_queue").insert({
@@ -195,7 +203,7 @@ export const buzz = createServerFn({ method: "POST" })
       tile_id: tileId,
       player_id: player.id,
     });
-    if (error && error.code !== "23505") {
+    if (buzzInsertRejected(error)) {
       return { ok: false as const, reason: "rejected" as const };
     }
 
@@ -206,12 +214,7 @@ export const buzz = createServerFn({ method: "POST" })
       .eq("tile_id", tileId)
       .in("status", ["queued", "active"])
       .order("created_at");
-    const position = (rows ?? []).findIndex((r) => r.player_id === player.id) + 1;
-    return {
-      ok: true as const,
-      position,
-      active: session.active_player_id === player.id,
-    };
+    return buzzReply(rows ?? [], player.id, session.active_player_id);
   });
 
 /** Public: submit a Final Jeopardy wager / answer for the authenticated player's own team. */
@@ -230,18 +233,17 @@ export const submitFinalAnswer = createServerFn({ method: "POST" })
     const player = await authenticatePlayer(data.playerId, data.token);
     if (!player) return { ok: false as const, reason: "no_player" as const };
     const db = await admin();
-    const { data: session } = await db.from("sessions").select("*").eq("id", player.session_id).maybeSingle();
-    if (!session || session.status !== "final") return { ok: false as const, reason: "closed" as const };
-    if (session.phase !== "final_wager" && session.phase !== "final_answer") {
+    const { data: session } = await db
+      .from("sessions")
+      .select("*")
+      .eq("id", player.session_id)
+      .maybeSingle();
+    if (!session || !finalSubmissionOpen(session))
       return { ok: false as const, reason: "closed" as const };
-    }
     // Team is taken from the verified player row — never from client input.
     const { error } = await db
       .from("final_answers")
-      .upsert(
-        { session_id: session.id, team: player.team, wager: data.wager, answer: data.answer },
-        { onConflict: "session_id,team" },
-      );
+      .upsert(finalAnswerRow(session, player.team, data), { onConflict: "session_id,team" });
     if (error) return { ok: false as const, reason: "rejected" as const };
     return { ok: true as const };
   });
@@ -280,7 +282,10 @@ export const getOverlayState = createServerFn({ method: "GET" })
       .order("position");
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
-      ? await db.from("tiles").select("id, category_id, row_index, points").in("category_id", catIds)
+      ? await db
+          .from("tiles")
+          .select("id, category_id, row_index, points")
+          .in("category_id", catIds)
       : { data: [] };
     const { data: players } = await db
       .from("players")
@@ -293,21 +298,15 @@ export const getOverlayState = createServerFn({ method: "GET" })
       .eq("session_id", session.id)
       .order("created_at");
 
-    let clue: { category: string; points: number; question: string; answer: string | null } | null = null;
+    let clue: { category: string; points: number; question: string; answer: string | null } | null =
+      null;
     if (session.current_tile_id) {
       const { data: tile } = await db
         .from("tiles")
         .select("id, category_id, points, question, answer")
         .eq("id", session.current_tile_id)
         .maybeSingle();
-      if (tile) {
-        clue = {
-          category: (categories ?? []).find((c) => c.id === tile.category_id)?.title ?? "",
-          points: session.dd_wager ?? tile.points,
-          question: tile.question,
-          answer: session.phase === "reveal" ? tile.answer : null,
-        };
-      }
+      if (tile) clue = overlayClue(session, tile, categories ?? []);
     }
 
     return {

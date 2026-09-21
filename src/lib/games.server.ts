@@ -8,7 +8,12 @@ type Client = SupabaseClient<Database>;
 export async function createEmptyBoard(client: Client, hostId: string, title: string) {
   const { data: game, error } = await client
     .from("games")
-    .insert({ host_id: hostId, title, join_code: generateJoinCode(), theme: DEFAULT_THEME as unknown as Json })
+    .insert({
+      host_id: hostId,
+      title,
+      join_code: generateJoinCode(),
+      theme: DEFAULT_THEME as unknown as Json,
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);
@@ -45,7 +50,10 @@ const DEMO: { title: string; tiles: [string, string][] }[] = [
       ["This is the largest hot desert in the world.", "What is the Sahara?"],
       ["This European country is shaped like a boot.", "What is Italy?"],
       ["The Strait of Gibraltar separates Spain from this African country.", "What is Morocco?"],
-      ["This is the only country crossed by both the Equator and the Tropic of Capricorn.", "What is Brazil?"],
+      [
+        "This is the only country crossed by both the Equator and the Tropic of Capricorn.",
+        "What is Brazil?",
+      ],
       ["Nouakchott is the capital of this Northwest African country.", "What is Mauritania?"],
     ],
   },
@@ -65,14 +73,20 @@ const DEMO: { title: string; tiles: [string, string][] }[] = [
       ["This boy wizard is famous for his lightning-shaped scar.", "Who is Harry Potter?"],
       ["This 2023 blockbuster painted movie theaters pink.", "What is Barbie?"],
       ["This artist released the albums “1989” and “Midnights”.", "Who is Taylor Swift?"],
-      ["This streaming series features a dimension called the Upside Down.", "What is Stranger Things?"],
+      [
+        "This streaming series features a dimension called the Upside Down.",
+        "What is Stranger Things?",
+      ],
       ["This green-clad brother of Mario stars in “Luigi's Mansion”.", "Who is Luigi?"],
     ],
   },
   {
     title: "History Buffs",
     tiles: [
-      ["This document, signed in 1776, declared American independence.", "What is the Declaration of Independence?"],
+      [
+        "This document, signed in 1776, declared American independence.",
+        "What is the Declaration of Independence?",
+      ],
       ["This ancient civilization built the pyramids of Giza.", "Who are the Egyptians?"],
       ["This wall fell in 1989, symbolizing the end of the Cold War.", "What is the Berlin Wall?"],
       ["This “unsinkable” ship sank in 1912 on its maiden voyage.", "What is the Titanic?"],
@@ -86,7 +100,10 @@ const DEMO: { title: string; tiles: [string, string][] }[] = [
       ["Sushi traditionally wraps fish and rice in this dried seaweed.", "What is nori?"],
       ["This Italian dish layers pasta, sauce, and cheese.", "What is lasagna?"],
       ["Worth more than gold by weight, this spice comes from crocus flowers.", "What is saffron?"],
-      ["This French term means “everything in its place” in the kitchen.", "What is mise en place?"],
+      [
+        "This French term means “everything in its place” in the kitchen.",
+        "What is mise en place?",
+      ],
     ],
   },
 ];

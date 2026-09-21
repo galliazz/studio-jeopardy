@@ -1,0 +1,52 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · 得点2倍",
+    fallbackCategory: "問題",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "問題のメディア",
+    tileClosed: "マス終了",
+    buzzersOpen: "早押し受付中",
+  },
+  queue: {
+    title: "早押し順",
+    clear: "早押し順をクリア",
+    clearConfirm: "早押し順をクリアしますか？待っている全員が外れます。",
+    position: "{position}番",
+    firstIn: "一番乗り",
+    deltaMs: "+{ms}ms",
+    deltaSeconds: "+{seconds}秒",
+  },
+  score: {
+    teamPlayers: { other: "{count}人" },
+    teamPlayersLabel: { other: "このチームのプレイヤー{count}人" },
+    subtractFrom: "{name}から{step}を引く",
+    addTo: "{name}に{step}を足す",
+    customChangeFor: "{name}のスコアを自由に変更",
+    customAmount: "任意の点数",
+    subtract: "引く",
+    teamScore: "{name}のスコア",
+    doubleClickToEdit: "ダブルクリックで編集",
+  },
+  fontFamilies: {
+    display: "ディスプレイ",
+    sans: "サンセリフ",
+    system: "システム",
+    grotesk: "グロテスク",
+    rounded: "ラウンド",
+    serif: "セリフ",
+    oldStyle: "オールドスタイル",
+    slab: "スラブ",
+    mono: "等幅",
+    condensed: "コンデンス",
+    handwriting: "手書き",
+  },
+  fontWeights: {
+    "300": "ライト",
+    "400": "レギュラー",
+    "500": "ミディアム",
+    "700": "ボールド",
+    "900": "ブラック",
+  },
+};

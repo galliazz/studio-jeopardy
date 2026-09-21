@@ -1,0 +1,80 @@
+import type { Messages } from "../en/index";
+
+export const studio: Messages["studio"] = {
+  topBar: {
+    title: "Studio",
+  },
+  defaultHostName: "Apresentador",
+  header: {
+    welcomeBack: "Que bom te ver de novo, {name}",
+    welcomeBackGuest: "Que bom te ver de novo",
+    loadingBoards: "Carregando seus painéis…",
+    signInToLoad: "Entre para carregar seus painéis",
+    boardCount: { one: "{count} painel", other: "{count} painéis" },
+  },
+  actions: {
+    createGame: "Criar um novo jogo",
+    importJson: "Importar JSON",
+    searchBoards: "Buscar painéis",
+    searchPlaceholder: "Buscar painéis…",
+  },
+  create: {
+    title: "Dê um nome ao painel",
+    placeholder: "ex.: Quiz de sexta à noite",
+    submit: "Criar",
+  },
+  signedOut: {
+    body: "Você precisa entrar para carregar e criar painéis.",
+    signIn: "Entrar",
+  },
+  empty: "Nenhum painel ainda — crie o primeiro!",
+  card: {
+    openInEditor: "Abrir no editor",
+    options: "Opções do painel",
+    joinCode: "Código de entrada",
+    rename: "Renomear",
+    duplicate: "Duplicar",
+    exportJson: "Exportar JSON",
+    exportExcel: "Exportar Excel",
+    readyToPlay: "Pronto para jogar",
+    tilesReady: {
+      one: "{ready} de {count} casa pronta",
+      other: "{ready} de {count} casas prontas",
+    },
+    play: "Jogar",
+  },
+  joinDialog: {
+    title: "Código de entrada",
+    description: "Os jogadores entram com este código ou escaneando o QR.",
+    linkCopied: "Link de entrada copiado",
+  },
+  deleteDialog: {
+    title: "Excluir “{title}”?",
+    description: "Isso apaga o painel e todas as perguntas dele. Dá para desfazer logo depois.",
+    confirm: "Excluir painel",
+  },
+  toast: {
+    created: "Painel criado",
+    createFailed: "Não foi possível criar o painel",
+    duplicated: "Painel duplicado",
+    duplicateFailed: "Não foi possível duplicar",
+    deleted: "“{title}” excluído",
+    deleteFailed: "Não foi possível excluir",
+    exportedJson: "Exportado como JSON",
+    exportedExcel: "Exportado como Excel",
+    exportFailed: "A exportação falhou",
+    startFailed: "Não foi possível iniciar a sessão",
+    renamed: "Painel renomeado",
+    renameFailed: "Não foi possível renomear",
+    imported: "Painel importado",
+    importFailed: "A importação falhou — arquivo inválido",
+  },
+  excel: {
+    sheet: "Painel",
+    category: "Categoria",
+    points: "Pontos",
+    clue: "Pergunta",
+    answer: "Resposta",
+    hint: "Dica",
+  },
+};

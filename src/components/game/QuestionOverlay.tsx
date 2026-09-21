@@ -14,6 +14,7 @@
 import { useEffect, useRef } from "react";
 import { motion, type MotionStyle } from "framer-motion";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useT } from "@/i18n";
 import { sfx } from "@/lib/sfx";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { useSignedUrl } from "@/lib/media";
@@ -45,6 +46,7 @@ export function QuestionOverlay({
    */
   ownContainer?: boolean;
 }) {
+  const t = useT();
   const imageUrl = useSignedUrl("game-media", tile.image_url);
   const audioUrl = useSignedUrl("game-media", tile.audio_url);
   const activePlayer = players.find((p) => p.id === session.active_player_id) ?? null;
@@ -66,7 +68,11 @@ export function QuestionOverlay({
       else sfx.tick();
       lastSecond.current = countdown.seconds;
     }
-    if (countdown.expired && alarmed.current !== session.timer_ends_at && armed.current === session.timer_ends_at) {
+    if (
+      countdown.expired &&
+      alarmed.current !== session.timer_ends_at &&
+      armed.current === session.timer_ends_at
+    ) {
       alarmed.current = session.timer_ends_at;
       sfx.alarm();
     }
@@ -87,7 +93,8 @@ export function QuestionOverlay({
     ...boardTextCss(theme, "questions", 3, 5.2),
   } as MotionStyle;
 
-  const flashRed = countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
+  const flashRed =
+    countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
   const showTimer = countdown.seconds != null && session.phase !== "reveal";
 
   return (
@@ -114,11 +121,14 @@ export function QuestionOverlay({
             style={{ fontSize: "clamp(0.6rem, 3cqmin, 1.35rem)" }}
             className="mb-[clamp(3px,1cqmin,8px)] shrink-0 rounded-full bg-butter py-[clamp(3px,1.2cqmin,10px)] text-center font-display font-black uppercase tracking-[0.25em] text-ink-gold"
           >
-            Daily Double · vale doppio
+            {t("game.clue.dailyDoubleBanner")}
           </motion.div>
         )}
 
-        <div className="flex shrink-0 items-center justify-end gap-2" style={{ minHeight: showTimer ? undefined : 0 }}>
+        <div
+          className="flex shrink-0 items-center justify-end gap-2"
+          style={{ minHeight: showTimer ? undefined : 0 }}
+        >
           {showTimer && (
             <motion.span
               /*
@@ -152,7 +162,9 @@ export function QuestionOverlay({
                  Una transizione di 100ms ne fa partire una nuova a ogni frame,
                  così la barra insegue il numero e non lo raggiunge mai. */
               className={`h-full rounded-full ${
-                countdown.seconds != null && countdown.seconds <= 5 ? "bg-danger-ink" : "bg-ink-gold"
+                countdown.seconds != null && countdown.seconds <= 5
+                  ? "bg-danger-ink"
+                  : "bg-ink-gold"
               }`}
               style={{ width: `${countdown.fraction * 100}%` }}
             />
@@ -168,13 +180,13 @@ export function QuestionOverlay({
             className="truncate font-bold uppercase tracking-[0.3em]"
             style={{ color: theme.accent, ...boardTextCss(theme, "categories", 0.75, 1.9) }}
           >
-            {category?.title ?? "Question"}
+            {category?.title ?? t("game.clue.fallbackCategory")}
           </p>
           <p
             className="shrink-0 font-display font-black"
             style={{ color: theme.accent, ...boardTextCss(theme, "numbers", 1.25, 3) }}
           >
-            {isDailyDouble ? `${tile.points} ×2` : tile.points}
+            {isDailyDouble ? t("game.clue.dailyDoubleValue", { points: tile.points }) : tile.points}
           </p>
         </div>
 
@@ -187,7 +199,13 @@ export function QuestionOverlay({
             style={{ color: theme.accent, ...boardTextCss(theme, "questions", 4.25, 8) }}
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(tile.question || "…") }}
           />
-          {imageUrl && <img src={imageUrl} alt="Question media" className="max-h-[28cqmin] rounded-[24px] object-contain" />}
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt={t("game.clue.mediaAlt")}
+              className="max-h-[28cqmin] rounded-[24px] object-contain"
+            />
+          )}
           {audioUrl && <audio controls src={audioUrl} className="h-10" autoPlay />}
 
           {session.phase === "reveal" && (
@@ -240,7 +258,7 @@ export function QuestionOverlay({
               style={{ fontSize: "clamp(0.55rem, 2.2cqmin, 0.95rem)" }}
               className="font-semibold uppercase tracking-[0.25em] text-muted-foreground"
             >
-              {session.phase === "reveal" ? "Casella conclusa" : "Buzzer aperti"}
+              {session.phase === "reveal" ? t("game.clue.tileClosed") : t("game.clue.buzzersOpen")}
             </span>
           )}
         </div>

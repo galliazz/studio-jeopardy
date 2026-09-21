@@ -7,6 +7,7 @@ import { IMAGE_CAP_BYTES, uploadMedia } from "@/lib/media";
 import { AVATAR_PRESETS, setAvatarValue, type AvatarValue } from "@/lib/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import { localizeError, useT } from "@/i18n";
 
 const ACCEPTED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const BOX = 240;
@@ -22,6 +23,7 @@ function CropStep({
   onCancel: () => void;
   onConfirm: (blob: Blob) => void;
 }) {
+  const t = useT();
   const [url, setUrl] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -71,7 +73,7 @@ function CropStep({
         {url && (
           <img
             src={url}
-            alt="Crop preview"
+            alt={t("avatar.crop.preview")}
             draggable={false}
             className="pointer-events-none absolute left-1/2 top-1/2 max-w-none select-none"
             style={{
@@ -83,16 +85,28 @@ function CropStep({
         )}
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-muted-foreground">Zoom</span>
-        <Slider value={[zoom * 100]} min={100} max={300} step={1} onValueChange={([v]) => setZoom((v ?? 100) / 100)} />
+        <span className="text-xs font-semibold text-muted-foreground">{t("avatar.crop.zoom")}</span>
+        <Slider
+          value={[zoom * 100]}
+          min={100}
+          max={300}
+          step={1}
+          onValueChange={([v]) => setZoom((v ?? 100) / 100)}
+        />
       </div>
-      <p className="text-center text-xs text-muted-foreground">Drag the photo to reposition it.</p>
+      <p className="text-center text-xs text-muted-foreground">{t("avatar.crop.hint")}</p>
       <div className="flex justify-end gap-2">
-        <button onClick={onCancel} className="h-11 rounded-full border border-border px-5 text-sm font-bold text-foreground">
-          Back
+        <button
+          onClick={onCancel}
+          className="h-11 rounded-full border border-border px-5 text-sm font-bold text-foreground"
+        >
+          {t("common.back")}
         </button>
-        <button onClick={confirm} className="h-11 rounded-full bg-coral px-6 text-sm font-black text-foreground elev-1">
-          Use photo
+        <button
+          onClick={confirm}
+          className="h-11 rounded-full bg-coral px-6 text-sm font-black text-foreground elev-1"
+        >
+          {t("avatar.crop.usePhoto")}
         </button>
       </div>
     </div>
@@ -108,6 +122,7 @@ export function ChooseAvatarDialog({
   initial: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const [choice, setChoice] = useState<AvatarValue>(current);
   const [pending, setPending] = useState<File | null>(null);
   const [uploadedPath, setUploadedPath] = useState<string | null>(
@@ -123,11 +138,11 @@ export function ChooseAvatarDialog({
     setError(null);
     if (!file) return;
     if (!ACCEPTED.includes(file.type)) {
-      setError("Use a JPG, PNG or WebP image");
+      setError(t("avatar.errors.unsupported"));
       return;
     }
     if (file.size > IMAGE_CAP_BYTES) {
-      setError("That image is larger than 5MB");
+      setError(t("avatar.errors.tooLarge"));
       return;
     }
     setPending(file);
@@ -140,14 +155,14 @@ export function ChooseAvatarDialog({
     try {
       const { data } = await supabase.auth.getUser();
       const uid = data.user?.id;
-      if (!uid) throw new Error("Sign in to upload a photo");
+      if (!uid) throw new Error(t("avatar.errors.signInToUpload"));
       const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
       const path = await uploadMedia("avatars", uid, "profile", file);
       setUploadedPath(path);
       setUploadedPreview(URL.createObjectURL(blob));
       setChoice(path);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(localizeError(err, "avatar.errors.uploadFailed"));
     } finally {
       setBusy(false);
     }
@@ -161,7 +176,7 @@ export function ChooseAvatarDialog({
       setAvatarValue(choice);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save avatar");
+      setError(localizeError(err, "avatar.errors.saveFailed"));
       setBusy(false);
     }
   };
@@ -172,13 +187,19 @@ export function ChooseAvatarDialog({
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90svh] w-full overflow-y-auto rounded-[32px] p-6 sm:max-w-[560px]">
-        <DialogTitle className="font-display text-2xl font-black text-foreground">Choose avatar</DialogTitle>
+        <DialogTitle className="font-display text-2xl font-black text-foreground">
+          {t("avatar.title")}
+        </DialogTitle>
         <DialogDescription className="text-sm text-muted-foreground">
-          Pick a preset or upload your own photo.
+          {t("avatar.description")}
         </DialogDescription>
 
         {pending ? (
-          <CropStep file={pending} onCancel={() => setPending(null)} onConfirm={(b) => void confirmCrop(b)} />
+          <CropStep
+            file={pending}
+            onCancel={() => setPending(null)}
+            onConfirm={(b) => void confirmCrop(b)}
+          />
         ) : (
           <div className="space-y-5">
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -189,7 +210,7 @@ export function ChooseAvatarDialog({
                   <button
                     key={p.id}
                     type="button"
-                    aria-label={p.label}
+                    aria-label={t(p.labelKey)}
                     aria-pressed={choice === value}
                     onClick={() => setChoice(value)}
                     className={`flex aspect-square w-full items-center justify-center rounded-full text-foreground outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-ring ${p.bg} ${ring(choice === value)}`}
@@ -201,12 +222,12 @@ export function ChooseAvatarDialog({
             </div>
 
             <div className="border-t border-border pt-4">
-              <p className="mb-2 text-sm font-bold text-foreground">Upload photo</p>
+              <p className="mb-2 text-sm font-bold text-foreground">{t("avatar.upload.title")}</p>
               <div className="flex items-center gap-4">
                 {uploadedPath && (
                   <button
                     type="button"
-                    aria-label="Your uploaded photo"
+                    aria-label={t("avatar.upload.yourPhoto")}
                     aria-pressed={choice === uploadedPath}
                     onClick={() => setChoice(uploadedPath)}
                     className={`h-16 w-16 shrink-0 overflow-hidden rounded-full bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring ${ring(choice === uploadedPath)}`}
@@ -223,7 +244,7 @@ export function ChooseAvatarDialog({
                 <div
                   role="button"
                   tabIndex={0}
-                  aria-label="Upload a photo"
+                  aria-label={t("avatar.upload.dropZone")}
                   onClick={() => fileRef.current?.click()}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -246,8 +267,10 @@ export function ChooseAvatarDialog({
                   }`}
                 >
                   <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm font-semibold text-foreground">Drop an image or click to browse</p>
-                  <p className="text-xs text-muted-foreground">JPG, PNG or WebP · up to 5MB</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("avatar.upload.dropTitle")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t("avatar.upload.dropHint")}</p>
                 </div>
               </div>
               <input
@@ -265,15 +288,19 @@ export function ChooseAvatarDialog({
                 onClick={onClose}
                 className="h-12 rounded-full border border-border px-6 text-sm font-bold text-foreground"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={() => void save()}
                 disabled={!choice || busy}
                 className="flex h-12 items-center gap-2 rounded-full bg-coral px-7 font-display text-base font-black text-foreground elev-2 transition-transform hover:scale-105 disabled:pointer-events-none disabled:opacity-40"
               >
-                {busy ? <Upload className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
-                Select
+                {busy ? (
+                  <Upload className="h-4 w-4 animate-pulse" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                {t("avatar.select")}
               </button>
             </div>
           </div>

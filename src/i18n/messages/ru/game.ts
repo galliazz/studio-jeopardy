@@ -1,0 +1,62 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · двойные очки",
+    fallbackCategory: "Вопрос",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "Медиа вопроса",
+    tileClosed: "Клетка закрыта",
+    buzzersOpen: "Кнопки открыты",
+  },
+  queue: {
+    title: "Очередь нажатий",
+    clear: "Очистить очередь",
+    clearConfirm: "Очистить очередь нажатий? Все, кто ждёт, из неё пропадут.",
+    position: "№{position}",
+    firstIn: "первый",
+    deltaMs: "+{ms} мс",
+    deltaSeconds: "+{seconds} с",
+  },
+  score: {
+    teamPlayers: {
+      one: "{count} игрок",
+      few: "{count} игрока",
+      many: "{count} игроков",
+      other: "{count} игрока",
+    },
+    teamPlayersLabel: {
+      one: "{count} игрок в этой команде",
+      few: "{count} игрока в этой команде",
+      many: "{count} игроков в этой команде",
+      other: "{count} игрока в этой команде",
+    },
+    subtractFrom: "Вычесть {step} из счёта {name}",
+    addTo: "Добавить {step} к счёту {name}",
+    customChangeFor: "Изменить счёт вручную: {name}",
+    customAmount: "Своё значение",
+    subtract: "Вычесть",
+    teamScore: "Счёт {name}",
+    doubleClickToEdit: "Дважды щёлкни, чтобы изменить",
+  },
+  fontFamilies: {
+    display: "Дисплейный",
+    sans: "Без засечек",
+    system: "Системный",
+    grotesk: "Гротеск",
+    rounded: "Округлый",
+    serif: "С засечками",
+    oldStyle: "Антиква",
+    slab: "Брусковый",
+    mono: "Моно",
+    condensed: "Узкий",
+    handwriting: "Рукописный",
+  },
+  fontWeights: {
+    "300": "Светлый",
+    "400": "Обычный",
+    "500": "Средний",
+    "700": "Жирный",
+    "900": "Чёрный",
+  },
+};

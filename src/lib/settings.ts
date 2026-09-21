@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "react";
 import type { ShortcutAction } from "@/lib/shortcuts";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@/i18n/locales";
 
 export type GraphicsQuality = "high" | "medium" | "low";
 
@@ -28,6 +29,8 @@ export interface StudioSettings {
   backgroundEffects: boolean;
   /** Tasti riassegnati dall'host. Viaggiano col profilo, non col computer. */
   shortcuts: Partial<Record<ShortcutAction, string>>;
+  /** Lingua dell'interfaccia. Il contenuto dei giochi resta com'è scritto. */
+  language: Locale;
 }
 
 export const DEFAULT_SETTINGS: StudioSettings = {
@@ -42,6 +45,7 @@ export const DEFAULT_SETTINGS: StudioSettings = {
   graphics: "high",
   backgroundEffects: true,
   shortcuts: {},
+  language: DEFAULT_LOCALE,
 };
 
 const KEY = "jd-studio-settings";
@@ -61,6 +65,7 @@ function load(): StudioSettings {
   } catch {
     /* ignore malformed storage */
   }
+  if (!isLocale(current.language)) current.language = DEFAULT_LOCALE;
   applyPresentation(current);
   return current;
 }
@@ -80,6 +85,7 @@ export function getSettings(): StudioSettings {
 
 export function setSettings(patch: Partial<StudioSettings>) {
   current = { ...load(), ...patch };
+  if (!isLocale(current.language)) current.language = DEFAULT_LOCALE;
   applyPresentation(current);
   if (typeof window !== "undefined") {
     try {
@@ -92,15 +98,25 @@ export function setSettings(patch: Partial<StudioSettings>) {
 }
 
 export function resetSettings() {
-  current = { ...DEFAULT_SETTINGS };
+  // La lingua sopravvive al ripristino: chi ha scelto l'arabo non deve
+  // ritrovarsi a cercare in inglese il menu per rimetterlo.
+  current = { ...DEFAULT_SETTINGS, language: load().language };
   if (typeof window !== "undefined") {
     try {
-      window.localStorage.removeItem(KEY);
+      window.localStorage.setItem(KEY, JSON.stringify({ language: current.language }));
     } catch {
       /* ignore */
     }
   }
   for (const l of listeners) l(current);
+}
+
+/** Per chi deve reagire ai cambi fuori da React, come la lingua. */
+export function subscribeSettings(listener: (s: StudioSettings) => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 /** Reactive hook: re-renders when any preference changes. */
@@ -134,5 +150,6 @@ export function syncablePreferences(s: StudioSettings = getSettings()) {
     graphics: s.graphics,
     backgroundEffects: s.backgroundEffects,
     shortcuts: s.shortcuts,
+    language: s.language,
   };
 }

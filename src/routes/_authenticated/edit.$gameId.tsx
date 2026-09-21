@@ -55,6 +55,7 @@ import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
 import { SPRING_UI } from "@/lib/motion";
+import { localizeError, useT, type MessageKey } from "@/i18n";
 
 export const Route = createFileRoute("/_authenticated/edit/$gameId")({
   head: () => ({
@@ -89,14 +90,35 @@ const BOARD_RATIO = 5 / 5.4;
 const FIELD_LABEL =
   "mb-1.5 block text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground";
 
-const THEME_PRESETS: { name: string; theme: Pick<ThemeSettings, "bg" | "card" | "accent"> }[] = [
-  { name: "Lilac Bloom", theme: { bg: "#F4EAF8", card: "#E3D3F5", accent: "#5B3E77" } },
-  { name: "Peach Fizz", theme: { bg: "#FEF1E6", card: "#FBD9C2", accent: "#7A4326" } },
-  { name: "Mint Sorbet", theme: { bg: "#E9F8EF", card: "#C8ECD7", accent: "#226047" } },
-  { name: "Blush Butter", theme: { bg: "#FDEDF1", card: "#FBE0B8", accent: "#7A3350" } },
+const THEME_PRESETS: {
+  id: string;
+  nameKey: MessageKey;
+  theme: Pick<ThemeSettings, "bg" | "card" | "accent">;
+}[] = [
+  {
+    id: "lilacBloom",
+    nameKey: "edit.appearance.presets.lilacBloom",
+    theme: { bg: "#F4EAF8", card: "#E3D3F5", accent: "#5B3E77" },
+  },
+  {
+    id: "peachFizz",
+    nameKey: "edit.appearance.presets.peachFizz",
+    theme: { bg: "#FEF1E6", card: "#FBD9C2", accent: "#7A4326" },
+  },
+  {
+    id: "mintSorbet",
+    nameKey: "edit.appearance.presets.mintSorbet",
+    theme: { bg: "#E9F8EF", card: "#C8ECD7", accent: "#226047" },
+  },
+  {
+    id: "blushButter",
+    nameKey: "edit.appearance.presets.blushButter",
+    theme: { bg: "#FDEDF1", card: "#FBE0B8", accent: "#7A3350" },
+  },
 ];
 
 function EditorPage() {
+  const t = useT();
   const { gameId } = Route.useParams();
   const queryClient = useQueryClient();
   const fetchBoard = useServerFn(getGameBoard);
@@ -135,7 +157,7 @@ function EditorPage() {
       const base = themeOf(board.game);
       const current = base.dailyDoubleTileIds ?? [];
       if (!current.includes(tileId) && current.length >= 2) {
-        toast.error("Two Daily Doubles at most — remove one first");
+        toast.error(t("edit.dailyDoubles.maxReached"));
         return;
       }
       const next = current.includes(tileId)
@@ -146,7 +168,7 @@ function EditorPage() {
       await updateGame({ data: { gameId, theme: { ...base, dailyDoubleTileIds: next } } });
       await refresh();
     },
-    [board, gameId, refresh],
+    [board, gameId, refresh, t],
   );
 
   if (!board || !theme) {
@@ -179,9 +201,9 @@ function EditorPage() {
           finestra, che è anche quella della board. */}
       <AppBar
         left={
-          <Link to="/studio" className={NAV_BUTTON} aria-label="Back to studio">
-            <ArrowLeft className="h-5 w-5" />
-            <span className="hidden sm:inline">Studio</span>
+          <Link to="/studio" className={NAV_BUTTON} aria-label={t("edit.nav.backToStudio")}>
+            <ArrowLeft className="h-5 w-5 rtl:-scale-x-100" />
+            <span className="hidden sm:inline">{t("edit.nav.studio")}</span>
           </Link>
         }
         center={
@@ -200,13 +222,16 @@ function EditorPage() {
               onClick={() => setPlayOpen(true)}
               className="flex h-12 items-center gap-2 rounded-full bg-coral px-5 font-display text-sm font-black text-foreground elev-2"
             >
-              <Play className="h-4 w-4" /> <span className="hidden sm:inline">Play Game</span>
+              <Play className="h-4 w-4" />{" "}
+              <span className="hidden sm:inline">{t("edit.nav.playGame")}</span>
             </motion.button>
             <AccountMenu
-              displayName={board.profile?.username ?? "Host"}
+              displayName={board.profile?.username ?? t("edit.nav.hostFallback")}
               avatarUrl={board.profile?.avatar_url ?? null}
               onOpenSettings={() => setSettingsOpen(true)}
-              items={[{ icon: QrCode, label: "Join code & QR", onSelect: () => setJoinOpen(true) }]}
+              items={[
+                { icon: QrCode, label: t("edit.join.title"), onSelect: () => setJoinOpen(true) },
+              ]}
             />
           </>
         }
@@ -233,7 +258,7 @@ function EditorPage() {
           }
           className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[1100px]:min-h-0 min-[1100px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1100px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[1100px]:[--board-reserve:46rem]"
         >
-          <aside className="order-2 flex flex-col gap-3 min-[1100px]:order-1 min-[1100px]:mt-[var(--board-offset)] min-[1100px]:max-h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:justify-self-end min-[1100px]:self-start min-[1100px]:overflow-y-auto min-[1100px]:pr-1">
+          <aside className="order-2 flex flex-col gap-3 min-[1100px]:order-1 min-[1100px]:mt-[var(--board-offset)] min-[1100px]:max-h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:justify-self-end min-[1100px]:self-start min-[1100px]:overflow-y-auto min-[1100px]:pe-1">
             {/* Ordine chiesto: il testo è quello che si tocca di più mentre si
                 scrive un gioco, le Daily Double una volta sola alla fine. */}
             <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
@@ -309,19 +334,17 @@ function EditorPage() {
             ) : (
               <Panel
                 fill
-                title={ddMode ? "Daily Doubles" : "Nothing selected"}
+                title={ddMode ? t("edit.dailyDoubles.title") : t("edit.inspector.nothingSelected")}
                 className="justify-center text-center"
               >
                 <p className="text-sm text-muted-foreground">
-                  {ddMode
-                    ? "Tap tiles on the board to mark them. Leave none and the game picks two at random."
-                    : "Tap any tile to edit its question, answer, media and formatting."}
+                  {ddMode ? t("edit.dailyDoubles.pickingHint") : t("edit.inspector.emptyHint")}
                 </p>
                 {!ddMode && (
                   /* L'unica cosa non evidente della pagina: le categorie si
                    rinominano cliccandole, e niente lo diceva. */
                   <p className="mt-3 text-xs text-muted-foreground/80">
-                    Category names are editable too — click one at the top of the board.
+                    {t("edit.inspector.categoryHint")}
                   </p>
                 )}
               </Panel>
@@ -404,9 +427,10 @@ function DailyDoublePanel({
   picking: boolean;
   onToggle: () => void;
 }) {
+  const t = useT();
   return (
     <Panel
-      title="Daily Doubles"
+      title={t("edit.dailyDoubles.title")}
       action={
         <span className="shrink-0 rounded-full bg-foreground/10 px-2.5 py-1 font-display text-xs font-black tabular-nums">
           {count}/2
@@ -423,7 +447,7 @@ function DailyDoublePanel({
         }`}
       >
         <Sparkles className="h-4 w-4" />
-        {picking ? "Done picking" : "Pick on the board"}
+        {picking ? t("edit.dailyDoubles.donePicking") : t("edit.dailyDoubles.pickOnBoard")}
       </button>
     </Panel>
   );
@@ -432,6 +456,7 @@ function DailyDoublePanel({
 /* ------------------------------ Inline title ------------------------------ */
 
 function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
@@ -444,7 +469,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
            un'etichetta di stato, non come il titolo della cosa che stai
            modificando. Testo pieno, più grande, e la pastiglia compare solo
            sotto il cursore per dire che si può cambiare. */
-        title="Click to rename"
+        title={t("edit.nav.clickToRename")}
         className="max-w-[45vw] truncate rounded-full px-3 py-1 text-center font-display text-xl font-black tracking-tight text-foreground transition-colors hover:bg-foreground/10 sm:text-2xl"
       >
         {value}
@@ -475,6 +500,7 @@ function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => 
  * che serve una volta sola, quando inviti i giocatori.
  */
 function JoinDialog({ joinCode, onClose }: { joinCode: string; onClose: () => void }) {
+  const t = useT();
   const origin = useOrigin();
   const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
 
@@ -494,7 +520,7 @@ function JoinDialog({ joinCode, onClose }: { joinCode: string; onClose: () => vo
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-[32px] bg-card p-6 text-center elev-3"
       >
-        <h3 className="mb-4 text-sm font-semibold text-muted-foreground">Join code &amp; QR</h3>
+        <h3 className="mb-4 text-sm font-semibold text-muted-foreground">{t("edit.join.title")}</h3>
         <div className="mx-auto mb-4 w-fit rounded-[20px] bg-muted p-3 text-foreground">
           {joinUrl ? (
             <QRCodeSVG value={joinUrl} size={148} bgColor="transparent" fgColor="currentColor" />
@@ -505,9 +531,9 @@ function JoinDialog({ joinCode, onClose }: { joinCode: string; onClose: () => vo
         <button
           onClick={() => {
             void navigator.clipboard.writeText(joinCode);
-            toast.success("Join code copied");
+            toast.success(t("edit.join.codeCopied"));
           }}
-          aria-label={`Copy join code ${joinCode}`}
+          aria-label={t("edit.join.copyCode", { code: joinCode })}
           className="mx-auto flex items-center gap-2 font-display text-2xl font-black tracking-[0.15em] text-ink-accent"
         >
           {joinCode} <Copy className="h-4 w-4 opacity-60" />
@@ -515,11 +541,11 @@ function JoinDialog({ joinCode, onClose }: { joinCode: string; onClose: () => vo
         <button
           onClick={() => {
             void navigator.clipboard.writeText(joinUrl);
-            toast.success("Join link copied");
+            toast.success(t("edit.join.linkCopied"));
           }}
           className="mx-auto mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-muted px-4 text-sm font-bold text-foreground elev-1"
         >
-          <Copy className="h-4 w-4" /> Copy link
+          <Copy className="h-4 w-4" /> {t("common.copyLink")}
         </button>
       </motion.div>
     </motion.div>
@@ -537,6 +563,7 @@ function CategoryHeader({
   theme: ThemeSettings;
   onSaved: () => void;
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(category.title);
   useEffect(() => setDraft(category.title), [category.title]);
@@ -546,7 +573,7 @@ function CategoryHeader({
     if (draft.trim() && draft !== category.title) {
       await updateCategoryTitle({ data: { categoryId: category.id, title: draft.trim() } });
       onSaved();
-      toast.success("Saved", { duration: 1200 });
+      toast.success(t("common.saved"), { duration: 1200 });
     }
   };
 
@@ -597,6 +624,7 @@ function TileCell({
   picking: boolean;
   onClick: () => void;
 }) {
+  const t = useT();
   const preview = stripHtml(tile.question);
   return (
     <motion.button
@@ -634,8 +662,8 @@ function TileCell({
     >
       {dailyDouble && (
         <span
-          aria-label="Daily Double"
-          className="absolute right-[1cqmin] top-[1cqmin] flex h-[3.2cqmin] w-[3.2cqmin] items-center justify-center rounded-full bg-butter"
+          aria-label={t("edit.tile.dailyDouble")}
+          className="absolute end-[1cqmin] top-[1cqmin] flex h-[3.2cqmin] w-[3.2cqmin] items-center justify-center rounded-full bg-butter"
         >
           <Sparkles className="h-[2cqmin] w-[2cqmin] text-ink-gold" />
         </span>
@@ -663,7 +691,7 @@ function TileCell({
           className="font-bold uppercase tracking-wider opacity-45"
           style={{ color: theme.accent, ...boardTextCss(theme, "questions", null, 1.3) }}
         >
-          Empty
+          {t("edit.tile.empty")}
         </span>
       )}
       {/* Icone al posto delle emoji: le emoji cambiano faccia da un sistema
@@ -674,9 +702,11 @@ function TileCell({
           style={{ color: theme.accent }}
         >
           {tile.image_url && (
-            <ImagePlus className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has image" />
+            <ImagePlus className="h-[1.8cqmin] w-[1.8cqmin]" aria-label={t("edit.tile.hasImage")} />
           )}
-          {tile.audio_url && <Music className="h-[1.8cqmin] w-[1.8cqmin]" aria-label="Has audio" />}
+          {tile.audio_url && (
+            <Music className="h-[1.8cqmin] w-[1.8cqmin]" aria-label={t("edit.tile.hasAudio")} />
+          )}
         </span>
       )}
     </motion.button>
@@ -707,6 +737,7 @@ function TileEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const t = useT();
   // Esc chiude, come ci si aspetta da un ispettore. Ignorato mentre si scrive
   // in un campo, dove Esc serve semmai ad annullare la riga.
   useEffect(() => {
@@ -757,22 +788,26 @@ function TileEditor({
     const html = editorRef.current?.innerHTML ?? "";
     if (html !== tile.question) {
       void save({ question: html });
-      toast.success("Saved", { duration: 1000 });
+      toast.success(t("common.saved"), { duration: 1000 });
     }
   };
 
   const handleUpload = async (file: File, kind: "image" | "audio") => {
     const cap = kind === "image" ? IMAGE_CAP_BYTES : AUDIO_CAP_BYTES;
     if (file.size > cap) {
-      toast.error(`${kind === "image" ? "Images" : "Audio"} capped at ${cap / 1024 / 1024}MB`);
+      toast.error(
+        t(kind === "image" ? "edit.media.imageTooLarge" : "edit.media.audioTooLarge", {
+          size: cap / 1024 / 1024,
+        }),
+      );
       return;
     }
     try {
       const path = await uploadMedia("game-media", hostId, gameId, file);
       await save(kind === "image" ? { image_url: path } : { audio_url: path });
-      toast.success(`${kind === "image" ? "Image" : "Audio"} attached`);
+      toast.success(t(kind === "image" ? "edit.media.imageAttached" : "edit.media.audioAttached"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed");
+      toast.error(localizeError(err, "edit.media.uploadFailed"));
     }
   };
 
@@ -806,9 +841,9 @@ function TileEditor({
           /* Dentro la riga del titolo e non incollata al bordo: a 44px
              abbondanti, il tondo tocca quasi lo spigolo della scheda. Qui è
              più piccola e rientra, così sta dentro la curva. */
-          className="absolute right-0 top-1/2 flex h-9 w-9 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground"
-          aria-label="Close editor"
-          title="Close (Esc)"
+          className="absolute end-0 top-1/2 flex h-9 w-9 shrink-0 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={t("edit.inspector.closeEditor")}
+          title={t("edit.inspector.closeWithEsc")}
         >
           <X className="h-4 w-4" />
         </button>
@@ -817,13 +852,13 @@ function TileEditor({
       {/* Colonna, non pila con spaziatura: così la domanda può prendersi tutto
           quello che avanza invece di restare a 96 pixel fissi con mezza scheda
           vuota sotto. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pr-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pe-1">
         {/* Cresce col testo invece di riempire tutta la scheda: una domanda di
             sei parole non ha bisogno di un riquadro alto mezzo schermo. Il
             contentEditable si allunga da sé, quindi basta non forzargli
             un'altezza. */}
         <div className="shrink-0">
-          <span className={FIELD_LABEL}>Question</span>
+          <span className={FIELD_LABEL}>{t("edit.inspector.question")}</span>
           <div
             ref={editorRef}
             contentEditable
@@ -853,41 +888,41 @@ function TileEditor({
         </div>
 
         <label className="block shrink-0">
-          <span className={FIELD_LABEL}>Answer</span>
+          <span className={FIELD_LABEL}>{t("edit.inspector.answer")}</span>
           <input
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             onBlur={() => answer !== tile.answer && void save({ answer })}
-            placeholder="What is…?"
+            placeholder={t("edit.inspector.answerPlaceholder")}
             className="h-12 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
 
         <label className="block shrink-0">
-          <span className={FIELD_LABEL}>Hint · host only</span>
+          <span className={FIELD_LABEL}>{t("edit.inspector.hint")}</span>
           <input
             value={hint}
             onChange={(e) => setHint(e.target.value)}
-            placeholder="Only you see this while hosting"
+            placeholder={t("edit.inspector.hintPlaceholder")}
             onBlur={() => hint !== (tile.hint ?? "") && void save({ hint: hint || null })}
             className="h-12 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
 
         <div className="shrink-0">
-          <span className={FIELD_LABEL}>Media</span>
+          <span className={FIELD_LABEL}>{t("edit.inspector.media")}</span>
           <div className="flex gap-2">
             <button
               onClick={() => imageRef.current?.click()}
               className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-sky text-xs font-bold text-foreground elev-1"
             >
-              <ImagePlus className="h-4 w-4" /> Image
+              <ImagePlus className="h-4 w-4" /> {t("edit.inspector.image")}
             </button>
             <button
               onClick={() => audioRef.current?.click()}
               className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-peach text-xs font-bold text-foreground elev-1"
             >
-              <Music className="h-4 w-4" /> Audio
+              <Music className="h-4 w-4" /> {t("edit.inspector.audio")}
             </button>
             <input
               ref={imageRef}
@@ -916,13 +951,13 @@ function TileEditor({
             <div className="relative mt-2">
               <img
                 src={imageUrl}
-                alt="Tile media"
+                alt={t("edit.inspector.mediaAlt")}
                 className="max-h-32 w-full rounded-[26px] object-cover"
               />
               <button
                 onClick={() => void save({ image_url: null })}
-                className="absolute right-2 top-2 rounded-full bg-card p-1.5 text-foreground elev-1"
-                aria-label="Remove image"
+                className="absolute end-2 top-2 rounded-full bg-card p-1.5 text-foreground elev-1"
+                aria-label={t("edit.inspector.removeImage")}
               >
                 <X className="h-3 w-3" />
               </button>
@@ -934,14 +969,14 @@ function TileEditor({
               <button
                 onClick={() => void save({ audio_url: null })}
                 className="rounded-full bg-muted p-1.5"
-                aria-label="Remove audio"
+                aria-label={t("edit.inspector.removeAudio")}
               >
                 <X className="h-3 w-3" />
               </button>
             </div>
           )}
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Images ≤ 5MB · Audio ≤ 10MB · stored privately
+            {t("edit.inspector.mediaLimits")}
           </p>
         </div>
 
@@ -958,12 +993,13 @@ function TileEditor({
             }`}
           >
             <Sparkles className="h-4 w-4" />
-            {isDailyDouble ? "Is a Daily Double" : "Make it a Daily Double"}
+            {isDailyDouble
+              ? t("edit.inspector.isDailyDouble")
+              : t("edit.inspector.makeDailyDouble")}
           </button>
           <button
             onClick={() => {
-              if (!window.confirm("Clear this tile? Question, answer, hint and media are removed."))
-                return;
+              if (!window.confirm(t("edit.inspector.clearConfirm"))) return;
               if (editorRef.current) editorRef.current.innerHTML = "";
               setAnswer("");
               setHint("");
@@ -971,7 +1007,7 @@ function TileEditor({
             }}
             className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-danger-ink transition-colors hover:bg-danger-ink/10"
           >
-            <Trash2 className="h-4 w-4" /> Clear tile
+            <Trash2 className="h-4 w-4" /> {t("edit.inspector.clearTile")}
           </button>
         </div>
       </div>
@@ -990,6 +1026,7 @@ function ThemeBar({
   theme: ThemeSettings;
   onSaved: () => void;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const [rowPoints, setRowPointsState] = useState(theme.rowPoints);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1026,7 +1063,9 @@ function ThemeBar({
   const applyPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
     patchThemeCache(preset.theme);
     await saveTheme(preset.theme);
-    toast.success(`Theme: ${preset.name}`, { duration: 1200 });
+    toast.success(t("edit.appearance.themeApplied", { name: t(preset.nameKey) }), {
+      duration: 1200,
+    });
   };
 
   /** Instant local feedback + debounced save while dragging. */
@@ -1060,13 +1099,13 @@ function ThemeBar({
     const patch = { [key]: value.trim() };
     patchThemeCache(patch);
     await saveTheme(patch);
-    toast.success("Team name saved", { duration: 1000 });
+    toast.success(t("edit.game.teamNameSaved"), { duration: 1000 });
   };
 
   const applyRowPoints = async () => {
     await setRowPoints({ data: { gameId, rowPoints } });
     onSaved();
-    toast.success("Point ladder saved", { duration: 1200 });
+    toast.success(t("edit.game.pointLadderSaved"), { duration: 1200 });
   };
 
   return (
@@ -1080,28 +1119,28 @@ function ThemeBar({
      * della console — stessa forma, stesso titolo, stessa elevazione.
      */
     <>
-      <Panel title="Text">
+      <Panel title={t("edit.text.title")}>
         {/* A CHE COSA si applica. Da solo in riga: è la scelta che comanda
             tutte le altre, e affiancato al carattere si leggevano come due
             valori senza chiave. */}
-        <span className={`${ROW_LABEL} mb-1.5 block`}>Applies to</span>
+        <span className={`${ROW_LABEL} mb-1.5 block`}>{t("edit.text.appliesTo")}</span>
         {/* Menu scritto a mano e non `<select>`: il menu di sistema tiene il
             testo a sinistra e incolla la freccia al bordo, e non c'è verso di
             centrarlo. Qui il valore sta al centro come in tutte le altre
             pastiglie, e la freccia ha il suo margine. */}
         <PillSelect
-          label="Text target"
+          label={t("edit.text.target")}
           value={scope}
           options={[
-            { value: "numbers", label: "Numbers" },
-            { value: "questions", label: "Questions" },
-            { value: "categories", label: "Categories" },
-            { value: "all", label: "All text" },
+            { value: "numbers", label: t("edit.text.scopes.numbers") },
+            { value: "questions", label: t("edit.text.scopes.questions") },
+            { value: "categories", label: t("edit.text.scopes.categories") },
+            { value: "all", label: t("edit.text.scopes.all") },
           ]}
           onChange={(v) => setScope(v as TextScope | "all")}
         />
 
-        <span className={`${ROW_LABEL} mb-1.5 mt-3 block`}>Font</span>
+        <span className={`${ROW_LABEL} mb-1.5 mt-3 block`}>{t("edit.text.font")}</span>
         <FontPicker
           font={current.font ?? ""}
           weight={current.weight}
@@ -1109,7 +1148,7 @@ function ThemeBar({
         />
 
         <span className={`${ROW_LABEL} mb-1.5 mt-3 flex items-center gap-1`}>
-          <Type className="h-3.5 w-3.5" /> Size
+          <Type className="h-3.5 w-3.5" /> {t("edit.text.size")}
         </span>
         {/* Il cursore non lasciava scrivere un valore. Qui il numero è il
             comando: doppio clic e si digita, oppure meno e più di uno alla
@@ -1119,23 +1158,23 @@ function ThemeBar({
           min={60}
           max={180}
           wide
-          label="Text size"
+          label={t("edit.text.textSize")}
           onChange={(v) => void applyTextStyle({ size: v / 100 })}
         />
 
         <div className="mt-3 flex gap-2">
           {(
             [
-              ["bold", "B", "font-black"],
-              ["italic", "I", "italic"],
-              ["underline", "U", "underline"],
+              ["bold", t("edit.text.boldShort"), t("edit.text.bold"), "font-black"],
+              ["italic", t("edit.text.italicShort"), t("edit.text.italic"), "italic"],
+              ["underline", t("edit.text.underlineShort"), t("edit.text.underline"), "underline"],
             ] as const
-          ).map(([key, label, cls]) => (
+          ).map(([key, label, name, cls]) => (
             <button
               key={key}
               onClick={() => void applyTextStyle({ [key]: !current[key] } as TextStyle)}
               aria-pressed={Boolean(current[key])}
-              aria-label={key}
+              aria-label={name}
               className={`h-12 flex-1 rounded-full text-sm transition-colors ${cls} ${
                 current[key]
                   ? "bg-ink-accent text-card"
@@ -1148,17 +1187,17 @@ function ThemeBar({
         </div>
       </Panel>
 
-      <Panel title="Appearance">
+      <Panel title={t("edit.appearance.title")}>
         {/* Cinque pastiglie in riga: quattro temi pronti e una personalizzata.
             Con quattro restava un buco a destra, e il gruppo non era centrato
             rispetto alla scheda. */}
         <div className="flex items-center justify-between gap-2">
           {THEME_PRESETS.map((p) => (
             <button
-              key={p.name}
+              key={p.id}
               onClick={() => void applyPreset(p)}
-              title={p.name}
-              aria-label={`Apply theme ${p.name}`}
+              title={t(p.nameKey)}
+              aria-label={t("edit.appearance.applyTheme", { name: t(p.nameKey) })}
               className="h-12 w-12 shrink-0 transition-transform hover:scale-110 scallop"
               style={{
                 background: `linear-gradient(135deg, ${p.theme.bg} 40%, ${p.theme.accent})`,
@@ -1169,22 +1208,28 @@ function ThemeBar({
         </div>
 
         <div className="mt-3 flex h-12 items-center gap-3">
-          <span className={ROW_LABEL}>Roundness</span>
+          <span className={ROW_LABEL}>{t("edit.appearance.roundness")}</span>
           <input
             type="range"
             min={0}
             max={50}
             value={theme.radius}
-            aria-label="Roundness"
+            aria-label={t("edit.appearance.roundness")}
             onChange={(e) => applyRadius(Number(e.target.value))}
             className="min-w-0 flex-1 accent-[var(--ink-accent)]"
           />
-          <Stepper value={theme.radius} min={0} max={50} onChange={applyRadius} label="Roundness" />
+          <Stepper
+            value={theme.radius}
+            min={0}
+            max={50}
+            onChange={applyRadius}
+            label={t("edit.appearance.roundness")}
+          />
         </div>
       </Panel>
 
-      <Panel title="Game">
-        <span className={`${ROW_LABEL} mb-2 block text-center`}>Teams</span>
+      <Panel title={t("edit.game.title")}>
+        <span className={`${ROW_LABEL} mb-2 block text-center`}>{t("edit.game.teams")}</span>
         {/* Le due squadre stanno una accanto all'altra: sono una coppia, e in
             colonna si leggevano come due impostazioni separate. */}
         <div className="flex gap-2">
@@ -1206,7 +1251,9 @@ function ThemeBar({
           />
         </div>
 
-        <span className={`${ROW_LABEL} mb-2 mt-3 block text-center`}>Points ladder</span>
+        <span className={`${ROW_LABEL} mb-2 mt-3 block text-center`}>
+          {t("edit.game.pointsLadder")}
+        </span>
         {/* Cinque valori in una riga sola: è una scala, e a capo 3+2 si leggeva
             come due gruppi con l'ultima riga mezza vuota. */}
         <div className="flex gap-1.5">
@@ -1215,7 +1262,7 @@ function ThemeBar({
               key={i}
               type="number"
               value={p}
-              aria-label={`Row ${i + 1} points`}
+              aria-label={t("edit.game.rowPoints", { row: i + 1 })}
               onChange={(e) => {
                 const next = [...rowPoints];
                 next[i] = Number(e.target.value);
@@ -1249,6 +1296,7 @@ function PillSelect({
   label: string;
   onChange: (v: string) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const current = options.find((o) => o.value === value);
 
@@ -1262,7 +1310,7 @@ function PillSelect({
            (12 + 16 = 28): altrimenti il testo esce di sei pixel dal centro
            della pastiglia, che è proprio quello che si stava cercando di
            evitare passando dal menu di sistema. */
-        className="flex h-12 w-full items-center rounded-full bg-muted pl-7 pr-3 text-foreground"
+        className="flex h-12 w-full items-center rounded-full bg-muted ps-7 pe-3 text-foreground"
       >
         <span className="flex-1 truncate text-center text-sm font-bold">{current?.label}</span>
         <ChevronDown
@@ -1273,7 +1321,7 @@ function PillSelect({
         {open && (
           <>
             <button
-              aria-label="Close"
+              aria-label={t("common.close")}
               onClick={() => setOpen(false)}
               className="fixed inset-0 z-20 cursor-default"
             />
@@ -1282,7 +1330,7 @@ function PillSelect({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -6 }}
               transition={SPRING_UI}
-              className="absolute left-0 right-0 top-14 z-30 rounded-[26px] bg-popover p-2 elev-3"
+              className="absolute start-0 end-0 top-14 z-30 rounded-[26px] bg-popover p-2 elev-3"
             >
               {options.map((o) => (
                 <button
@@ -1331,6 +1379,7 @@ function Stepper({
   label: string;
   onChange: (v: number) => void;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState<string | null>(null);
   const clamp = (v: number) => Math.max(min, Math.min(max, v));
 
@@ -1346,7 +1395,7 @@ function Stepper({
     <button
       onClick={() => onChange(clamp(value + delta))}
       disabled={delta < 0 ? value <= min : value >= max}
-      aria-label={`${label} ${delta > 0 ? "+" : "−"}1`}
+      aria-label={t(delta > 0 ? "edit.stepper.increase" : "edit.stepper.decrease", { label })}
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground transition-colors hover:bg-foreground/10 disabled:opacity-30"
     >
       {children}
@@ -1378,7 +1427,7 @@ function Stepper({
       ) : (
         <button
           onDoubleClick={() => setDraft(String(value))}
-          title="Double-click to type a value"
+          title={t("edit.stepper.doubleClickToType")}
           className={`${wide ? "flex-1" : "w-10"} cursor-text select-none text-center font-display text-sm font-black tabular-nums text-foreground`}
         >
           {value}
@@ -1405,6 +1454,7 @@ function FontPicker({
   weight: number | undefined;
   onPick: (patch: TextStyle) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const family = BOARD_FONTS.find((f) => f.value === font) ?? BOARD_FONTS[0]!;
   const cut = FONT_WEIGHTS.find((w) => w.value === weight);
@@ -1418,18 +1468,18 @@ function FontPicker({
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Font"
-        className="flex h-12 w-full items-center gap-2 rounded-full bg-muted pl-4 pr-3 text-foreground"
+        aria-label={t("edit.text.font")}
+        className="flex h-12 w-full items-center gap-2 rounded-full bg-muted ps-4 pe-3 text-foreground"
       >
         <span
           className="min-w-0 flex-1 truncate text-center text-sm font-semibold"
           style={family.value ? { fontFamily: family.value } : undefined}
         >
-          {family.label}
+          {t(family.labelKey)}
         </span>
         <span aria-hidden className="h-6 w-px shrink-0 rounded-full bg-foreground/20" />
         <span className="w-16 shrink-0 text-center text-[11px] font-bold text-muted-foreground">
-          {cut?.label ?? "Auto"}
+          {cut ? t(cut.labelKey) : t("edit.text.weightAuto")}
         </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
@@ -1440,7 +1490,7 @@ function FontPicker({
         {open && (
           <>
             <button
-              aria-label="Close"
+              aria-label={t("common.close")}
               onClick={() => setOpen(false)}
               className="fixed inset-0 z-20 cursor-default"
             />
@@ -1449,24 +1499,24 @@ function FontPicker({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: -6 }}
               transition={SPRING_UI}
-              className="absolute left-0 right-0 top-14 z-30 rounded-[26px] bg-popover p-2 elev-3"
+              className="absolute start-0 end-0 top-14 z-30 rounded-[26px] bg-popover p-2 elev-3"
             >
               <div className="max-h-56 overflow-y-auto overscroll-contain">
                 {BOARD_FONTS.map((f) => (
                   <button
-                    key={f.label}
+                    key={f.labelKey}
                     onClick={() => onPick({ font: f.value })}
                     className={`h-11 w-full rounded-full px-4 text-center text-sm transition-colors ${
                       f.value === font ? "bg-ink-accent text-card" : "hover:bg-foreground/5"
                     }`}
                     style={f.value ? { fontFamily: f.value } : undefined}
                   >
-                    {f.label}
+                    {t(f.labelKey)}
                   </button>
                 ))}
               </div>
               <div className="mt-2 border-t border-foreground/10 pt-2">
-                <span className={`${ROW_LABEL} mb-1.5 block px-2`}>Weight</span>
+                <span className={`${ROW_LABEL} mb-1.5 block px-2`}>{t("edit.text.weight")}</span>
                 <div className="flex flex-wrap gap-1.5 px-1 pb-1">
                   {FONT_WEIGHTS.map((w) => (
                     <button
@@ -1482,7 +1532,7 @@ function FontPicker({
                         ...(family.value ? { fontFamily: family.value } : null),
                       }}
                     >
-                      {w.label}
+                      {t(w.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -1507,11 +1557,12 @@ function CustomThemeSwatch({
   theme: ThemeSettings;
   onPick: (patch: Pick<ThemeSettings, "bg" | "card" | "accent">) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rows: { key: "bg" | "card" | "accent"; label: string }[] = [
-    { key: "bg", label: "Board" },
-    { key: "card", label: "Tiles" },
-    { key: "accent", label: "Text" },
+    { key: "bg", label: t("edit.appearance.colours.board") },
+    { key: "card", label: t("edit.appearance.colours.tiles") },
+    { key: "accent", label: t("edit.appearance.colours.text") },
   ];
 
   return (
@@ -1519,8 +1570,8 @@ function CustomThemeSwatch({
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        title="Custom colours"
-        aria-label="Custom colours"
+        title={t("edit.appearance.customColours")}
+        aria-label={t("edit.appearance.customColours")}
         className="flex h-12 w-12 items-center justify-center text-foreground transition-transform hover:scale-110 scallop"
         style={{ background: `linear-gradient(135deg, ${theme.bg} 40%, ${theme.accent})` }}
       >
@@ -1531,7 +1582,7 @@ function CustomThemeSwatch({
         {open && (
           <>
             <button
-              aria-label="Close"
+              aria-label={t("common.close")}
               onClick={() => setOpen(false)}
               className="fixed inset-0 z-20 cursor-default"
             />
@@ -1540,7 +1591,7 @@ function CustomThemeSwatch({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: -6 }}
               transition={SPRING_UI}
-              className="absolute right-0 top-14 z-30 w-56 rounded-[26px] bg-popover p-3 elev-3"
+              className="absolute end-0 top-14 z-30 w-56 rounded-[26px] bg-popover p-3 elev-3"
             >
               {rows.map((r) => (
                 <label
@@ -1597,6 +1648,7 @@ function TeamNameInput({
   onSave: (value: string) => void;
   onSaveColor: (value: string) => void;
 }) {
+  const t = useT();
   const [value, setValue] = useState(defaultValue);
   useEffect(() => setValue(defaultValue), [defaultValue]);
 
@@ -1605,13 +1657,13 @@ function TeamNameInput({
       <label
         className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full"
         style={{ backgroundColor: color ?? `var(${colorVar})` }}
-        title={`${placeholder} colour`}
+        title={t("edit.game.teamColour", { team: placeholder })}
       >
         <input
           type="color"
           value={color ?? "#888888"}
           onChange={(e) => onSaveColor(e.target.value)}
-          aria-label={`${placeholder} colour`}
+          aria-label={t("edit.game.teamColour", { team: placeholder })}
           className="absolute inset-0 cursor-pointer opacity-0"
         />
         <Palette className="h-3.5 w-3.5 text-foreground/70 mix-blend-difference" />
@@ -1623,7 +1675,7 @@ function TeamNameInput({
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         placeholder={placeholder}
         maxLength={24}
-        aria-label={`${placeholder} name`}
+        aria-label={t("edit.game.teamName", { team: placeholder })}
         className="min-w-0 flex-1 bg-transparent px-1 text-center text-xs font-bold outline-none"
       />
     </div>
@@ -1641,6 +1693,7 @@ function PlayDialog({
   joinCode: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const navigate = useNavigate();
   const start = useServerFn(startSession);
   const [nonce] = useState(() => Date.now());
@@ -1669,8 +1722,8 @@ function PlayDialog({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-[36px] bg-card p-8 text-center elev-3"
       >
-        <h2 className="font-display text-2xl font-black">Players join with this code</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Open on any phone — no app needed</p>
+        <h2 className="font-display text-2xl font-black">{t("edit.play.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("edit.play.subtitle")}</p>
 
         <div className="my-5 font-display text-5xl font-black tracking-[0.25em] text-ink-accent">
           {joinCode}
@@ -1684,11 +1737,11 @@ function PlayDialog({
           <button
             onClick={() => {
               void navigator.clipboard?.writeText(joinUrl);
-              toast.success("Join link copied");
+              toast.success(t("edit.join.linkCopied"));
             }}
             className="flex items-center justify-center gap-2 rounded-full bg-lilac py-3.5 text-sm font-bold text-foreground elev-1"
           >
-            <Copy className="h-4 w-4" /> Copy join link
+            <Copy className="h-4 w-4" /> {t("edit.play.copyJoinLink")}
           </button>
           <button
             disabled={isLoading || isError}
@@ -1699,7 +1752,7 @@ function PlayDialog({
             className="flex items-center justify-center gap-2 rounded-full bg-coral py-3.5 font-display text-sm font-black text-foreground elev-2 disabled:opacity-50"
           >
             <ExternalLink className="h-4 w-4" />
-            {isLoading ? "Preparing session…" : "Open Host Console"}
+            {isLoading ? t("edit.play.preparing") : t("edit.play.openHostConsole")}
           </button>
         </div>
       </motion.div>

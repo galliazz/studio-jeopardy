@@ -11,6 +11,7 @@
  * this user-curated board.
  */
 
+import type { MessageKey } from "@/i18n";
 import { sfx } from "@/lib/sfx";
 import { sfxGain } from "@/lib/settings";
 import { signedUrl } from "@/lib/media";
@@ -29,23 +30,29 @@ export interface SoundboardClip {
 
 export interface PresetDef {
   key: string;
-  name: string;
+  /** Il nome si traduce quando si mostra: qui c'è solo la chiave. */
+  nameKey: MessageKey;
   /** approximate length in seconds, used for the chip progress line */
   duration: number;
   play: () => void;
 }
 
 export const PRESETS: PresetDef[] = [
-  { key: "buzz", name: "Buzz in", duration: 0.5, play: () => sfx.buzz() },
-  { key: "ding", name: "Correct", duration: 1.2, play: () => sfx.ding() },
-  { key: "wrong", name: "Wrong", duration: 2.0, play: () => sfx.wrong() },
-  { key: "alarm", name: "Time's up", duration: 1.4, play: () => sfx.alarm() },
-  { key: "drumroll", name: "Drum roll", duration: 1.3, play: () => sfx.drumroll() },
-  { key: "suspense", name: "Suspense sting", duration: 3.4, play: () => sfx.suspense() },
-  { key: "dailyDouble", name: "Daily Double", duration: 1.3, play: () => sfx.dailyDouble() },
-  { key: "applause", name: "Applause", duration: 1.2, play: () => sfx.applause() },
-  { key: "fanfare", name: "Victory fanfare", duration: 3.0, play: () => sfx.fanfare() },
-  { key: "sad", name: "Sad trombone", duration: 2.4, play: () => sfx.sad() },
+  { key: "buzz", nameKey: "sound.presets.buzz", duration: 0.5, play: () => sfx.buzz() },
+  { key: "ding", nameKey: "sound.presets.ding", duration: 1.2, play: () => sfx.ding() },
+  { key: "wrong", nameKey: "sound.presets.wrong", duration: 2.0, play: () => sfx.wrong() },
+  { key: "alarm", nameKey: "sound.presets.alarm", duration: 1.4, play: () => sfx.alarm() },
+  { key: "drumroll", nameKey: "sound.presets.drumroll", duration: 1.3, play: () => sfx.drumroll() },
+  { key: "suspense", nameKey: "sound.presets.suspense", duration: 3.4, play: () => sfx.suspense() },
+  {
+    key: "dailyDouble",
+    nameKey: "sound.presets.dailyDouble",
+    duration: 1.3,
+    play: () => sfx.dailyDouble(),
+  },
+  { key: "applause", nameKey: "sound.presets.applause", duration: 1.2, play: () => sfx.applause() },
+  { key: "fanfare", nameKey: "sound.presets.fanfare", duration: 3.0, play: () => sfx.fanfare() },
+  { key: "sad", nameKey: "sound.presets.sad", duration: 2.4, play: () => sfx.sad() },
 ];
 
 export function presetByKey(key: string | null): PresetDef | undefined {
@@ -60,7 +67,8 @@ function ac(): AudioContext | null {
   if (typeof window === "undefined") return null;
   if (!ctx) {
     const AC =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AC) return null;
     ctx = new AC();
   }
@@ -69,7 +77,10 @@ function ac(): AudioContext | null {
 }
 
 const buffers = new Map<string, AudioBuffer>();
-const active = new Map<string, { source: AudioBufferSourceNode | null; endsAt: number; startedAt: number }>();
+const active = new Map<
+  string,
+  { source: AudioBufferSourceNode | null; endsAt: number; startedAt: number }
+>();
 
 /** Board-level volume (0..1), separate from the Settings SFX volume. */
 let boardVolume = 0.9;

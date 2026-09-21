@@ -1,7 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -40,7 +48,6 @@ import {
   openTile,
   closeTile,
   clearQueue,
-
   resetBoard,
   judgeAnswer,
   revealAnswer,
@@ -57,6 +64,7 @@ import {
 } from "@/lib/sessions.functions";
 import { bootstrapStudio, regenerateOverlayToken, updateGame } from "@/lib/games.functions";
 import { useSessionRealtime } from "@/hooks/use-session-realtime";
+import { localizeError, useT, type MessageKey } from "@/i18n";
 import {
   keyLabel,
   normalizeKey,
@@ -95,9 +103,15 @@ export const Route = createFileRoute("/_authenticated/host/$sessionId")({
   head: () => ({
     meta: [
       { title: "Host Console — JEOPARDESTINY" },
-      { name: "description", content: "Live host console: board, buzzer queue, timers and scoring." },
+      {
+        name: "description",
+        content: "Live host console: board, buzzer queue, timers and scoring.",
+      },
       { property: "og:title", content: "Host Console — JEOPARDESTINY" },
-      { property: "og:description", content: "Live host console: board, buzzer queue, timers and scoring." },
+      {
+        property: "og:description",
+        content: "Live host console: board, buzzer queue, timers and scoring.",
+      },
       { property: "og:type", content: "website" },
     ],
   }),
@@ -135,7 +149,6 @@ export interface HostActions {
   clearQueue: () => void;
 }
 
-
 /* ------------------------------ Confirmation ------------------------------ */
 
 function ConfirmDialog({
@@ -151,6 +164,7 @@ function ConfirmDialog({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const t = useT();
   return (
     <div
       role="dialog"
@@ -173,7 +187,7 @@ function ConfirmDialog({
             onClick={onClose}
             className="min-h-12 rounded-full border border-foreground/25 px-5 text-sm font-bold transition-colors hover:bg-foreground/5"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             onClick={() => {
@@ -197,6 +211,7 @@ function HostPage() {
   const navigate = useNavigate();
   const fetchState = useServerFn(getHostState);
   const queryClient = useQueryClient();
+  const t = useT();
 
   /*
    * Ogni azione locale incrementa questo contatore. Una risposta partita prima
@@ -228,7 +243,9 @@ function HostPage() {
     staleTime: 60_000,
     retry: false,
   });
-  const profile = (account as { profile?: { username?: string; avatar_url?: string | null } } | undefined)?.profile;
+  const profile = (
+    account as { profile?: { username?: string; avatar_url?: string | null } } | undefined
+  )?.profile;
 
   const state = data as unknown as HostState | undefined;
   const [ddOpen, setDdOpen] = useState(false);
@@ -240,7 +257,6 @@ function HostPage() {
   const [menuPanel, setMenuPanel] = useState<null | "join" | "overlays">(null);
   /** Below 1200px the right column becomes a togglable slide-over panel. */
   const [panelOpen, setPanelOpen] = useState(false);
-
 
   const setHostState = useCallback(
     (patch: Omit<Partial<HostState>, "session"> & { session?: Partial<Session> }) => {
@@ -310,7 +326,7 @@ function HostPage() {
     (call: Promise<unknown>) => {
       void call
         .catch((err: unknown) => {
-          toast.error(err instanceof Error ? err.message : "The action did not go through");
+          toast.error(localizeError(err, "host.errors.actionFailed"));
         })
         .finally(() => {
           void queryClient.invalidateQueries({ queryKey: ["host", sessionId] });
@@ -329,15 +345,15 @@ function HostPage() {
         });
         // Il server ha riaperto la casella a tutti: va detto, perché la coda
         // sparisce di colpo e altrimenti sembrerebbe un errore.
-        if (res.outcome === "reset") toast.success("Everyone missed — buzzers reopened for all");
+        if (res.outcome === "reset") toast.success(t("host.judge.everyoneMissed"));
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Nothing was judged");
+        toast.error(localizeError(err, "host.errors.nothingJudged"));
       } finally {
         judging.current = false;
         void queryClient.invalidateQueries({ queryKey: ["host", sessionId] });
       }
     },
-    [queryClient, sessionId],
+    [queryClient, sessionId, t],
   );
 
   // ---- Game-loop actions, shared by the panel and the keyboard ----------
@@ -427,16 +443,18 @@ function HostPage() {
   const played = usedSet.size;
   /** players[].connected — the only signal for "live" status and join-card collapse. */
   const connectedCount = players.filter((p) => !p.locked_out).length;
-  const currentTile = tiles.find((t) => t.id === session.current_tile_id) ?? null;
-  const currentCategory = currentTile ? categories.find((c) => c.id === currentTile.category_id) : null;
+  const currentTile = tiles.find((tile) => tile.id === session.current_tile_id) ?? null;
+  const currentCategory = currentTile
+    ? categories.find((c) => c.id === currentTile.category_id)
+    : null;
   /** The board's distinct point values, used as quick picks in the custom-score popover. */
-  const pointValues = Array.from(new Set(tiles.map((t) => t.points))).sort((a, b) => a - b);
-
-
+  const pointValues = Array.from(new Set(tiles.map((tile) => tile.points))).sort((a, b) => a - b);
 
   const bumpScore = (team: Team, delta: number) => {
     setHostSession(
-      team === "alpha" ? { score_alpha: session.score_alpha + delta } : { score_bravo: session.score_bravo + delta },
+      team === "alpha"
+        ? { score_alpha: session.score_alpha + delta }
+        : { score_bravo: session.score_bravo + delta },
     );
     settle(adjustScore({ data: { sessionId, team, delta } }));
   };
@@ -467,19 +485,20 @@ function HostPage() {
           <div className="flex min-w-0 items-center gap-3">
             <button
               onClick={() => {
-                if (
-                  session.status === "live" &&
-                  !window.confirm("Leave the live game? Players stay connected and you can rejoin from Studio.")
-                )
+                if (session.status === "live" && !window.confirm(t("host.bar.leaveConfirm")))
                   return;
                 leaveSession();
               }}
               className={NAV_BUTTON}
-              aria-label="Close session and back to editor"
+              aria-label={t("host.bar.closeSession")}
             >
-              <ArrowLeft className="h-5 w-5" /> <span className="hidden sm:inline">Close</span>
+              <ArrowLeft className="h-5 w-5 rtl:-scale-x-100" />{" "}
+              <span className="hidden sm:inline">{t("common.close")}</span>
             </button>
-            <h1 className="min-w-0 truncate font-display text-lg font-semibold leading-tight" title={game.title}>
+            <h1
+              className="min-w-0 truncate font-display text-lg font-semibold leading-tight"
+              title={game.title}
+            >
               {game.title}
             </h1>
           </div>
@@ -517,18 +536,38 @@ function HostPage() {
           <div className="flex justify-end">
             <AccountMenu
               wide
-              displayName={profile?.username ?? "Host"}
+              displayName={profile?.username ?? t("host.menu.defaultName")}
               avatarUrl={profile?.avatar_url ?? null}
               onOpenSettings={() => setSettingsOpen(true)}
               items={[
-                { icon: QrCode, label: "Join code & QR", onSelect: () => setMenuPanel("join") },
-                { icon: Radio, label: "Broadcast overlays", onSelect: () => setMenuPanel("overlays") },
-                { icon: Sparkles, label: "Daily Double tiles", onSelect: () => setDdOpen(true) },
-                { icon: BarChart3, label: "Analytics", onSelect: () => setAnalyticsOpen(true) },
-                { icon: Flag, label: "Final Jeopardy", onSelect: () => setFinalOpen(true) },
+                {
+                  icon: QrCode,
+                  label: t("host.menu.joinCode"),
+                  onSelect: () => setMenuPanel("join"),
+                },
+                {
+                  icon: Radio,
+                  label: t("host.menu.broadcastOverlays"),
+                  onSelect: () => setMenuPanel("overlays"),
+                },
+                {
+                  icon: Sparkles,
+                  label: t("host.menu.dailyDoubleTiles"),
+                  onSelect: () => setDdOpen(true),
+                },
+                {
+                  icon: BarChart3,
+                  label: t("host.menu.analytics"),
+                  onSelect: () => setAnalyticsOpen(true),
+                },
+                {
+                  icon: Flag,
+                  label: t("host.menu.finalJeopardy"),
+                  onSelect: () => setFinalOpen(true),
+                },
                 {
                   icon: PanelRight,
-                  label: "Live control panel",
+                  label: t("host.menu.liveControlPanel"),
                   onSelect: () => setPanelOpen((v) => !v),
                   className: "min-[1200px]:hidden",
                 },
@@ -536,21 +575,23 @@ function HostPage() {
               dangerItems={[
                 {
                   icon: RefreshCw,
-                  label: "Reset buzzers",
+                  label: t("host.menu.resetBuzzers"),
                   onSelect: () => {
                     actions.clearQueue();
-                    toast.success("Buzzers reset — everyone can buzz again");
+                    toast.success(t("host.menu.buzzersReset"));
                   },
                 },
-                { icon: RotateCcw, label: "Reset board", onSelect: () => setConfirm("reset") },
-                { icon: Crown, label: "End game", onSelect: () => setConfirm("end") },
+                {
+                  icon: RotateCcw,
+                  label: t("host.menu.resetBoard"),
+                  onSelect: () => setConfirm("reset"),
+                },
+                { icon: Crown, label: t("host.menu.endGame"), onSelect: () => setConfirm("end") },
               ]}
             />
           </div>
         </div>
       </header>
-
-
 
       {/*
        * Body. From 840px up it is exactly one viewport tall and only the side
@@ -573,18 +614,25 @@ function HostPage() {
            * `--board-offset` è l'aria sopra di lei, che a schermo stretto non
            * esiste perché non ci sono colonne a fianco.
            */
-          style={{ "--board-side": `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))` } as CSSProperties}
-          className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[840px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[840px]:[--board-reserve:23rem] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1200px]:[--board-reserve:46rem]">
+          style={
+            {
+              "--board-side": `min(100cqh, max(16rem, calc((100cqw - var(--board-reserve)) / ${BOARD_RATIO})))`,
+            } as CSSProperties
+          }
+          className="grid h-full grid-cols-1 gap-4 [--board-offset:0px] [--board-reserve:0px] min-[840px]:min-h-0 min-[840px]:grid-cols-[minmax(0,1fr)_auto] min-[840px]:[--board-offset:calc((100cqh_-_var(--board-side))/2)] min-[840px]:[--board-reserve:23rem] min-[1200px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] min-[1200px]:[--board-reserve:46rem]"
+        >
           {/*
            * SINISTRA: stato, giocatori, soundboard e — in fondo — i comandi
            * della domanda. Stavano a destra, lontani dalla board e a fianco
            * degli stessi pulsanti ripetuti nella casella centrale.
            */}
-          <div className="order-2 min-h-0 w-full space-y-4 min-[840px]:order-1 min-[840px]:mt-[var(--board-offset)] min-[840px]:max-h-[var(--board-side)] min-[840px]:max-w-[340px] min-[840px]:justify-self-end min-[840px]:self-start min-[840px]:overflow-y-auto min-[840px]:pr-1">
+          <div className="order-2 min-h-0 w-full space-y-4 min-[840px]:order-1 min-[840px]:mt-[var(--board-offset)] min-[840px]:max-h-[var(--board-side)] min-[840px]:max-w-[340px] min-[840px]:justify-self-end min-[840px]:self-start min-[840px]:overflow-y-auto min-[840px]:pe-1">
             <SessionStatus
               remaining={tiles.length - played}
               total={tiles.length}
-              dailyDoublesLeft={session.daily_double_tile_ids.filter((id) => !usedSet.has(id)).length}
+              dailyDoublesLeft={
+                session.daily_double_tile_ids.filter((id) => !usedSet.has(id)).length
+              }
             />
             <PlayerRoster
               players={players}
@@ -592,7 +640,9 @@ function HostPage() {
               onSwitchTeam={(playerId) => {
                 setHostState({
                   players: players.map((p) =>
-                    p.id === playerId ? { ...p, team: (p.team === "alpha" ? "bravo" : "alpha") as Team } : p,
+                    p.id === playerId
+                      ? { ...p, team: (p.team === "alpha" ? "bravo" : "alpha") as Team }
+                      : p,
                   ),
                 });
                 settle(switchPlayerTeam({ data: { sessionId, playerId } }));
@@ -676,48 +726,67 @@ function HostPage() {
           <div
             className={`order-3 min-h-0 w-full flex-col gap-4 min-[1200px]:mt-[var(--board-offset)] min-[1200px]:flex min-[1200px]:h-[var(--board-side)] min-[1200px]:max-w-[340px] min-[1200px]:justify-self-start min-[1200px]:self-start ${
               panelOpen
-                ? "fixed inset-y-0 right-0 z-40 flex w-[min(380px,90vw)] border-l border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
+                ? "fixed inset-y-0 end-0 z-40 flex w-[min(380px,90vw)] border-s border-foreground/10 bg-background p-4 elev-3 min-[1200px]:static min-[1200px]:w-auto min-[1200px]:border-0 min-[1200px]:bg-transparent min-[1200px]:p-0 min-[1200px]:shadow-none"
                 : "hidden"
             }`}
           >
-            <BuzzerPanel session={session} players={players} queue={queue} onClearQueue={actions.clearQueue} />
+            <BuzzerPanel
+              session={session}
+              players={players}
+              queue={queue}
+              onClearQueue={actions.clearQueue}
+            />
             {session.status === "final" && (
-              <FinalPanel session={session} finalAnswers={finalAnswers} players={players} theme={theme} />
+              <FinalPanel
+                session={session}
+                finalAnswers={finalAnswers}
+                players={players}
+                theme={theme}
+              />
             )}
           </div>
-
         </div>
       </div>
 
-
       <AnimatePresence>
         {menuPanel === "join" && (
-          <Dialog onClose={() => setMenuPanel(null)} title="Join" subtitle="Inquadra il codice o manda il link">
+          <Dialog
+            onClose={() => setMenuPanel(null)}
+            title={t("host.join.title")}
+            subtitle={t("host.join.subtitle")}
+          >
             <MenuJoinBlock joinCode={game.join_code} />
           </Dialog>
         )}
         {menuPanel === "overlays" && (
           <Dialog
             onClose={() => setMenuPanel(null)}
-            title="Broadcast overlays"
-            subtitle="Sorgenti browser per OBS, 1920×1080"
+            title={t("host.overlays.title")}
+            subtitle={t("host.overlays.subtitle")}
           >
-            <MenuObsLinks overlayToken={game.overlay_token} onRegenerate={() => setConfirm("rotate")} />
+            <MenuObsLinks
+              overlayToken={game.overlay_token}
+              onRegenerate={() => setConfirm("rotate")}
+            />
           </Dialog>
         )}
       </AnimatePresence>
-      <AnimatePresence>{ddOpen && <DDTilesDialog state={state} onClose={() => setDdOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {ddOpen && <DDTilesDialog state={state} onClose={() => setDdOpen(false)} />}
+      </AnimatePresence>
       <AnimatePresence>
         {analyticsOpen && <AnalyticsDialog state={state} onClose={() => setAnalyticsOpen(false)} />}
       </AnimatePresence>
-      <AnimatePresence>{finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}</AnimatePresence>
+      <AnimatePresence>
+        {finalOpen && <FinalDialog sessionId={sessionId} onClose={() => setFinalOpen(false)} />}
+      </AnimatePresence>
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
       <AnimatePresence>
         {confirm === "reset" && (
           <ConfirmDialog
-            title="Reset the board?"
-            body="Scores go back to zero, every tile reopens and new Daily Doubles are picked."
-            confirmLabel="Reset board"
+            title={t("host.confirmReset.title")}
+            body={t("host.confirmReset.body")}
+            confirmLabel={t("host.menu.resetBoard")}
             onClose={() => setConfirm(null)}
             onConfirm={() => {
               setHostSession({
@@ -733,30 +802,32 @@ function HostPage() {
                 final_question: null,
                 final_answer: null,
               });
-              void resetBoard({ data: { sessionId } }).then(() => toast.success("Board reset"));
+              void resetBoard({ data: { sessionId } }).then(() =>
+                toast.success(t("host.confirmReset.done")),
+              );
             }}
           />
         )}
         {confirm === "rotate" && (
           <ConfirmDialog
-            title="Regenerate overlay links?"
-            body="The current links stop working immediately. Any OBS browser source still using them goes blank until you paste the new links."
-            confirmLabel="Regenerate"
+            title={t("host.confirmRotate.title")}
+            body={t("host.confirmRotate.body")}
+            confirmLabel={t("host.confirmRotate.confirm")}
             onClose={() => setConfirm(null)}
             onConfirm={() => {
               void (async () => {
                 await rotateOverlayToken({ data: { gameId: game.id } });
                 void queryClient.invalidateQueries();
-                toast.success("Overlay links regenerated");
+                toast.success(t("host.confirmRotate.done"));
               })();
             }}
           />
         )}
         {confirm === "end" && (
           <ConfirmDialog
-            title="End the game?"
-            body="This closes the session and shows the podium. It cannot be undone."
-            confirmLabel="End game"
+            title={t("host.confirmEnd.title")}
+            body={t("host.confirmEnd.body")}
+            confirmLabel={t("host.menu.endGame")}
             onClose={() => setConfirm(null)}
             onConfirm={() => void finishSession({ data: { sessionId } })}
           />
@@ -776,7 +847,6 @@ function HostPage() {
   );
 }
 
-
 /* ----------------------------- Session status ----------------------------- */
 
 /**
@@ -793,15 +863,16 @@ function SessionStatus({
   total: number;
   dailyDoublesLeft: number;
 }) {
+  const t = useT();
   return (
     <div className="flex min-h-12 flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-foreground/15 px-4 py-2">
       <span className="text-xs font-bold text-muted-foreground">
-        {remaining}/{total} left
+        {t("host.status.tilesLeft", { remaining, total })}
       </span>
       <span aria-hidden className="h-3.5 w-px bg-foreground/15" />
       <span className="flex items-center gap-1.5 text-xs font-bold text-ink-gold">
         <Sparkles className="h-3.5 w-3.5" />
-        {dailyDoublesLeft} Daily Double
+        {t("host.status.dailyDoublesLeft", { count: dailyDoublesLeft })}
       </span>
     </div>
   );
@@ -814,6 +885,7 @@ function SessionStatus({
  * copy affordance: the separate "copy code" chip said the same thing twice.
  */
 function MenuJoinBlock({ joinCode }: { joinCode: string }) {
+  const t = useT();
   const origin = useOrigin();
   const joinUrl = origin ? `${origin}/play/${joinCode}` : "";
 
@@ -831,11 +903,11 @@ function MenuJoinBlock({ joinCode }: { joinCode: string }) {
         disabled={!joinUrl}
         onClick={() => {
           void navigator.clipboard.writeText(joinUrl);
-          toast.success("Join link copied");
+          toast.success(t("host.join.linkCopied"));
         }}
         className="mx-auto mt-3 flex min-h-12 items-center gap-2 rounded-full border border-foreground/20 px-5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
       >
-        <Copy className="h-4 w-4" /> Copy link
+        <Copy className="h-4 w-4" /> {t("common.copyLink")}
       </button>
     </div>
   );
@@ -854,6 +926,7 @@ function PlayerRoster({
   onSwitchTeam: (playerId: string) => void;
   onRemove: (playerId: string) => void;
 }) {
+  const t = useT();
   const live = connectedCount > 0;
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
@@ -865,14 +938,13 @@ function PlayerRoster({
           aria-hidden
         />
         <span className={live ? "text-success-ink" : "text-muted-foreground"}>
-          {live ? `Live · ${connectedCount} ${connectedCount === 1 ? "player" : "players"}` : "In lobby"}
+          {live ? t("host.roster.liveCount", { count: connectedCount }) : t("host.roster.inLobby")}
         </span>
       </h3>
       {players.length === 0 && (
-        <p className="py-3 text-center text-sm text-muted-foreground">Nobody has joined yet.</p>
+        <p className="py-3 text-center text-sm text-muted-foreground">{t("host.roster.empty")}</p>
       )}
       {players.length > 0 && (
-
         <ul className="space-y-1">
           {players.map((p) => {
             const connected = !p.locked_out;
@@ -888,12 +960,12 @@ function PlayerRoster({
                 <span className="shrink-0 text-base">{p.avatar}</span>
                 <span className="min-w-0 flex-1 truncate text-sm font-bold">{p.name}</span>
                 <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  {connected ? "Live" : "Locked"}
+                  {connected ? t("host.roster.live") : t("host.roster.locked")}
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
-                      aria-label={`Options for ${p.name}`}
+                      aria-label={t("host.roster.options", { name: p.name })}
                       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-foreground/5"
                     >
                       <MoreHorizontal className="h-4 w-4" />
@@ -904,13 +976,13 @@ function PlayerRoster({
                       className="rounded-full px-3 py-2.5 text-sm font-semibold"
                       onSelect={() => onSwitchTeam(p.id)}
                     >
-                      Switch team
+                      {t("host.roster.switchTeam")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="rounded-full px-3 py-2.5 text-sm font-semibold text-danger-ink"
                       onSelect={() => onRemove(p.id)}
                     >
-                      Remove player
+                      {t("host.roster.removePlayer")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -923,7 +995,6 @@ function PlayerRoster({
   );
 }
 
-
 /* ------------------------------ OBS overlays ------------------------------ */
 
 /*
@@ -932,39 +1003,71 @@ function PlayerRoster({
  * ridimensionano ognuno per conto suo. "Buzzer queue + scores" resta per chi
  * l'ha già montata in una scena: toglierla la romperebbe.
  */
-const OBS_VIEWS: { path: string; label: string; hint: string }[] = [
-  { path: "board", label: "Board only", hint: "5×5 grid, clue and timer" },
-  { path: "scores", label: "Scores only", hint: "The two team scores" },
-  { path: "buzzer", label: "Buzzer only", hint: "Who buzzed, in order" },
-  { path: "combined", label: "Combined overlay", hint: "Board, scores and buzzer together" },
-  { path: "queue", label: "Buzzer + scores", hint: "Older combination, kept for existing scenes" },
+const OBS_VIEWS: { path: string; labelKey: MessageKey; hintKey: MessageKey }[] = [
+  {
+    path: "board",
+    labelKey: "host.overlays.views.board.label",
+    hintKey: "host.overlays.views.board.hint",
+  },
+  {
+    path: "scores",
+    labelKey: "host.overlays.views.scores.label",
+    hintKey: "host.overlays.views.scores.hint",
+  },
+  {
+    path: "buzzer",
+    labelKey: "host.overlays.views.buzzer.label",
+    hintKey: "host.overlays.views.buzzer.hint",
+  },
+  {
+    path: "combined",
+    labelKey: "host.overlays.views.combined.label",
+    hintKey: "host.overlays.views.combined.hint",
+  },
+  {
+    path: "queue",
+    labelKey: "host.overlays.views.queue.label",
+    hintKey: "host.overlays.views.queue.hint",
+  },
 ];
 
 /**
  * The overlay links. Ogni riga copia il proprio link; l'icona in coda apre
  * l'anteprima in una scheda nuova, per controllare che la sorgente si veda.
  */
-function MenuObsLinks({ overlayToken, onRegenerate }: { overlayToken: string; onRegenerate: () => void }) {
+function MenuObsLinks({
+  overlayToken,
+  onRegenerate,
+}: {
+  overlayToken: string;
+  onRegenerate: () => void;
+}) {
+  const t = useT();
   const origin = useOrigin();
+  // L'overlay non ha impostazioni sue: la lingua dell'host gliela porta il link.
+  const lang = t.locale !== "en" ? `?lang=${t.locale}` : "";
 
   return (
     <div className="space-y-1.5">
       {OBS_VIEWS.map((v) => {
-        const url = origin ? `${origin}/overlay/${v.path}/${overlayToken}` : "";
+        const url = origin ? `${origin}/overlay/${v.path}/${overlayToken}${lang}` : "";
+        const label = t(v.labelKey);
         return (
           <div key={v.path} className="flex items-center gap-1 rounded-[20px] bg-muted px-4 py-2">
             <button
               disabled={!url}
-              aria-label={`Copy ${v.label} link`}
+              aria-label={t("host.overlays.copyLink", { label })}
               onClick={() => {
                 void navigator.clipboard.writeText(url);
-                toast.success("Link copied");
+                toast.success(t("common.linkCopied"));
               }}
-              className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:opacity-40"
+              className="flex min-w-0 flex-1 items-center gap-3 text-start disabled:opacity-40"
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-foreground">{v.label}</span>
-                <span className="block truncate text-[11px] text-muted-foreground">{v.hint}</span>
+                <span className="block truncate text-sm font-bold text-foreground">{label}</span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {t(v.hintKey)}
+                </span>
               </span>
               <Copy className="h-4 w-4 shrink-0 text-muted-foreground" />
             </button>
@@ -972,7 +1075,7 @@ function MenuObsLinks({ overlayToken, onRegenerate }: { overlayToken: string; on
               href={url || undefined}
               target="_blank"
               rel="noreferrer"
-              aria-label={`Open ${v.label} in a new tab`}
+              aria-label={t("host.overlays.openInNewTab", { label })}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-card"
             >
               <ExternalLink className="h-4 w-4" />
@@ -981,16 +1084,16 @@ function MenuObsLinks({ overlayToken, onRegenerate }: { overlayToken: string; on
         );
       })}
       <ul className="space-y-0.5 px-2 pt-1 text-[11px] text-muted-foreground">
-        <li>· Add as a Browser Source</li>
-        <li>· Width 1920, height 1080</li>
-        <li>· Uncheck “Shutdown source when not visible”</li>
-        <li>· Uncheck “Refresh browser when scene becomes active”</li>
+        <li>· {t("host.overlays.steps.browserSource")}</li>
+        <li>· {t("host.overlays.steps.size")}</li>
+        <li>· {t("host.overlays.steps.shutdownSource")}</li>
+        <li>· {t("host.overlays.steps.refreshBrowser")}</li>
       </ul>
       <button
         onClick={onRegenerate}
         className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-danger-ink/40 text-sm font-bold text-danger-ink transition-colors hover:bg-danger/20"
       >
-        <Radio className="h-4 w-4" /> Regenerate links
+        <Radio className="h-4 w-4" /> {t("host.overlays.regenerateLinks")}
       </button>
     </div>
   );
@@ -1001,7 +1104,7 @@ function MenuObsLinks({ overlayToken, onRegenerate }: { overlayToken: string; on
 /** Small key-hint label so the host learns the shortcuts in place. */
 function KeyHint({ k }: { k: string }) {
   return (
-    <kbd className="ml-2 rounded-md border border-current/30 px-1.5 py-0.5 font-mono text-[10px] font-bold opacity-70">
+    <kbd className="ms-2 rounded-md border border-current/30 px-1.5 py-0.5 font-mono text-[10px] font-bold opacity-70">
       {k}
     </kbd>
   );
@@ -1022,13 +1125,17 @@ function LiveControlPanel({
   queue: QueueEntry[];
   actions: HostActions;
 }) {
+  const t = useT();
   const countdown = useCountdown(session.timer_ends_at);
   // I suggerimenti devono dire il tasto VERO: se l'host se li è riassegnati,
   // un'etichetta di fabbrica sarebbe una bugia stampata sul pulsante.
   const keys = resolveShortcuts(useSettings().shortcuts);
   const activePlayer = players.find((p) => p.id === session.active_player_id) ?? null;
   const tileQueue = queue
-    .filter((q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"))
+    .filter(
+      (q) =>
+        q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+    )
     .sort((a, b) => a.created_at.localeCompare(b.created_at));
   const hasNext = tileQueue.some((q) => q.status === "queued");
   const isDD = tile ? session.daily_double_tile_ids.includes(tile.id) : false;
@@ -1042,30 +1149,43 @@ function LiveControlPanel({
        e quasi sempre vuota, e per arrivare in fondo bisognava scorrere. */
     <div className="rounded-[32px] bg-card p-5 elev-2">
       <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
-        <h3 className="text-center text-sm font-semibold text-muted-foreground">Live control</h3>
+        <h3 className="text-center text-sm font-semibold text-muted-foreground">
+          {t("host.live.title")}
+        </h3>
         {tile && (
           <span className="truncate rounded-full border border-foreground/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-            {category?.title ?? "Clue"} · {value}{isDD ? " · DD" : ""}
+            {t(isDD ? "host.live.tileLabelDailyDouble" : "host.live.tileLabel", {
+              category: category?.title ?? t("host.live.clueFallback"),
+              value,
+            })}
           </span>
         )}
       </div>
 
       {!tile || phase === "idle" ? (
-        <p className="py-2 text-center text-sm text-muted-foreground">Open a tile to arm the buzzers</p>
+        <p className="py-2 text-center text-sm text-muted-foreground">
+          {t("host.buzzer.openTileToArm")}
+        </p>
       ) : phase === "reveal" ? (
         <div className="space-y-4">
           <div className="rounded-[24px] border border-foreground/15 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Answer</p>
-            <p className="mt-1 font-display text-xl font-black text-ink-gold">{tile.answer || "—"}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {t("host.live.answer")}
+            </p>
+            <p className="mt-1 font-display text-xl font-black text-ink-gold">
+              {tile.answer || "—"}
+            </p>
           </div>
           <p className="text-center text-sm text-muted-foreground">
-            {activePlayer ? `Scored for ${activePlayer.name}` : "No score change"}
+            {activePlayer
+              ? t("host.live.scoredFor", { name: activePlayer.name })
+              : t("host.live.noScoreChange")}
           </p>
           <button
             onClick={actions.closeTile}
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-coral px-6 font-display text-base font-black text-foreground elev-2"
           >
-            Close tile <KeyHint k={keyLabel(keys.closeTile)} />
+            {t("host.live.closeTile")} <KeyHint k={keyLabel(keys.closeTile)} />
           </button>
         </div>
       ) : activePlayer ? (
@@ -1103,13 +1223,15 @@ function LiveControlPanel({
               onClick={actions.judgeCorrect}
               className="flex min-h-12 items-center justify-center rounded-full bg-success px-4 font-display text-base font-black text-success-ink elev-2"
             >
-              <Check className="mr-1.5 h-5 w-5" /> +{value} <KeyHint k={keyLabel(keys.judgeCorrect)} />
+              <Check className="me-1.5 h-5 w-5" /> +{value}{" "}
+              <KeyHint k={keyLabel(keys.judgeCorrect)} />
             </button>
             <button
               onClick={actions.judgeWrong}
               className="flex min-h-12 items-center justify-center rounded-full bg-danger px-4 font-display text-base font-black text-danger-ink elev-2"
             >
-              <X className="mr-1.5 h-5 w-5" /> Wrong <KeyHint k={keyLabel(keys.judgeWrong)} />
+              <X className="me-1.5 h-5 w-5" /> {t("host.live.wrong")}{" "}
+              <KeyHint k={keyLabel(keys.judgeWrong)} />
             </button>
           </div>
 
@@ -1119,16 +1241,16 @@ function LiveControlPanel({
               disabled={!hasNext}
               className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-40"
             >
-              Pass to next <KeyHint k={keyLabel(keys.passToNext)} />
+              {t("host.live.passToNext")} <KeyHint k={keyLabel(keys.passToNext)} />
             </button>
             <button
               onClick={actions.restartTimer}
               className="flex min-h-12 items-center justify-center rounded-full border border-foreground/25 px-4 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
             >
-              <RotateCcw className="mr-1.5 h-4 w-4" /> Timer <KeyHint k={keyLabel(keys.restartTimer)} />
+              <RotateCcw className="me-1.5 h-4 w-4" /> {t("host.live.timer")}{" "}
+              <KeyHint k={keyLabel(keys.restartTimer)} />
             </button>
           </div>
-
         </div>
       ) : (
         <div className="space-y-3">
@@ -1136,15 +1258,23 @@ function LiveControlPanel({
             {tile.question.replace(/<[^>]*>/g, "") || "…"}
           </p>
           <div className="rounded-[24px] border border-dashed border-foreground/30 p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Host only · answer</p>
-            <p className="mt-1 font-display text-lg font-black text-ink-gold">{tile.answer || "—"}</p>
-            {tile.hint && <p className="mt-1 text-xs italic text-muted-foreground">Hint: {tile.hint}</p>}
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {t("host.live.hostOnlyAnswer")}
+            </p>
+            <p className="mt-1 font-display text-lg font-black text-ink-gold">
+              {tile.answer || "—"}
+            </p>
+            {tile.hint && (
+              <p className="mt-1 text-xs italic text-muted-foreground">
+                {t("host.live.hint", { hint: tile.hint })}
+              </p>
+            )}
           </div>
           <button
             onClick={actions.reveal}
             className="flex min-h-12 w-full items-center justify-center rounded-full bg-lilac px-6 font-display text-base font-black text-foreground"
           >
-            Reveal answer <KeyHint k={keyLabel(keys.reveal)} />
+            {t("host.live.revealAnswer")} <KeyHint k={keyLabel(keys.reveal)} />
           </button>
         </div>
       )}
@@ -1170,17 +1300,21 @@ function BuzzerPanel({
   queue: QueueEntry[];
   onClearQueue: () => void;
 }) {
+  const t = useT();
   const armed = session.phase === "question_open" || session.phase === "answering";
   const lockedOut = players.filter((p) => p.locked_out).length;
   const waiting = queue.filter(
-    (q) => q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+    (q) =>
+      q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
   );
 
   return (
     /* Alto quanto la board: la coda può allungarsi, e una scheda che cresce e
        cala a ogni buzz farebbe ballare tutta la colonna. */
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[32px] bg-card p-5 elev-2">
-      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Buzzer</h3>
+      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">
+        {t("host.buzzer.title")}
+      </h3>
       <p
         className={`mb-4 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider ${
           armed ? "text-ink-gold" : "text-muted-foreground"
@@ -1190,26 +1324,26 @@ function BuzzerPanel({
           className={`h-2.5 w-2.5 rounded-full ${armed ? "animate-pulse bg-ink-gold" : "bg-foreground/25"}`}
           aria-hidden
         />
-        {armed ? "Buzzers armed" : "Buzzers closed"}
+        {armed ? t("host.buzzer.armed") : t("host.buzzer.closed")}
       </p>
       {waiting.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 py-6 text-center">
           <p className="text-sm text-muted-foreground">
             {!armed
-              ? "Open a tile to arm the buzzers"
+              ? t("host.buzzer.openTileToArm")
               : lockedOut > 0
                 ? /* Prima qui c'era "Nobody has buzzed yet" anche quando avevano
                      premuto tutti e sbagliato tutti: falso, e senza un pulsante
                      per uscirne. */
-                  `${lockedOut} of ${players.length} ${lockedOut === 1 ? "player is" : "players are"} locked out`
-                : "Nobody has buzzed yet"}
+                  t("host.buzzer.lockedOut", { count: lockedOut, total: players.length })
+                : t("host.buzzer.nobodyBuzzed")}
           </p>
           {armed && lockedOut > 0 && (
             <button
               onClick={onClearQueue}
               className="flex min-h-12 items-center gap-2 rounded-full border border-foreground/20 px-5 text-sm font-bold transition-colors hover:bg-foreground/5"
             >
-              <RefreshCw className="h-4 w-4" /> Reopen for everyone
+              <RefreshCw className="h-4 w-4" /> {t("host.buzzer.reopenForEveryone")}
             </button>
           )}
         </div>
@@ -1222,35 +1356,41 @@ function BuzzerPanel({
 
 /* ---------------------------- Question overlay ---------------------------- */
 
-
 /* --------------------------- Daily Double wager --------------------------- */
 
-
 /* ------------------------------- Queue list ------------------------------- */
-
-
 
 /* ------------------------- Daily Double tiles dialog ----------------------- */
 
 function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => void }) {
+  const t = useT();
   const { session, tiles, categories } = state;
   const [selected, setSelected] = useState<string[]>(session.daily_double_tile_ids);
 
   const toggle = (id: string) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((t) => t !== id) : prev.length < 2 ? [...prev, id] : prev));
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 2 ? [...prev, id] : prev,
+    );
   };
 
   return (
-    <Dialog onClose={onClose} title="Daily Double tiles" subtitle="Pick up to 2 tiles to become Daily Doubles">
+    <Dialog
+      onClose={onClose}
+      title={t("host.dailyDoubles.title")}
+      subtitle={t("host.dailyDoubles.subtitle")}
+    >
       <div className="grid max-h-80 grid-cols-5 gap-1.5 overflow-y-auto">
         {categories.map((cat) => (
-          <div key={cat.id} className="mb-1 truncate text-center text-[9px] font-bold uppercase text-muted-foreground">
+          <div
+            key={cat.id}
+            className="mb-1 truncate text-center text-[9px] font-bold uppercase text-muted-foreground"
+          >
             {cat.title}
           </div>
         ))}
         {[0, 1, 2, 3, 4].map((row) =>
           categories.map((cat) => {
-            const tile = tiles.find((t) => t.category_id === cat.id && t.row_index === row);
+            const tile = tiles.find((x) => x.category_id === cat.id && x.row_index === row);
             if (!tile) return <div key={`${cat.id}-${row}`} />;
             const on = selected.includes(tile.id);
             return (
@@ -1273,14 +1413,17 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
           // sopravviva alla partita: le prossime la ereditano.
           await setDailyDoubles({ data: { sessionId: session.id, tileIds: selected } });
           await updateGame({
-            data: { gameId: state.game.id, theme: { ...themeOf(state.game), dailyDoubleTileIds: selected } },
+            data: {
+              gameId: state.game.id,
+              theme: { ...themeOf(state.game), dailyDoubleTileIds: selected },
+            },
           });
-          toast.success("Daily Doubles updated");
+          toast.success(t("host.dailyDoubles.updated"));
           onClose();
         }}
         className="mt-4 w-full rounded-full bg-coral py-3.5 text-sm font-black text-foreground elev-1"
       >
-        Save ({selected.length}/2)
+        {t("host.dailyDoubles.save", { selected: selected.length })}
       </button>
     </Dialog>
   );
@@ -1289,6 +1432,7 @@ function DDTilesDialog({ state, onClose }: { state: HostState; onClose: () => vo
 /* ------------------------------ Analytics dialog --------------------------- */
 
 function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => void }) {
+  const t = useT();
   const { queue, players, tiles } = state;
 
   const { series, playerStats } = useMemo(() => {
@@ -1299,7 +1443,7 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
     let bravo = 0;
     const series = judged.map((q, i) => {
       const player = players.find((p) => p.id === q.player_id);
-      const tile = tiles.find((t) => t.id === q.tile_id);
+      const tile = tiles.find((x) => x.id === q.tile_id);
       const pts = tile?.points ?? 0;
       const delta = q.status === "correct" ? pts : -Math.round(pts / 2);
       if (player?.team === "alpha") alpha += delta;
@@ -1323,9 +1467,16 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
   }, [queue, players, tiles]);
 
   return (
-    <Dialog onClose={onClose} title="Match analytics" subtitle="Score progression & buzzer activity" wide>
+    <Dialog
+      onClose={onClose}
+      title={t("host.analytics.title")}
+      subtitle={t("host.analytics.subtitle")}
+      wide
+    >
       {series.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No judged answers yet — data appears as you play.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          {t("host.analytics.empty")}
+        </p>
       ) : (
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -1333,11 +1484,29 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
               <XAxis dataKey="n" stroke="currentColor" fontSize={10} tickLine={false} />
               <YAxis stroke="currentColor" fontSize={10} tickLine={false} width={40} />
               <Tooltip
-                contentStyle={{ background: "var(--card)", border: "none", borderRadius: 18, fontSize: 12, color: "var(--foreground)" }}
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "none",
+                  borderRadius: 18,
+                  fontSize: 12,
+                  color: "var(--foreground)",
+                }}
               />
               <Legend />
-              <Line type="monotone" dataKey="alpha" stroke="var(--team-alpha-ink)" strokeWidth={3} dot={false} />
-              <Line type="monotone" dataKey="bravo" stroke="var(--team-bravo-ink)" strokeWidth={3} dot={false} />
+              <Line
+                type="monotone"
+                dataKey="alpha"
+                stroke="var(--team-alpha-ink)"
+                strokeWidth={3}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="bravo"
+                stroke="var(--team-bravo-ink)"
+                strokeWidth={3}
+                dot={false}
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -1345,10 +1514,15 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
       {playerStats.length > 0 && (
         <div className="mt-4 space-y-1.5">
           {playerStats.map((s) => (
-            <div key={s.player.id} className="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-xs">
+            <div
+              key={s.player.id}
+              className="flex items-center gap-2 rounded-full bg-muted px-4 py-2.5 text-xs"
+            >
               <span>{s.player.avatar}</span>
               <span className="flex-1 font-bold">{s.player.name}</span>
-              <span className="text-muted-foreground">{s.buzzes} buzzes</span>
+              <span className="text-muted-foreground">
+                {t("host.analytics.buzzes", { count: s.buzzes })}
+              </span>
               <span className="font-bold text-success-ink">✓{s.correct}</span>
               <span className="font-bold text-danger-ink">✗{s.wrong}</span>
             </div>
@@ -1362,33 +1536,40 @@ function AnalyticsDialog({ state, onClose }: { state: HostState; onClose: () => 
 /* ------------------------------- Final dialog ------------------------------ */
 
 function FinalDialog({ sessionId, onClose }: { sessionId: string; onClose: () => void }) {
+  const t = useT();
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   return (
-    <Dialog onClose={onClose} title="Final Jeopardy" subtitle="Set the final clue — teams will wager and answer">
+    <Dialog
+      onClose={onClose}
+      title={t("host.finalSetup.title")}
+      subtitle={t("host.finalSetup.subtitle")}
+    >
       <textarea
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
-        placeholder="The final clue…"
+        placeholder={t("host.finalSetup.cluePlaceholder")}
         rows={3}
         className="w-full rounded-[24px] bg-muted p-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
       />
       <input
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
-        placeholder="Correct answer"
+        placeholder={t("host.finalSetup.answerPlaceholder")}
         className="mt-2 h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
       />
       <button
         disabled={!question.trim() || !answer.trim()}
         onClick={async () => {
-          await startFinal({ data: { sessionId, question: question.trim(), answer: answer.trim() } });
-          toast.success("Final Jeopardy started — teams are wagering");
+          await startFinal({
+            data: { sessionId, question: question.trim(), answer: answer.trim() },
+          });
+          toast.success(t("host.finalSetup.started"));
           onClose();
         }}
         className="mt-4 w-full rounded-full bg-coral py-3.5 text-sm font-black text-foreground elev-1 disabled:opacity-40"
       >
-        Start Final Jeopardy
+        {t("host.finalSetup.start")}
       </button>
     </Dialog>
   );
@@ -1407,19 +1588,27 @@ function FinalPanel({
   players: Player[];
   theme: ThemeSettings;
 }) {
+  const t = useT();
   const teams: Team[] = ["alpha", "bravo"];
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
-      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">Final Jeopardy</h3>
+      <h3 className="mb-3 text-center text-sm font-semibold text-muted-foreground">
+        {t("host.final.title")}
+      </h3>
       {session.phase === "final_wager" && (
         <>
-          <p className="mb-3 text-sm text-muted-foreground">Teams are placing wagers…</p>
+          <p className="mb-3 text-sm text-muted-foreground">{t("host.final.placingWagers")}</p>
           <div className="mb-3 flex gap-2">
-            {teams.map((t) => {
-              const submitted = finalAnswers.some((f) => f.team === t);
+            {teams.map((team) => {
+              const submitted = finalAnswers.some((f) => f.team === team);
               return (
-                <span key={t} className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase ${submitted ? "bg-success text-success-ink" : "bg-muted text-muted-foreground"}`}>
-                  {teamName(theme, t)} {submitted ? "✓ wagered" : "…"}
+                <span
+                  key={team}
+                  className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase ${submitted ? "bg-success text-success-ink" : "bg-muted text-muted-foreground"}`}
+                >
+                  {t(submitted ? "host.final.teamWagered" : "host.final.teamWaiting", {
+                    team: teamName(theme, team),
+                  })}
                 </span>
               );
             })}
@@ -1428,56 +1617,79 @@ function FinalPanel({
             onClick={() => void beginFinalAnswers({ data: { sessionId: session.id } })}
             className="w-full rounded-full bg-coral py-3 text-xs font-black text-foreground elev-1"
           >
-            Reveal question
+            {t("host.final.revealQuestion")}
           </button>
         </>
       )}
       {session.phase === "final_answer" && (
         <div className="space-y-3">
-          <p className="rounded-[24px] bg-lilac p-4 text-sm font-semibold">{session.final_question}</p>
-          <p className="text-xs italic text-muted-foreground">Answer: {session.final_answer}</p>
-          {teams.map((t) => {
-            const entry = finalAnswers.find((f) => f.team === t);
-            const members = players.filter((p) => p.team === t).map((p) => p.avatar + " " + p.name).join(", ");
+          <p className="rounded-[24px] bg-lilac p-4 text-sm font-semibold">
+            {session.final_question}
+          </p>
+          <p className="text-xs italic text-muted-foreground">
+            {t("host.final.answer", { answer: session.final_answer ?? "" })}
+          </p>
+          {teams.map((team) => {
+            const entry = finalAnswers.find((f) => f.team === team);
+            const members = players
+              .filter((p) => p.team === team)
+              .map((p) => p.avatar + " " + p.name)
+              .join(", ");
             return (
-              <div key={t} className="rounded-[26px] bg-muted p-4">
+              <div key={team} className="rounded-[26px] bg-muted p-4">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className={`text-xs font-black uppercase ${t === "alpha" ? "text-team-alpha-ink" : "text-team-bravo-ink"}`}>{teamName(theme, t)}</span>
-                  <span className="text-[10px] text-muted-foreground">{members || "no players"}</span>
+                  <span
+                    className={`text-xs font-black uppercase ${team === "alpha" ? "text-team-alpha-ink" : "text-team-bravo-ink"}`}
+                  >
+                    {teamName(theme, team)}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {members || t("host.final.noPlayers")}
+                  </span>
                 </div>
                 {entry ? (
                   <>
-                    <p className="text-sm">“{entry.answer}”</p>
-                    <p className="mb-2 text-xs text-muted-foreground">Wager: {entry.wager}</p>
+                    <p className="text-sm">
+                      {t("host.final.quotedAnswer", { answer: entry.answer })}
+                    </p>
+                    <p className="mb-2 text-xs text-muted-foreground">
+                      {t("host.final.wager", { wager: entry.wager })}
+                    </p>
                     {entry.judged === null ? (
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
                             sfx.ding();
-                            void judgeFinal({ data: { sessionId: session.id, team: t, correct: true } });
+                            void judgeFinal({
+                              data: { sessionId: session.id, team, correct: true },
+                            });
                           }}
                           className="flex-1 rounded-full bg-success py-2 text-xs font-black text-success-ink"
                         >
-                          Correct
+                          {t("host.final.correct")}
                         </button>
                         <button
                           onClick={() => {
                             sfx.wrong();
-                            void judgeFinal({ data: { sessionId: session.id, team: t, correct: false } });
+                            void judgeFinal({
+                              data: { sessionId: session.id, team, correct: false },
+                            });
                           }}
                           className="flex-1 rounded-full bg-danger py-2 text-xs font-black text-danger-ink"
                         >
-                          Wrong
+                          {t("host.final.wrong")}
                         </button>
                       </div>
                     ) : (
-                      <p className={`text-xs font-bold ${entry.judged ? "text-success-ink" : "text-danger-ink"}`}>
-                        Judged {entry.judged ? "correct" : "wrong"}
+                      <p
+                        className={`text-xs font-bold ${entry.judged ? "text-success-ink" : "text-danger-ink"}`}
+                      >
+                        {entry.judged ? t("host.final.judgedCorrect") : t("host.final.judgedWrong")}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="text-xs italic text-muted-foreground">No answer submitted</p>
+                  <p className="text-xs italic text-muted-foreground">{t("host.final.noAnswer")}</p>
                 )}
               </div>
             );
@@ -1486,7 +1698,7 @@ function FinalPanel({
             onClick={() => void finishSession({ data: { sessionId: session.id } })}
             className="w-full rounded-full bg-lilac py-3 text-xs font-bold text-foreground"
           >
-            Finish game
+            {t("host.final.finishGame")}
           </button>
         </div>
       )}
@@ -1507,6 +1719,7 @@ function Podium({
   theme: ThemeSettings;
   onExit: () => void;
 }) {
+  const t = useT();
   // Esc, spazio o un clic fuori: la partita è finita, non serve spiegare come
   // uscire da una schermata che si chiude in tutti i modi in cui ci si prova.
   useEffect(() => {
@@ -1535,7 +1748,7 @@ function Podium({
       animate={{ opacity: 1 }}
       role="dialog"
       aria-modal
-      aria-label="Risultato finale"
+      aria-label={t("host.podium.label")}
       onClick={onExit}
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/35 p-4 backdrop-blur-md"
     >
@@ -1546,14 +1759,19 @@ function Podium({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-[36px] bg-card p-8 text-center elev-3"
       >
-        <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop"><Crown className="h-10 w-10 text-ink-gold" /></span>
+        <span className="mx-auto mb-4 flex h-20 w-20 items-center justify-center bg-butter scallop">
+          <Crown className="h-10 w-10 text-ink-gold" />
+        </span>
         <h2 className="font-display text-3xl font-black text-ink-gold text-glow-gold">
-          {tie ? "It's a tie!" : `${teamName(theme, winner)} wins!`}
+          {tie ? t("host.podium.tie") : t("host.podium.wins", { team: teamName(theme, winner) })}
         </h2>
         <p className="mt-1 font-display text-5xl font-black">{winScore}</p>
         <div className="mt-3 flex flex-wrap justify-center gap-1.5">
           {winners.map((p) => (
-            <span key={p.id} className="rounded-full bg-butter px-3.5 py-1.5 text-xs font-bold text-ink-gold">
+            <span
+              key={p.id}
+              className="rounded-full bg-butter px-3.5 py-1.5 text-xs font-bold text-ink-gold"
+            >
               {p.avatar} {p.name}
             </span>
           ))}
@@ -1590,6 +1808,7 @@ function Dialog({
   subtitle?: string;
   wide?: boolean;
 }) {
+  const t = useT();
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -1611,7 +1830,11 @@ function Dialog({
             <h2 className="font-display text-xl font-black">{title}</h2>
             {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
           </div>
-          <button onClick={onClose} className="rounded-full bg-muted p-2.5 text-muted-foreground hover:bg-lilac" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="rounded-full bg-muted p-2.5 text-muted-foreground hover:bg-lilac"
+            aria-label={t("common.close")}
+          >
             <X className="h-4 w-4" />
           </button>
         </div>

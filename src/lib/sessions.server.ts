@@ -1,7 +1,7 @@
-const TIMER_SECONDS = 15;
+import { timerEndsAt } from "@/lib/game-rules";
 
 export function timerEnd(): string {
-  return new Date(Date.now() + TIMER_SECONDS * 1000).toISOString();
+  return timerEndsAt(Date.now());
 }
 
 export function shuffleIds(ids: string[]): string[] {

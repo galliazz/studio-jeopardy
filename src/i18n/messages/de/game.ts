@@ -1,0 +1,55 @@
+import type { Messages } from "../en/index";
+
+export const game: Messages["game"] = {
+  clue: {
+    dailyDoubleBanner: "Daily Double · zählt doppelt",
+    fallbackCategory: "Frage",
+    dailyDoubleValue: "{points} ×2",
+    mediaAlt: "Medien zur Frage",
+    tileClosed: "Feld geschlossen",
+    buzzersOpen: "Buzzer offen",
+  },
+  queue: {
+    title: "Buzzer-Liste",
+    clear: "Liste leeren",
+    clearConfirm: "Buzzer-Liste leeren? Alle Wartenden werden entfernt.",
+    position: "#{position}",
+    firstIn: "zuerst",
+    deltaMs: "+{ms}ms",
+    deltaSeconds: "+{seconds}s",
+  },
+  score: {
+    teamPlayers: { one: "{count} Spieler", other: "{count} Spieler" },
+    teamPlayersLabel: {
+      one: "{count} Spieler in diesem Team",
+      other: "{count} Spieler in diesem Team",
+    },
+    subtractFrom: "{step} von {name} abziehen",
+    addTo: "{step} zu {name} addieren",
+    customChangeFor: "Eigene Punktänderung für {name}",
+    customAmount: "Eigener Wert",
+    subtract: "Abziehen",
+    teamScore: "Punkte von {name}",
+    doubleClickToEdit: "Doppelklick zum Bearbeiten",
+  },
+  fontFamilies: {
+    display: "Display",
+    sans: "Sans",
+    system: "System",
+    grotesk: "Grotesk",
+    rounded: "Rund",
+    serif: "Serif",
+    oldStyle: "Old Style",
+    slab: "Slab",
+    mono: "Mono",
+    condensed: "Schmal",
+    handwriting: "Handschrift",
+  },
+  fontWeights: {
+    "300": "Leicht",
+    "400": "Normal",
+    "500": "Medium",
+    "700": "Fett",
+    "900": "Extrafett",
+  },
+};

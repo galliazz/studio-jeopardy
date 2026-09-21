@@ -1,13 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { useForcedLocale } from "@/i18n";
 import { OverlayCanvas, OverlayQueue, OverlayScores } from "@/components/overlay/OverlayPieces";
-import { SAFE, useOverlayState, useTransparentPage } from "@/components/overlay/overlay-state";
+import {
+  SAFE,
+  overlaySearch,
+  useOverlayState,
+  useTransparentPage,
+} from "@/components/overlay/overlay-state";
 
 export const Route = createFileRoute("/overlay/queue/$overlayToken")({
+  validateSearch: overlaySearch,
   head: () => ({
     meta: [
       { title: "Queue overlay — JEOPARDESTINY" },
-      { name: "description", content: "Transparent scores and buzzer queue mirror for OBS browser sources." },
+      {
+        name: "description",
+        content: "Transparent scores and buzzer queue mirror for OBS browser sources.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Queue overlay — JEOPARDESTINY" },
       {
@@ -21,6 +31,8 @@ export const Route = createFileRoute("/overlay/queue/$overlayToken")({
 
 function QueueOverlay() {
   const { overlayToken } = Route.useParams();
+  const { lang } = Route.useSearch();
+  useForcedLocale(lang);
   useTransparentPage();
   const state = useOverlayState(overlayToken);
   if (!state) return null;
@@ -31,13 +43,14 @@ function QueueOverlay() {
         style={{
           position: "absolute",
           top: SAFE,
-          left: SAFE,
+          insetInlineStart: SAFE,
           /*
            * Tutta la larghezza sicura, non 700. Le due pillole dei punteggi,
            * ingrandite 2.6 volte, occupano circa 800 pixel — di più se una
            * squadra ha molti giocatori — e la colonna da 700 ne tagliava via
-           * 95 della seconda. Il contenuto resta allineato a sinistra, quindi
-           * in OBS si ritaglia sempre dallo stesso angolo.
+           * 95 della seconda. Il contenuto resta allineato a sinistra (a
+           * destra in arabo), quindi in OBS si ritaglia sempre dallo stesso
+           * angolo.
            */
           width: 1920 - SAFE * 2,
           maxHeight: 1080 - SAFE * 2,
@@ -54,7 +67,7 @@ function QueueOverlay() {
         }}
       >
         <OverlayScores state={state} />
-        <OverlayQueue state={state} align="left" />
+        <OverlayQueue state={state} align="start" />
       </div>
     </OverlayCanvas>
   );

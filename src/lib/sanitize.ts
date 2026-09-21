@@ -19,7 +19,19 @@
  */
 
 /** Tag conservati. Qualunque altro tag viene rimosso, mantenendone il testo. */
-const ALLOWED_TAGS = new Set(["b", "strong", "i", "em", "u", "s", "span", "font", "br", "div", "p"]);
+const ALLOWED_TAGS = new Set([
+  "b",
+  "strong",
+  "i",
+  "em",
+  "u",
+  "s",
+  "span",
+  "font",
+  "br",
+  "div",
+  "p",
+]);
 
 /** Tag che non hanno una chiusura. */
 const VOID_TAGS = new Set(["br"]);
@@ -43,10 +55,12 @@ const LENGTH = String.raw`-?\d{1,4}(\.\d{1,3})?(px|pt|em|rem|%|ex|ch|vw|vh)?`;
 const SAFE_STYLE_VALUES: Record<string, RegExp> = {
   color: new RegExp(`^(${COLOR})$`),
   "background-color": new RegExp(`^(${COLOR})$`),
-  "font-size": new RegExp(`^(${LENGTH}|smaller|larger|x-small|small|medium|large|x-large|xx-large)$`),
+  "font-size": new RegExp(
+    `^(${LENGTH}|smaller|larger|x-small|small|medium|large|x-large|xx-large)$`,
+  ),
   "font-weight": /^(\d{3}|normal|bold|bolder|lighter)$/,
   "font-style": /^(normal|italic|oblique)$/,
-  "font-family": /^[a-zA-Z0-9\s,\-]{1,120}$/,
+  "font-family": /^[a-zA-Z0-9\s,-]{1,120}$/,
   "text-decoration": /^(none|underline|overline|line-through)( (solid|dotted|dashed|wavy))?$/,
   "text-align": /^(left|right|center|justify)$/,
   "letter-spacing": new RegExp(`^(${LENGTH}|normal)$`),
@@ -57,7 +71,7 @@ const SAFE_STYLE_VALUES: Record<string, RegExp> = {
 const SAFE_ATTR_VALUES: Record<string, RegExp> = {
   color: new RegExp(`^(${COLOR})$`),
   size: /^[1-7]$/,
-  face: /^[a-zA-Z0-9\s,\-]{1,120}$/,
+  face: /^[a-zA-Z0-9\s,-]{1,120}$/,
 };
 
 function sanitizeStyle(value: string): string {
@@ -90,7 +104,8 @@ function sanitizeAttrs(tag: string, raw: string): string {
     const name = match[1]!.toLowerCase();
     if (!allowed.has(name)) continue;
     const value = match[2] ?? match[3] ?? match[4] ?? "";
-    const clean = name === "style" ? sanitizeStyle(value) : SAFE_ATTR_VALUES[name]?.test(value) ? value : "";
+    const clean =
+      name === "style" ? sanitizeStyle(value) : SAFE_ATTR_VALUES[name]?.test(value) ? value : "";
     if (clean) out += ` ${name}="${clean}"`;
   }
   return out;

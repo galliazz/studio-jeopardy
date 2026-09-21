@@ -1,0 +1,71 @@
+import type { Messages } from "../en/index";
+
+export const play: Messages["play"] = {
+  lookup: {
+    finding: "Procurando seu jogo…",
+    serverErrorTitle: "Erro do servidor",
+    serverErrorBody:
+      "O painel está no ar, mas o servidor recusou o pedido. Isso não dá para resolver daqui — avise o apresentador.",
+    notStartedTitle: "O jogo ainda não começou",
+    notStartedBody: "O apresentador ainda não abriu este painel. Espere um pouco e atualize.",
+    notFoundTitle: "Jogo não encontrado",
+    notFoundBody: "Nenhum jogo ao vivo com o código “{code}”. Confira o código e tente de novo.",
+  },
+  join: {
+    intro: "Não precisa de conta — escolha nome, avatar e time.",
+    nameLabel: "Seu nome",
+    nameLength: "Use de {min} a {max} caracteres",
+    avatarLabel: "Seu avatar",
+    avatarOption: "Avatar {avatar}",
+    teamLabel: "Seu time",
+    notAccepting: "Este jogo não está aceitando jogadores agora.",
+    gameGone: "Esse jogo terminou ou não existe mais.",
+    fullOrClosed: "O jogo está cheio ou fechado — fale com o apresentador.",
+    failed: "Não deu para entrar — tente de novo.",
+    joining: "Entrando…",
+    joinGame: "Entrar no jogo",
+  },
+  lobby: {
+    title: "Você entrou",
+    waiting: "Esperando o apresentador abrir o painel…",
+    changeIdentity: "Mudar nome, avatar ou time",
+  },
+  idle: {
+    title: "Prepare-se",
+    body: "Esperando a próxima pergunta.",
+  },
+  buzzer: {
+    youreUp: "É COM VOCÊ!",
+    secondsLeft: "{seconds}s",
+    answerOutLoud: "Responda em voz alta — o apresentador está ouvindo!",
+    lockedOutTitle: "Buzzer bloqueado",
+    lockedOutBody: "Errou — espere a próxima pergunta.",
+    inLine: "NA FILA",
+    position: "#{position}",
+    lockedIn: "Seu buzzer foi registrado!",
+    buzz: "APERTAR",
+    closed: "Os buzzers estão fechados",
+    rejected: "Buzzer recusado",
+    failed: "Não deu para apertar — tente de novo",
+  },
+  reveal: {
+    title: "Resposta revelada",
+    body: "Olhe o painel — já vem a próxima casa.",
+  },
+  finished: {
+    tie: "Deu empate!",
+    wins: "{team} venceu!",
+    yourTeamScored: "Seu time fez <b>{score}</b>",
+  },
+  final: {
+    title: "Final Jeopardy",
+    rules: "Um envio por time — {team} · aposta máxima {max}",
+    wager: "Aposta",
+    answerPlaceholder: "A resposta do seu time…",
+    lockInWager: "Confirmar aposta",
+    submitAnswer: "Enviar resposta final",
+    rejected: "Envio recusado",
+    sentTitle: "Confirmado",
+    sentBody: "A resposta final do seu time foi enviada. Esperando o apresentador…",
+  },
+};

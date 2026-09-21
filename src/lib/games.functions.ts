@@ -16,11 +16,19 @@ export const bootstrapStudio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    let { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+    let { data: profile } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
     if (!profile) {
       const { data: userData } = await supabase.auth.getUser();
       const email = userData.user?.email ?? "host";
-      const username = email.split("@")[0]!.replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 24) || "host";
+      const username =
+        email
+          .split("@")[0]!
+          .replace(/[^a-zA-Z0-9_.-]/g, "")
+          .slice(0, 24) || "host";
       const { data: created, error } = await supabase
         .from("profiles")
         .insert({ id: userId, username })
@@ -30,7 +38,10 @@ export const bootstrapStudio = createServerFn({ method: "GET" })
       profile = created;
       await seedDemoGame(supabase, userId);
     }
-    const { data: games } = await supabase.from("games").select("*").order("updated_at", { ascending: false });
+    const { data: games } = await supabase
+      .from("games")
+      .select("*")
+      .order("updated_at", { ascending: false });
     const list = games ?? [];
 
     // Per-board completeness used by the Studio cards (counts + a 5x5 ready map).
@@ -38,19 +49,31 @@ export const bootstrapStudio = createServerFn({ method: "GET" })
       ? await supabase
           .from("categories")
           .select("id, game_id, position")
-          .in("game_id", list.map((g) => g.id))
+          .in(
+            "game_id",
+            list.map((g) => g.id),
+          )
       : { data: [] };
     const catList = cats ?? [];
     const { data: tiles } = catList.length
       ? await supabase
           .from("tiles")
           .select("category_id, row_index, question, answer")
-          .in("category_id", catList.map((c) => c.id))
+          .in(
+            "category_id",
+            catList.map((c) => c.id),
+          )
       : { data: [] };
-    const catMeta = new Map(catList.map((c) => [c.id, { gameId: c.game_id, position: c.position }]));
+    const catMeta = new Map(
+      catList.map((c) => [c.id, { gameId: c.game_id, position: c.position }]),
+    );
     const stats: Record<string, { total: number; ready: number; grid: boolean[][] }> = {};
     for (const g of list) {
-      stats[g.id] = { total: 0, ready: 0, grid: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => false)) };
+      stats[g.id] = {
+        total: 0,
+        ready: 0,
+        grid: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => false)),
+      };
     }
     for (const t of tiles ?? []) {
       const meta = catMeta.get(t.category_id);
@@ -78,7 +101,11 @@ export const getGameBoard = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: game, error } = await supabase.from("games").select("*").eq("id", data.gameId).single();
+    const { data: game, error } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", data.gameId)
+      .single();
     if (error) throw new Error(error.message);
     const { data: categories } = await supabase
       .from("categories")
@@ -115,7 +142,8 @@ export const updateGame = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     };
     if (data.title !== undefined) patch.title = data.title;
-    if (data.theme !== undefined) patch.theme = { ...DEFAULT_THEME, ...data.theme } as unknown as Json;
+    if (data.theme !== undefined)
+      patch.theme = { ...DEFAULT_THEME, ...data.theme } as unknown as Json;
     const { error } = await context.supabase.from("games").update(patch).eq("id", data.gameId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -167,14 +195,24 @@ export const setRowPoints = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ gameId: z.string().uuid(), rowPoints: z.array(z.number().int().min(0).max(100000)).length(5) })
+      .object({
+        gameId: z.string().uuid(),
+        rowPoints: z.array(z.number().int().min(0).max(100000)).length(5),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: game, error: gErr } = await supabase.from("games").select("*").eq("id", data.gameId).single();
+    const { data: game, error: gErr } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", data.gameId)
+      .single();
     if (gErr) throw new Error(gErr.message);
-    const { data: categories } = await supabase.from("categories").select("id").eq("game_id", data.gameId);
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("game_id", data.gameId);
     const catIds = (categories ?? []).map((c) => c.id);
     for (let row = 0; row < 5; row++) {
       const { error } = await supabase
@@ -184,7 +222,11 @@ export const setRowPoints = createServerFn({ method: "POST" })
         .eq("row_index", row);
       if (error) throw new Error(error.message);
     }
-    const theme = { ...DEFAULT_THEME, ...(game.theme as Record<string, unknown>), rowPoints: data.rowPoints };
+    const theme = {
+      ...DEFAULT_THEME,
+      ...(game.theme as Record<string, unknown>),
+      rowPoints: data.rowPoints,
+    };
     const { error } = await supabase
       .from("games")
       .update({ theme: theme as unknown as Json, updated_at: new Date().toISOString() })
@@ -198,9 +240,17 @@ export const duplicateGame = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: game, error } = await supabase.from("games").select("*").eq("id", data.gameId).single();
+    const { data: game, error } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", data.gameId)
+      .single();
     if (error) throw new Error(error.message);
-    const { data: categories } = await supabase.from("categories").select("*").eq("game_id", game.id).order("position");
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("game_id", game.id)
+      .order("position");
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("*").in("category_id", catIds)
@@ -283,9 +333,17 @@ export const exportGame = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: game, error } = await supabase.from("games").select("*").eq("id", data.gameId).single();
+    const { data: game, error } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", data.gameId)
+      .single();
     if (error) throw new Error(error.message);
-    const { data: categories } = await supabase.from("categories").select("*").eq("game_id", game.id).order("position");
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("*")
+      .eq("game_id", game.id)
+      .order("position");
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("*").in("category_id", catIds)
@@ -367,7 +425,10 @@ export const updateProfile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const patch = stripUndefined(data) as Database["public"]["Tables"]["profiles"]["Update"];
-    const { error } = await context.supabase.from("profiles").update(patch).eq("id", context.userId);
+    const { error } = await context.supabase
+      .from("profiles")
+      .update(patch)
+      .eq("id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

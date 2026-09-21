@@ -11,7 +11,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider";
 import { AddSoundDialog, type NewClip } from "@/components/AddSoundDialog";
-import { addClip, listClips, removeClip, reorderClips, updateClip, MAX_CLIPS } from "@/lib/soundboard.functions";
+import { localizeError, useT } from "@/i18n";
+import {
+  addClip,
+  listClips,
+  removeClip,
+  reorderClips,
+  updateClip,
+  MAX_CLIPS,
+} from "@/lib/soundboard.functions";
 import { shortcutsSuppressed } from "@/lib/shortcuts";
 import {
   getBoardVolume,
@@ -26,6 +34,7 @@ import {
 import { SPRING_UI } from "@/lib/motion";
 
 export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string }) {
+  const t = useT();
   const qc = useQueryClient();
   const addButtonRef = useRef<HTMLButtonElement>(null);
   const [addOpen, setAddOpen] = useState(false);
@@ -49,7 +58,10 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
     if (clips.length) void preloadAll(clips);
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const refresh = useCallback(() => qc.invalidateQueries({ queryKey: ["soundboard", gameId] }), [qc, gameId]);
+  const refresh = useCallback(
+    () => qc.invalidateQueries({ queryKey: ["soundboard", gameId] }),
+    [qc, gameId],
+  );
 
   const fire = useCallback((clip: SoundboardClip) => {
     playClip(clip);
@@ -80,7 +92,7 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
       await reorderClips({ data: { gameId, ids: next.map((c) => c.id) } });
       await refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not reorder");
+      toast.error(localizeError(err, "sound.board.reorderFailed"));
     }
   };
 
@@ -99,18 +111,17 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
         },
       });
       await refresh();
-      toast.success(`${clip.name} added`);
+      toast.success(t("sound.board.clipAdded", { name: clip.name }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add sound");
+      toast.error(localizeError(err, "sound.board.addFailed"));
     }
   };
 
   return (
     <div className="rounded-[32px] bg-card p-5 elev-1">
       <h3 className="mb-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-muted-foreground">
-        <Volume2 className="h-4 w-4" /> Soundboard
+        <Volume2 className="h-4 w-4" /> {t("sound.board.title")}
       </h3>
-
 
       {clips.length === 0 ? (
         <button
@@ -119,9 +130,9 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
           className="flex w-full flex-col items-center gap-1.5 rounded-[28px] border-2 border-dashed border-border px-4 py-8 text-center transition-colors hover:border-primary"
         >
           <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-            <Plus className="h-4 w-4" /> Add sound
+            <Plus className="h-4 w-4" /> {t("sound.board.addSound")}
           </span>
-          <span className="text-xs text-muted-foreground">No sounds yet — add presets or upload your own</span>
+          <span className="text-xs text-muted-foreground">{t("sound.board.empty")}</span>
         </button>
       ) : (
         <>
@@ -166,7 +177,8 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
             disabled={clips.length >= MAX_CLIPS}
             className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border-2 border-dashed border-border px-4 py-2 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
           >
-            <Plus className="h-3.5 w-3.5" /> Add {clips.length >= MAX_CLIPS ? "(full)" : ""}
+            <Plus className="h-3.5 w-3.5" />{" "}
+            {clips.length >= MAX_CLIPS ? t("sound.board.addFull") : t("common.add")}
           </button>
         </>
       )}
@@ -180,7 +192,7 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
             min={0}
             max={100}
             step={1}
-            aria-label="Soundboard volume"
+            aria-label={t("sound.board.volume")}
             onValueChange={([v]) => {
               const next = (v ?? 0) / 100;
               setVolume(next);
@@ -191,11 +203,10 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
             onClick={() => stopAll()}
             className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-xs font-bold text-foreground"
           >
-            <Square className="h-3 w-3" /> Stop all
+            <Square className="h-3 w-3" /> {t("sound.board.stopAll")}
           </button>
         </div>
       )}
-
 
       <AddSoundDialog
         open={addOpen}
@@ -233,6 +244,7 @@ function ClipChip({
   onTrim: (patch: { trimStartMs: number; trimEndMs: number; gain: number }) => Promise<void>;
   onRemove: () => Promise<void>;
 }) {
+  const t = useT();
   const [progress, setProgress] = useState<number | null>(null);
   const [editingTrim, setEditingTrim] = useState(false);
   const key = index < 9 ? String(index + 1) : null;
@@ -264,15 +276,22 @@ function ClipChip({
       onDragStart={onDragStart}
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDropAt}
-      className={`relative flex items-center gap-1.5 overflow-hidden rounded-full pl-2 pr-1.5 ${
+      className={`relative flex items-center gap-1.5 overflow-hidden rounded-full pe-1.5 ps-2 ${
         playing ? "bg-primary" : "bg-lilac"
       }`}
     >
-      <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground" aria-hidden />
+      <GripVertical
+        className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground"
+        aria-hidden
+      />
       <button
         onClick={onPlay}
-        aria-label={`Play ${clip.name}${key ? `, key ${key}` : ""}`}
-        className="min-w-0 flex-1 truncate py-2.5 text-left text-xs font-bold text-foreground"
+        aria-label={
+          key
+            ? t("sound.clip.playWithKey", { name: clip.name, key })
+            : t("sound.clip.play", { name: clip.name })
+        }
+        className="min-w-0 flex-1 truncate py-2.5 text-start text-xs font-bold text-foreground"
       >
         {clip.name}
       </button>
@@ -287,7 +306,7 @@ function ClipChip({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            aria-label={`Options for ${clip.name}`}
+            aria-label={t("sound.clip.options", { name: clip.name })}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-card"
           >
             <MoreVertical className="h-4 w-4" />
@@ -296,21 +315,25 @@ function ClipChip({
         <DropdownMenuContent align="end" className="rounded-[20px]">
           <DropdownMenuItem
             onSelect={() => {
-              const next = window.prompt("Rename clip", clip.name);
+              const next = window.prompt(t("sound.clip.renamePrompt"), clip.name);
               if (next && next.trim()) void onRename(next.trim().slice(0, 40));
             }}
           >
-            Rename
+            {t("sound.clip.rename")}
           </DropdownMenuItem>
-          <DropdownMenuItem disabled={clip.source !== "upload"} onSelect={() => setEditingTrim(true)}>
-            Edit trim
+          <DropdownMenuItem
+            disabled={clip.source !== "upload"}
+            onSelect={() => setEditingTrim(true)}
+          >
+            {t("sound.clip.editTrim")}
           </DropdownMenuItem>
           <DropdownMenuItem className="text-destructive" onSelect={() => void onRemove()}>
-            Remove
+            {t("common.remove")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* Come ogni barra di riproduzione, va da sinistra a destra anche in arabo. */}
       {playing && (
         <span
           aria-hidden
@@ -344,6 +367,7 @@ function TrimEditor({
   onClose: () => void;
   onSave: (patch: { trimStartMs: number; trimEndMs: number; gain: number }) => Promise<void>;
 }) {
+  const t = useT();
   const [start, setStart] = useState(clip.trim_start_ms / 1000);
   const [end, setEnd] = useState(clip.trim_end_ms / 1000);
   const [gain, setGain] = useState(clip.gain);
@@ -351,11 +375,17 @@ function TrimEditor({
   return (
     <div className="absolute inset-x-0 top-full z-20 mt-1 flex flex-col gap-2 rounded-[22px] bg-card p-3 elev-2">
       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        Start {start.toFixed(2)}s
-        <Slider value={[start]} min={0} max={Math.max(end, 8)} step={0.05} onValueChange={([v]) => setStart(v ?? 0)} />
+        {t("sound.trim.start", { seconds: start.toFixed(2) })}
+        <Slider
+          value={[start]}
+          min={0}
+          max={Math.max(end, 8)}
+          step={0.05}
+          onValueChange={([v]) => setStart(v ?? 0)}
+        />
       </label>
       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        End {end.toFixed(2)}s
+        {t("sound.trim.end", { seconds: end.toFixed(2) })}
         <Slider
           value={[end]}
           min={0}
@@ -365,20 +395,33 @@ function TrimEditor({
         />
       </label>
       <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        Gain {Math.round(gain * 100)}%
-        <Slider value={[gain * 100]} min={0} max={200} step={5} onValueChange={([v]) => setGain((v ?? 100) / 100)} />
+        {t("sound.trim.gain", { percent: Math.round(gain * 100) })}
+        <Slider
+          value={[gain * 100]}
+          min={0}
+          max={200}
+          step={5}
+          onValueChange={([v]) => setGain((v ?? 100) / 100)}
+        />
       </label>
       <div className="flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-full border-2 border-border px-3 py-1.5 text-[11px] font-bold">
-          Cancel
+        <button
+          onClick={onClose}
+          className="rounded-full border-2 border-border px-3 py-1.5 text-[11px] font-bold"
+        >
+          {t("common.cancel")}
         </button>
         <button
           onClick={() =>
-            void onSave({ trimStartMs: Math.round(start * 1000), trimEndMs: Math.round(end * 1000), gain })
+            void onSave({
+              trimStartMs: Math.round(start * 1000),
+              trimEndMs: Math.round(end * 1000),
+              gain,
+            })
           }
           className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-foreground"
         >
-          Save
+          {t("common.save")}
         </button>
       </div>
     </div>

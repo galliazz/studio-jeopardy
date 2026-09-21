@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreHorizontal, Minus, Plus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useT } from "@/i18n";
 import type { Player, Team } from "@/lib/types";
 import { SPRING_PLAYFUL, SPRING_UI, useLayoutAnimation } from "@/lib/motion";
 
@@ -37,6 +38,7 @@ function CountUpScore({ value }: { value: number }) {
 }
 
 function TeamCountBadge({ team, count }: { team: Team; count: number }) {
+  const t = useT();
   const animateLayout = useLayoutAnimation();
   return (
     <motion.span
@@ -46,11 +48,14 @@ function TeamCountBadge({ team, count }: { team: Team; count: number }) {
       exit={{ scale: 0.4, opacity: 0 }}
       transition={SPRING_UI}
       className="relative block h-7 w-7 shrink-0"
-      title={`${count} players`}
-      aria-label={`${count} players on this team`}
+      title={t("game.score.teamPlayers", { count })}
+      aria-label={t("game.score.teamPlayersLabel", { count })}
     >
       <svg viewBox="0 0 100 100" className="h-7 w-7">
-        <path d={COOKIE_PATH} className={team === "alpha" ? "fill-team-alpha-ink" : "fill-team-bravo-ink"} />
+        <path
+          d={COOKIE_PATH}
+          className={team === "alpha" ? "fill-team-alpha-ink" : "fill-team-bravo-ink"}
+        />
       </svg>
       <span
         className={`absolute inset-0 flex items-center justify-center pb-[1px] font-display text-[11px] font-black leading-none ${
@@ -77,6 +82,7 @@ function ScoreControls({
   mirrored: boolean;
   onAdjust: (delta: number) => void;
 }) {
+  const t = useT();
   const [custom, setCustom] = useState("");
   const btn =
     "flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
@@ -85,26 +91,37 @@ function ScoreControls({
   return (
     <div
       className={`flex shrink-0 items-center gap-0.5 rounded-full border border-foreground/15 p-1 ${
-        mirrored ? "mr-2 flex-row" : "ml-2 flex-row-reverse"
+        mirrored ? "me-2 flex-row" : "ms-2 flex-row-reverse"
       }`}
     >
-      <button onClick={() => onAdjust(-step)} aria-label={`Subtract ${step} from ${name}`} title={`−${step}`} className={btn}>
+      <button
+        onClick={() => onAdjust(-step)}
+        aria-label={t("game.score.subtractFrom", { step, name })}
+        title={`−${step}`}
+        className={btn}
+      >
         <Minus className="h-4 w-4" />
       </button>
       <Popover>
         <PopoverTrigger asChild>
-          <button aria-label={`Custom score change for ${name}`} title="Custom amount" className={btn}>
+          <button
+            aria-label={t("game.score.customChangeFor", { name })}
+            title={t("game.score.customAmount")}
+            className={btn}
+          >
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </PopoverTrigger>
         <PopoverContent align="center" className="w-[19rem] rounded-[24px] p-4">
-          <p className="mb-2 text-sm font-semibold text-muted-foreground">Custom amount</p>
+          <p className="mb-2 text-sm font-semibold text-muted-foreground">
+            {t("game.score.customAmount")}
+          </p>
           <input
             type="number"
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
             placeholder="0"
-            aria-label="Custom amount"
+            aria-label={t("game.score.customAmount")}
             className="h-11 w-full rounded-full border border-foreground/20 bg-transparent px-4 text-sm font-bold outline-none focus-visible:ring-2 focus-visible:ring-ink-accent"
           />
           {quickValues.length > 0 && (
@@ -131,7 +148,7 @@ function ScoreControls({
               }}
               className="min-h-11 rounded-full bg-success px-3 text-sm font-black text-success-ink disabled:opacity-40"
             >
-              Add
+              {t("common.add")}
             </button>
             <button
               disabled={!amount}
@@ -141,12 +158,17 @@ function ScoreControls({
               }}
               className="min-h-11 rounded-full bg-danger px-3 text-sm font-black text-danger-ink disabled:opacity-40"
             >
-              Subtract
+              {t("game.score.subtract")}
             </button>
           </div>
         </PopoverContent>
       </Popover>
-      <button onClick={() => onAdjust(step)} aria-label={`Add ${step} to ${name}`} title={`+${step}`} className={btn}>
+      <button
+        onClick={() => onAdjust(step)}
+        aria-label={t("game.score.addTo", { step, name })}
+        title={`+${step}`}
+        className={btn}
+      >
         <Plus className="h-4 w-4" />
       </button>
     </div>
@@ -154,7 +176,16 @@ function ScoreControls({
 }
 
 /** The score value, editable in place on double click without shifting layout. */
-function EditableScore({ score, name, onSet }: { score: number; name: string; onSet?: ((value: number) => void) | undefined }) {
+function EditableScore({
+  score,
+  name,
+  onSet,
+}: {
+  score: number;
+  name: string;
+  onSet?: ((value: number) => void) | undefined;
+}) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(score));
   const inputRef = useRef<HTMLInputElement>(null);
@@ -180,7 +211,7 @@ function EditableScore({ score, name, onSet }: { score: number; name: string; on
         ref={inputRef}
         type="number"
         value={draft}
-        aria-label={`${name} score`}
+        aria-label={t("game.score.teamScore", { name })}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
@@ -195,7 +226,7 @@ function EditableScore({ score, name, onSet }: { score: number; name: string; on
   return (
     <div
       className={`${shared} cursor-text`}
-      title="Double-click to edit"
+      title={t("game.score.doubleClickToEdit")}
       onDoubleClick={() => {
         if (!onSet) return;
         setDraft(String(score));
@@ -252,8 +283,8 @@ export function ScorePill({
                 p.locked_out ? "opacity-40" : ""
               }`}
               style={{
-                marginLeft: !mirrored && i > 0 ? "-35%" : undefined,
-                marginRight: mirrored && i > 0 ? "-35%" : undefined,
+                marginInlineStart: !mirrored && i > 0 ? "-35%" : undefined,
+                marginInlineEnd: mirrored && i > 0 ? "-35%" : undefined,
                 zIndex: members.length - i,
               }}
             >
@@ -266,14 +297,20 @@ export function ScorePill({
   );
 
   const text = (
-    <div className={`text-foreground ${mirrored ? "text-right" : "text-left"}`}>
+    <div className={`text-foreground ${mirrored ? "text-end" : "text-start"}`}>
       <div className="text-[9px] font-bold uppercase tracking-wider opacity-70">{name}</div>
       <EditableScore score={score} name={name} onSet={onSet} />
     </div>
   );
 
   const adjust = onAdjust && (
-    <ScoreControls name={name} step={step} quickValues={quickValues} mirrored={mirrored} onAdjust={onAdjust} />
+    <ScoreControls
+      name={name}
+      step={step}
+      quickValues={quickValues}
+      mirrored={mirrored}
+      onAdjust={onAdjust}
+    />
   );
 
   const pill = (

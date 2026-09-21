@@ -1,0 +1,77 @@
+import type { Messages } from "../en/index";
+
+export const studio: Messages["studio"] = {
+  topBar: {
+    title: "Studio",
+  },
+  defaultHostName: "主持人",
+  header: {
+    welcomeBack: "欢迎回来，{name}",
+    welcomeBackGuest: "欢迎回来",
+    loadingBoards: "正在加载题板…",
+    signInToLoad: "登录以加载你的题板",
+    boardCount: { other: "{count} 个题板" },
+  },
+  actions: {
+    createGame: "创建新游戏",
+    importJson: "导入 JSON",
+    searchBoards: "搜索题板",
+    searchPlaceholder: "搜索题板…",
+  },
+  create: {
+    title: "给题板起个名字",
+    placeholder: "例如：周五知识问答之夜",
+    submit: "创建",
+  },
+  signedOut: {
+    body: "登录后才能加载和创建题板。",
+    signIn: "登录",
+  },
+  empty: "还没有题板，创建你的第一个吧！",
+  card: {
+    openInEditor: "在编辑器中打开",
+    options: "题板选项",
+    joinCode: "加入码",
+    rename: "重命名",
+    duplicate: "创建副本",
+    exportJson: "导出 JSON",
+    exportExcel: "导出 Excel",
+    readyToPlay: "准备就绪",
+    tilesReady: { other: "{ready}/{count} 个题格已就绪" },
+    play: "开始游戏",
+  },
+  joinDialog: {
+    title: "加入码",
+    description: "玩家可以输入这个加入码或扫描二维码加入。",
+    linkCopied: "加入链接已复制",
+  },
+  deleteDialog: {
+    title: "删除“{title}”？",
+    description: "这会删除题板及其所有题目。删除后可以立即撤销。",
+    confirm: "删除题板",
+  },
+  toast: {
+    created: "题板已创建",
+    createFailed: "无法创建题板",
+    duplicated: "题板副本已创建",
+    duplicateFailed: "创建副本失败",
+    deleted: "已删除“{title}”",
+    deleteFailed: "删除失败",
+    exportedJson: "已导出为 JSON",
+    exportedExcel: "已导出为 Excel",
+    exportFailed: "导出失败",
+    startFailed: "无法开始游戏",
+    renamed: "题板已重命名",
+    renameFailed: "重命名失败",
+    imported: "题板已导入",
+    importFailed: "导入失败，文件无效",
+  },
+  excel: {
+    sheet: "题板",
+    category: "类别",
+    points: "分值",
+    clue: "题目",
+    answer: "答案",
+    hint: "提示",
+  },
+};

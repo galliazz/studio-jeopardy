@@ -1,0 +1,21 @@
+/** Parole che tornano in tutta l'app. Solo quelle davvero generiche. */
+export const common = {
+  cancel: "Cancel",
+  save: "Save",
+  saved: "Saved",
+  close: "Close",
+  copyLink: "Copy link",
+  linkCopied: "Link copied",
+  delete: "Delete",
+  remove: "Remove",
+  back: "Back",
+  done: "Done",
+  retry: "Try again",
+  add: "Add",
+  reset: "Reset",
+  undo: "Undo",
+  settings: "Settings",
+  home: "Home",
+  language: "Language",
+  somethingWentWrong: "Something went wrong",
+};

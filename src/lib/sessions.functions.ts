@@ -2,17 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { shuffleIds, timerEnd } from "@/lib/sessions.server";
-
-/**
- * Daily Double scelte a mano, lette dal tema del gioco. Stanno lì e non in una
- * colonna propria perché il tema è già il posto dove la pagina di Edit salva
- * le scelte dell'host, e non serviva una migrazione per una lista di id.
- */
-function themeDailyDoubles(theme: unknown): string[] | null {
-  if (!theme || typeof theme !== "object") return null;
-  const value = (theme as { dailyDoubleTileIds?: unknown }).dailyDoubleTileIds;
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : null;
-}
+import {
+  BOARD_TILES,
+  answerDelta,
+  everyoneLockedOut,
+  findNextBuzzer,
+  isDailyDouble,
+  judgeFinalScores,
+  judgeTarget,
+  markTileUsed,
+  pickDailyDoubles,
+  scorePatch,
+  turnPatch,
+} from "@/lib/game-rules";
 
 /** Starts a fresh live session for a game. Picks Daily Double tiles. */
 export const startSession = createServerFn({ method: "POST" })
@@ -20,17 +22,30 @@ export const startSession = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ gameId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { data: game, error: gErr } = await supabase.from("games").select("*").eq("id", data.gameId).single();
+    const { data: game, error: gErr } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", data.gameId)
+      .single();
     if (gErr) throw new Error(gErr.message);
 
     const { error: finishErr } = await supabase
       .from("sessions")
-      .update({ status: "finished", phase: "idle", current_tile_id: null, active_player_id: null, timer_ends_at: null })
+      .update({
+        status: "finished",
+        phase: "idle",
+        current_tile_id: null,
+        active_player_id: null,
+        timer_ends_at: null,
+      })
       .eq("game_id", data.gameId)
       .in("status", ["lobby", "live", "final"]);
     if (finishErr) throw new Error(finishErr.message);
 
-    const { data: categories } = await supabase.from("categories").select("id").eq("game_id", data.gameId);
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("game_id", data.gameId);
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("id").in("category_id", catIds)
@@ -40,11 +55,11 @@ export const startSession = createServerFn({ method: "POST" })
      * sulla sessione: la sessione nasce solo quando si preme Play. Qui si
      * ereditano, e si sorteggiano soltanto se l'host non ne ha scelta nessuna.
      */
-    const tileIds = new Set((tiles ?? []).map((t) => t.id));
-    const chosen = (themeDailyDoubles(game.theme) ?? []).filter((id) => tileIds.has(id));
-    const dailyDoubles = chosen.length
-      ? chosen.slice(0, 2)
-      : shuffleIds([...tileIds]).slice(0, Math.min(2, tileIds.size));
+    const dailyDoubles = pickDailyDoubles(
+      game.theme,
+      (tiles ?? []).map((t) => t.id),
+      shuffleIds,
+    );
 
     const { data: session, error } = await supabase
       .from("sessions")
@@ -74,9 +89,17 @@ export const getHostState = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
-    const { data: game } = await supabase.from("games").select("*").eq("id", session.game_id).single();
+    const { data: game } = await supabase
+      .from("games")
+      .select("*")
+      .eq("id", session.game_id)
+      .single();
     const { data: categories } = await supabase
       .from("categories")
       .select("*")
@@ -140,10 +163,14 @@ export const openTile = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     if (session.status === "finished") throw new Error("Session already finished");
-    const isDD = (session.daily_double_tile_ids as string[]).includes(data.tileId);
+    const isDD = isDailyDouble(session.daily_double_tile_ids as string[], data.tileId);
     const { error: uErr } = await supabase
       .from("sessions")
       .update({
@@ -184,20 +211,23 @@ export const judgeAnswer = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     // Corse dell'host (doppio click, stato già avanzato): niente errore, niente effetto.
-    if (!session.current_tile_id || !session.active_player_id) return { outcome: "noop" as const, delta: 0 };
-    if (session.active_player_id !== data.expectedPlayerId) {
-      return { outcome: "noop" as const, delta: 0 };
-    }
-    // Fissati dopo la guardia: il restringimento di tipo su una proprietà non
-    // sopravvive dentro una closure, e `markJudged` più sotto è una closure.
-    const openTileId: string = session.current_tile_id;
-    const judgedPlayerId: string = session.active_player_id;
+    const target = judgeTarget(session, data.expectedPlayerId);
+    if (!target) return { outcome: "noop" as const, delta: 0 };
+    const { tileId: openTileId, playerId: judgedPlayerId } = target;
 
-    const { data: tile } = await supabase.from("tiles").select("*").eq("id", session.current_tile_id).single();
-    const { data: player } = await supabase.from("players").select("*").eq("id", session.active_player_id).single();
+    const { data: tile } = await supabase.from("tiles").select("*").eq("id", openTileId).single();
+    const { data: player } = await supabase
+      .from("players")
+      .select("*")
+      .eq("id", judgedPlayerId)
+      .single();
     if (!tile || !player) throw new Error("Missing tile or player");
 
     // Guard against double-judging: there must be an active queue row.
@@ -205,8 +235,8 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       .from("buzzer_queue")
       .select("id")
       .eq("session_id", data.sessionId)
-      .eq("tile_id", session.current_tile_id)
-      .eq("player_id", session.active_player_id)
+      .eq("tile_id", openTileId)
+      .eq("player_id", judgedPlayerId)
       .eq("status", "active")
       .maybeSingle();
     /*
@@ -216,18 +246,11 @@ export const judgeAnswer = createServerFn({ method: "POST" })
      */
     if (!activeRow) return { outcome: "noop" as const, delta: 0 };
 
-    /*
-     * Una Daily Double raddoppia in entrambe le direzioni: una casella da 1000
-     * ne dà 2000 se giusta e ne toglie 1000 se sbagliata, contro i 1000 e i 500
-     * di una casella normale. Il moltiplicatore si legge dalla casella, non più
-     * da una puntata: la puntata non esiste più.
-     */
-    const isDD = (session.daily_double_tile_ids as string[]).includes(openTileId);
-    const multiplier = isDD ? 2 : 1;
-    const value = tile.points * multiplier;
-    const delta = data.correct ? value : -Math.round((tile.points / 2) * multiplier);
-    const teamCol = player.team === "alpha" ? "score_alpha" : "score_bravo";
-    const newScore = (teamCol === "score_alpha" ? session.score_alpha : session.score_bravo) + delta;
+    // Il moltiplicatore si legge dalla casella, non più da una puntata: la
+    // puntata non esiste più.
+    const isDD = isDailyDouble(session.daily_double_tile_ids as string[], openTileId);
+    const delta = answerDelta(tile.points, isDD, data.correct);
+    const score = scorePatch(session, player.team, delta);
 
     /*
      * Stesso ordine di `closeTile`: `sessions` PER PRIMA, poi coda e giocatori.
@@ -256,7 +279,7 @@ export const judgeAnswer = createServerFn({ method: "POST" })
           phase: "reveal",
           dd_wager: null,
           timer_ends_at: null,
-          ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
+          ...score,
         })
         .eq("id", data.sessionId);
       if (sErr) throw new Error(sErr.message);
@@ -266,7 +289,7 @@ export const judgeAnswer = createServerFn({ method: "POST" })
         .from("buzzer_queue")
         .update({ status: "cleared", judged_at: judgedAt })
         .eq("session_id", data.sessionId)
-        .eq("tile_id", session.current_tile_id)
+        .eq("tile_id", openTileId)
         .eq("status", "queued");
       return { outcome: "correct" as const, delta };
     }
@@ -279,21 +302,19 @@ export const judgeAnswer = createServerFn({ method: "POST" })
       .from("buzzer_queue")
       .select("*")
       .eq("session_id", data.sessionId)
-      .eq("tile_id", session.current_tile_id)
+      .eq("tile_id", openTileId)
       .eq("status", "queued")
       .order("created_at");
-    let nextEntryId: string | null = null;
-    let nextPlayerId: string | null = null;
-    for (const entry of queued ?? []) {
-      // Chi ha appena sbagliato non può essere ripescato dalla sua stessa coda.
-      if (entry.player_id === judgedPlayerId) continue;
-      const { data: p } = await supabase.from("players").select("locked_out").eq("id", entry.player_id).single();
-      if (p && !p.locked_out) {
-        nextEntryId = entry.id;
-        nextPlayerId = entry.player_id;
-        break;
-      }
-    }
+    const next = await findNextBuzzer(queued ?? [], judgedPlayerId, async (playerId) => {
+      const { data: p } = await supabase
+        .from("players")
+        .select("locked_out")
+        .eq("id", playerId)
+        .single();
+      return !!p && !p.locked_out;
+    });
+    const nextEntryId = next?.id ?? null;
+    const nextPlayerId = next?.player_id ?? null;
 
     /*
      * TUTTI FUORI: la partita non poteva più andare avanti.
@@ -314,9 +335,7 @@ export const judgeAnswer = createServerFn({ method: "POST" })
         .from("players")
         .select("id, locked_out")
         .eq("session_id", data.sessionId);
-      const allOut =
-        (everyone ?? []).length > 0 &&
-        (everyone ?? []).every((p) => p.id === judgedPlayerId || p.locked_out);
+      const allOut = everyoneLockedOut(everyone ?? [], judgedPlayerId);
 
       if (allOut) {
         /*
@@ -339,7 +358,7 @@ export const judgeAnswer = createServerFn({ method: "POST" })
         const { error: rErr } = await supabase
           .from("sessions")
           .update({
-            ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
+            ...score,
             phase: "question_open" as const,
             active_player_id: null,
             timer_ends_at: null,
@@ -352,17 +371,13 @@ export const judgeAnswer = createServerFn({ method: "POST" })
 
     const { error: sErr } = await supabase
       .from("sessions")
-      .update({
-        ...(teamCol === "score_alpha" ? { score_alpha: newScore } : { score_bravo: newScore }),
-        ...(nextPlayerId
-          ? { phase: "answering" as const, active_player_id: nextPlayerId, timer_ends_at: timerEnd() }
-          : { phase: "question_open" as const, active_player_id: null, timer_ends_at: null }),
-      })
+      .update({ ...score, ...turnPatch(nextPlayerId, timerEnd) })
       .eq("id", data.sessionId);
     if (sErr) throw new Error(sErr.message);
 
     await markJudged();
-    if (nextEntryId) await supabase.from("buzzer_queue").update({ status: "active" }).eq("id", nextEntryId);
+    if (nextEntryId)
+      await supabase.from("buzzer_queue").update({ status: "active" }).eq("id", nextEntryId);
     await supabase.from("players").update({ locked_out: true }).eq("id", player.id);
     return { outcome: nextPlayerId ? ("promoted" as const) : ("reopened" as const), delta };
   });
@@ -386,12 +401,14 @@ export const closeTile = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     const tileId = session.current_tile_id;
-    const used = new Set(session.used_tile_ids as string[]);
-    if (tileId) used.add(tileId);
-    const usedArr = [...used];
+    const usedArr = markTileUsed(session.used_tile_ids as string[], tileId);
 
     /*
      * `sessions` PRIMA di tutto il resto. Ogni scrittura fa scattare un evento
@@ -424,7 +441,7 @@ export const closeTile = createServerFn({ method: "POST" })
         .in("status", ["queued", "active"]);
     }
     await supabase.from("players").update({ locked_out: false }).eq("session_id", data.sessionId);
-    return { remaining: 25 - usedArr.length };
+    return { remaining: BOARD_TILES - usedArr.length };
   });
 
 /** Void the current buzzer queue and re-open buzzers on the same tile. */
@@ -433,7 +450,11 @@ export const clearQueue = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     if (session.current_tile_id) {
       /*
@@ -463,7 +484,12 @@ export const clearQueue = createServerFn({ method: "POST" })
       .from("sessions")
       // `dd_wager` va azzerato: se resta impostato, la casella è un Daily
       // Double a cui nessuno può più rispondere.
-      .update({ phase: "question_open", active_player_id: null, timer_ends_at: null, dd_wager: null })
+      .update({
+        phase: "question_open",
+        active_player_id: null,
+        timer_ends_at: null,
+        dd_wager: null,
+      })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
     return { ok: true };
@@ -475,18 +501,31 @@ export const resetBoard = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
-    const { data: categories } = await supabase.from("categories").select("id").eq("game_id", session.game_id);
+    const { data: categories } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("game_id", session.game_id);
     const catIds = (categories ?? []).map((c) => c.id);
     const { data: tiles } = catIds.length
       ? await supabase.from("tiles").select("id").in("category_id", catIds)
       : { data: [] };
     // Anche qui si rispettano le Daily Double scelte a mano nella pagina di Edit.
-    const { data: game } = await supabase.from("games").select("theme").eq("id", session.game_id).single();
-    const tileIds = new Set((tiles ?? []).map((t) => t.id));
-    const chosen = (themeDailyDoubles(game?.theme) ?? []).filter((id) => tileIds.has(id));
-    const dailyDoubles = chosen.length ? chosen.slice(0, 2) : shuffleIds([...tileIds]).slice(0, Math.min(2, tileIds.size));
+    const { data: game } = await supabase
+      .from("games")
+      .select("theme")
+      .eq("id", session.game_id)
+      .single();
+    const dailyDoubles = pickDailyDoubles(
+      game?.theme,
+      (tiles ?? []).map((t) => t.id),
+      shuffleIds,
+    );
 
     // `sessions` per prima: l'host applica una modifica ottimistica enorme
     // (punteggi a zero, board vuota) e le ricariche innescate dalle altre
@@ -520,7 +559,9 @@ export const resetBoard = createServerFn({ method: "POST" })
 export const setDailyDoubles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
-    z.object({ sessionId: z.string().uuid(), tileIds: z.array(z.string().uuid()).max(2) }).parse(data),
+    z
+      .object({ sessionId: z.string().uuid(), tileIds: z.array(z.string().uuid()).max(2) })
+      .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
@@ -536,7 +577,11 @@ export const startFinal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ sessionId: z.string().uuid(), question: z.string().min(1).max(4000), answer: z.string().max(2000) })
+      .object({
+        sessionId: z.string().uuid(),
+        question: z.string().min(1).max(4000),
+        answer: z.string().max(2000),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
@@ -582,12 +627,20 @@ export const judgeFinal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
-      .object({ sessionId: z.string().uuid(), team: z.enum(["alpha", "bravo"]), correct: z.boolean() })
+      .object({
+        sessionId: z.string().uuid(),
+        team: z.enum(["alpha", "bravo"]),
+        correct: z.boolean(),
+      })
       .parse(data),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     const { data: entry } = await supabase
       .from("final_answers")
@@ -622,42 +675,25 @@ export const judgeFinal = createServerFn({ method: "POST" })
       .select("judged, wager")
       .eq("session_id", data.sessionId)
       .neq("team", data.team);
-    const otherJudged = (others ?? []).every((o) => o.judged !== null) && (others ?? []).length > 0;
-
-    /*
-     * La finale è una scommessa fra le due squadre, non contro il banco.
-     * Chi risponde bene tiene la propria puntata e si prende quella avversaria;
-     * chi sbaglia perde la propria. Quindi una risposta giusta muove DUE
-     * punteggi, non uno: per questo si calcolano entrambi.
-     */
-    const ownWager = entry.wager ?? 0;
-    const rivalWager = (others ?? []).reduce((sum, o) => sum + (o.wager ?? 0), 0);
-    let scoreAlpha = session.score_alpha;
-    let scoreBravo = session.score_bravo;
-    if (data.correct) {
-      if (data.team === "alpha") {
-        scoreAlpha += rivalWager;
-        scoreBravo -= rivalWager;
-      } else {
-        scoreBravo += rivalWager;
-        scoreAlpha -= rivalWager;
-      }
-    } else if (data.team === "alpha") {
-      scoreAlpha -= ownWager;
-    } else {
-      scoreBravo -= ownWager;
-    }
+    // Una risposta giusta muove DUE punteggi: la regola è in `judgeFinalScores`.
+    const result = judgeFinalScores({
+      team: data.team,
+      correct: data.correct,
+      ownWager: entry.wager,
+      rivals: others ?? [],
+      scores: session,
+    });
 
     const { error: uErr } = await supabase
       .from("sessions")
       .update({
-        score_alpha: scoreAlpha,
-        score_bravo: scoreBravo,
-        ...(otherJudged ? { status: "finished" as const, phase: "idle" as const } : {}),
+        score_alpha: result.score_alpha,
+        score_bravo: result.score_bravo,
+        ...(result.finished ? { status: "finished" as const, phase: "idle" as const } : {}),
       })
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
-    return { ok: true, finished: otherJudged, delta: data.correct ? rivalWager : -ownWager };
+    return { ok: true, finished: result.finished, delta: result.delta };
   });
 
 /** End the session outright (skip Final Jeopardy). */
@@ -695,10 +731,7 @@ export const adjustScore = createServerFn({ method: "POST" })
       .eq("id", data.sessionId)
       .single();
     if (error) throw new Error(error.message);
-    const patch =
-      data.team === "alpha"
-        ? { score_alpha: session.score_alpha + data.delta }
-        : { score_bravo: session.score_bravo + data.delta };
+    const patch = scorePatch(session, data.team, data.delta);
     const { error: uErr } = await supabase.from("sessions").update(patch).eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
     return { ok: true };
@@ -710,7 +743,11 @@ export const passToNext = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ sessionId: z.string().uuid() }).parse(data))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: session, error } = await supabase.from("sessions").select("*").eq("id", data.sessionId).single();
+    const { data: session, error } = await supabase
+      .from("sessions")
+      .select("*")
+      .eq("id", data.sessionId)
+      .single();
     if (error) throw new Error(error.message);
     if (!session.current_tile_id) throw new Error("No open tile");
 
@@ -727,11 +764,7 @@ export const passToNext = createServerFn({ method: "POST" })
 
     const { error: uErr } = await supabase
       .from("sessions")
-      .update(
-        next
-          ? { phase: "answering" as const, active_player_id: next.player_id, timer_ends_at: timerEnd() }
-          : { phase: "question_open" as const, active_player_id: null, timer_ends_at: null },
-      )
+      .update(turnPatch(next?.player_id ?? null, timerEnd))
       .eq("id", data.sessionId);
     if (uErr) throw new Error(uErr.message);
 
@@ -793,7 +826,11 @@ export const removePlayer = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    await supabase.from("buzzer_queue").delete().eq("session_id", data.sessionId).eq("player_id", data.playerId);
+    await supabase
+      .from("buzzer_queue")
+      .delete()
+      .eq("session_id", data.sessionId)
+      .eq("player_id", data.playerId);
     const { error } = await supabase
       .from("players")
       .delete()

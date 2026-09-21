@@ -1,4 +1,4 @@
-import { DEFAULT_TIMER_DURATION_MS } from "@/hooks/use-countdown";
+import { TIMER_DURATION_MS } from "@/lib/game-rules";
 import type { Category, Game, Player, QueueEntry, Session, Tile } from "@/lib/types";
 
 /**
@@ -7,13 +7,7 @@ import type { Category, Game, Player, QueueEntry, Session, Tile } from "@/lib/ty
  * session, player, queue and tile rows the backend already owns.
  */
 export type ContractPhase =
-  | "lobby"
-  | "board"
-  | "clue_open"
-  | "buzzed"
-  | "revealed"
-  | "final"
-  | "ended";
+  "lobby" | "board" | "clue_open" | "buzzed" | "revealed" | "final" | "ended";
 
 export type TimerState = "idle" | "running" | "expired" | "stopped";
 
@@ -120,7 +114,7 @@ export function toSessionState({
   const playerName = new Map(players.map((p) => [p.id, p.name]));
   const playerTeam = new Map(players.map((p) => [p.id, p.team as string]));
 
-  const durationMs = DEFAULT_TIMER_DURATION_MS;
+  const durationMs = TIMER_DURATION_MS;
   const endsAt = session.timer_ends_at ? Date.parse(session.timer_ends_at) : null;
   const startedAt = endsAt !== null ? new Date(endsAt - durationMs).toISOString() : null;
   const timerState: TimerState =

@@ -2,6 +2,7 @@ import { Zap } from "lucide-react";
 
 import { AccountMenu } from "@/components/AccountMenu";
 import { AppBar } from "@/components/AppBar";
+import { useT } from "@/i18n";
 
 /**
  * Studio app bar: logo badge + page title on the left, a single account avatar
@@ -17,6 +18,7 @@ export function StudioTopBar({
   avatarUrl?: string | null | undefined;
   onOpenSettings: () => void;
 }) {
+  const t = useT();
   return (
     <AppBar
       sticky
@@ -26,11 +28,17 @@ export function StudioTopBar({
             <Zap className="h-5 w-5 text-ink-gold" />
           </span>
           <h1 className="truncate font-display text-[22px] font-semibold leading-7 tracking-tight text-foreground">
-            Studio
+            {t("studio.topBar.title")}
           </h1>
         </>
       }
-      right={<AccountMenu displayName={displayName} avatarUrl={avatarUrl} onOpenSettings={onOpenSettings} />}
+      right={
+        <AccountMenu
+          displayName={displayName}
+          avatarUrl={avatarUrl}
+          onOpenSettings={onOpenSettings}
+        />
+      }
     />
   );
 }

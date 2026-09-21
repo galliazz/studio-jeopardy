@@ -7,7 +7,7 @@ export const settings: Messages["settings"] = {
     changeAvatar: "Trocar avatar",
     displayName: "Nome de exibição",
     email: "E-mail",
-    notSignedIn: "Você não está conectado",
+    notSignedIn: "Não conectado",
     nameLength: "Use de 2 a 24 caracteres",
     nameUpdated: "Nome de exibição atualizado",
     nameSaveFailed: "Não foi possível salvar o nome",

@@ -4,12 +4,12 @@ export const settings: Messages["settings"] = {
   description: "تُطبَّق التغييرات فورًا.",
   account: {
     title: "الحساب",
-    changeAvatar: "تغيير الصورة",
+    changeAvatar: "تغيير الصورة الرمزية",
     displayName: "الاسم الظاهر",
     email: "البريد الإلكتروني",
     notSignedIn: "غير مسجَّل الدخول",
     nameLength: "من 2 إلى 24 حرفًا",
-    nameUpdated: "تغيّر الاسم الظاهر",
+    nameUpdated: "حُدِّث الاسم الظاهر",
     nameSaveFailed: "تعذّر حفظ الاسم",
   },
   appearance: {
@@ -42,7 +42,7 @@ export const settings: Messages["settings"] = {
   keyboard: {
     title: "اختصارات لوحة المفاتيح",
     customKeys: "مفاتيح مخصّصة",
-    customKeysHint: "تُحفظ في ملفك — المفاتيح نفسها على أي حاسوب",
+    customKeysHint: "تُحفظ في ملفك الشخصي — المفاتيح نفسها على أي حاسوب",
     hide: "إخفاء",
     customise: "تخصيص",
   },

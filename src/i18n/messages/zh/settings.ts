@@ -42,7 +42,7 @@ export const settings: Messages["settings"] = {
   keyboard: {
     title: "键盘快捷键",
     customKeys: "自定义按键",
-    customKeysHint: "保存在你的个人资料中，换台电脑也是同样的按键",
+    customKeysHint: "保存在你的个人资料里，换台电脑按键也一样",
     hide: "隐藏",
     customise: "自定义",
   },

@@ -27,7 +27,7 @@ export const play: Messages["play"] = {
   },
   lobby: {
     title: "Ci sei!",
-    waiting: "Aspetta che l'host apra il tabellone…",
+    waiting: "In attesa che l'host apra il tabellone…",
     changeIdentity: "Cambia nome, avatar o squadra",
   },
   idle: {

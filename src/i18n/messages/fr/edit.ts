@@ -111,8 +111,8 @@ export const edit: Messages["edit"] = {
   game: {
     title: "Partie",
     teams: "Équipes",
-    teamColour: "Couleur de {team}",
-    teamName: "Nom de {team}",
+    teamColour: "Couleur de l'équipe {team}",
+    teamName: "Nom de l'équipe {team}",
     teamNameSaved: "Nom d'équipe enregistré",
     pointsLadder: "Barème des points",
     rowPoints: "Points de la ligne {row}",

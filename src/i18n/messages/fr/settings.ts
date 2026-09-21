@@ -37,7 +37,7 @@ export const settings: Messages["settings"] = {
     qualityMedium: "Moyenne",
     qualityLow: "Basse",
     backgroundEffects: "Effets d'arrière-plan",
-    backgroundEffectsHint: "Taches de couleur en fond",
+    backgroundEffectsHint: "Halos de couleur en fond",
   },
   keyboard: {
     title: "Raccourcis clavier",

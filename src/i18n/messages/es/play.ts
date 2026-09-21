@@ -42,7 +42,7 @@ export const play: Messages["play"] = {
     answerOutLoud: "Responde en voz alta — ¡el presentador te escucha!",
     lockedOutTitle: "Bloqueado",
     lockedOutBody: "Incorrecto — espera la siguiente pregunta.",
-    inLine: "EN ESPERA",
+    inLine: "EN COLA",
     position: "#{position}",
     lockedIn: "¡Tu pulsación quedó registrada!",
     buzz: "PULSA",
@@ -67,7 +67,7 @@ export const play: Messages["play"] = {
     lockInWager: "Confirmar apuesta",
     submitAnswer: "Enviar respuesta final",
     rejected: "Envío rechazado",
-    sentTitle: "¡Enviada!",
+    sentTitle: "Respuesta enviada",
     sentBody: "La respuesta final de tu equipo ya está registrada. Esperando al presentador…",
   },
 };

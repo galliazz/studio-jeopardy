@@ -2,7 +2,7 @@ import type { Messages } from "../en/index";
 
 export const auth: Messages["auth"] = {
   backToHome: "返回首页",
-  subtitle: "主持人控制台登录",
+  subtitle: "主持人控制台入口",
   checkEmail: {
     title: "查收邮件",
     body: "我们已向 <b>{email}</b> 发送确认链接。点击链接激活你的主持人账户，然后登录。",

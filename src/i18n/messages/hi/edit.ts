@@ -95,7 +95,7 @@ export const edit: Messages["edit"] = {
       lilacBloom: "बैंगनी बहार",
       peachFizz: "आड़ू फ़िज़",
       mintSorbet: "पुदीना शर्बत",
-      blushButter: "गुलाबी मक्खन",
+      blushButter: "गुलाबी मलाई",
     },
     customColours: "अपने रंग",
     colours: {

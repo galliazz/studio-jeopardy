@@ -40,8 +40,8 @@ export const sound: Messages["sound"] = {
     failed: "Не удалось загрузить",
   },
   trim: {
-    title: "Обрежь свой звук",
-    description: "Выбери кусок клипа, который пойдёт в эфир.",
+    title: "Обрезка звука",
+    description: "Выбери часть клипа, которая пойдёт в эфир.",
     range: "Начало {start} · Конец {end}",
     selection: "Выбрано {length} с / макс. {max} с",
     start: "Начало {seconds} с",

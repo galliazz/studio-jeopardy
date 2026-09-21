@@ -12,12 +12,12 @@ export const edit: Messages["edit"] = {
     title: "Codice partita e QR",
     copyCode: "Copia il codice partita {code}",
     codeCopied: "Codice partita copiato",
-    linkCopied: "Link di accesso copiato",
+    linkCopied: "Link della partita copiato",
   },
   play: {
     title: "I giocatori entrano con questo codice",
     subtitle: "Si apre su qualsiasi telefono — senza app",
-    copyJoinLink: "Copia il link di accesso",
+    copyJoinLink: "Copia il link della partita",
     preparing: "Preparo la sessione…",
     openHostConsole: "Apri la console dell'host",
   },
@@ -36,7 +36,7 @@ export const edit: Messages["edit"] = {
     hasAudio: "Con audio",
   },
   inspector: {
-    nothingSelected: "Niente di selezionato",
+    nothingSelected: "Nessuna selezione",
     emptyHint: "Tocca una casella per modificarne domanda, risposta, media e formattazione.",
     categoryHint: "Anche i nomi delle categorie si modificano — clicca in cima al tabellone.",
     closeEditor: "Chiudi l'editor",

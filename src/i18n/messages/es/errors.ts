@@ -4,7 +4,7 @@ export const errors: Messages["errors"] = {
   session: {
     alreadyFinished: "Esta partida ya terminó.",
     missingTileOrPlayer: "No se encontró la casilla o el jugador que se está evaluando.",
-    noOpenTile: "No hay ninguna casilla abierta ahora.",
+    noOpenTile: "En este momento no hay ninguna casilla abierta.",
     noFinalAnswer: "Este equipo no tiene una respuesta final que evaluar.",
   },
   soundboard: {
@@ -14,7 +14,7 @@ export const errors: Messages["errors"] = {
     signedOut: "Tu sesión se cerró o expiró. Vuelve a iniciar sesión.",
   },
   data: {
-    notFound: "No se encontró. Puede que se haya eliminado.",
+    notFound: "No lo encontramos. Puede que se haya eliminado.",
     notAllowed: "No tienes permiso para hacer eso.",
   },
   upload: {

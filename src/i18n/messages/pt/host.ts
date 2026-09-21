@@ -28,13 +28,13 @@ export const host: Messages["host"] = {
   },
   join: {
     title: "Entrar",
-    subtitle: "Aponte a câmera para o código ou mande o link",
+    subtitle: "Escaneie o código ou mande o link",
     linkCopied: "Link de entrada copiado",
   },
   overlays: {
     title: "Overlays de transmissão",
     subtitle: "Fontes de navegador para o OBS, 1920×1080",
-    copyLink: "Copiar o link de {label}",
+    copyLink: "Copiar o link: {label}",
     openInNewTab: "Abrir {label} em uma nova aba",
     views: {
       board: { label: "Só o painel", hint: "Grade 5×5, pergunta e cronômetro" },
@@ -56,13 +56,13 @@ export const host: Messages["host"] = {
   },
   confirmReset: {
     title: "Zerar o painel?",
-    body: "O placar volta a zero, todas as casas reabrem e novos Daily Double são sorteados.",
+    body: "O placar volta a zero, todas as casas reabrem e novos Daily Doubles são sorteados.",
     done: "Painel zerado",
   },
   confirmRotate: {
     title: "Gerar novos links de overlay?",
     body: "Os links atuais param de funcionar na hora. Qualquer fonte de navegador do OBS que ainda use os antigos fica em branco até você colar os novos.",
-    confirm: "Gerar",
+    confirm: "Gerar novos links",
     done: "Links de overlay renovados",
   },
   confirmEnd: {
@@ -71,7 +71,7 @@ export const host: Messages["host"] = {
   },
   status: {
     tilesLeft: "{remaining}/{total} restantes",
-    dailyDoublesLeft: { one: "{count} Daily Double", other: "{count} Daily Double" },
+    dailyDoublesLeft: { one: "{count} Daily Double", other: "{count} Daily Doubles" },
   },
   roster: {
     liveCount: { one: "Ao vivo · {count} jogador", other: "Ao vivo · {count} jogadores" },
@@ -81,7 +81,7 @@ export const host: Messages["host"] = {
     locked: "Bloqueado",
     options: "Opções de {name}",
     switchTeam: "Trocar de time",
-    removePlayer: "Remover o jogador",
+    removePlayer: "Remover jogador",
   },
   live: {
     title: "Controle ao vivo",
@@ -93,7 +93,7 @@ export const host: Messages["host"] = {
     noScoreChange: "Ninguém pontuou",
     closeTile: "Fechar a casa",
     wrong: "Errou",
-    passToNext: "Passar para o próximo",
+    passToNext: "Passar ao próximo",
     timer: "Cronômetro",
     hostOnlyAnswer: "Só você vê · resposta",
     hint: "Dica: {hint}",
@@ -105,7 +105,7 @@ export const host: Messages["host"] = {
     closed: "Buzzers fechados",
     openTileToArm: "Abra uma casa para liberar os buzzers",
     lockedOut: {
-      one: "{count} de {total} jogador está bloqueado",
+      one: "{count} de {total} jogadores está bloqueado",
       other: "{count} de {total} jogadores estão bloqueados",
     },
     nobodyBuzzed: "Ninguém apertou ainda",

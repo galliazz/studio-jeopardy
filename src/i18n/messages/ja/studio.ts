@@ -42,7 +42,7 @@ export const studio: Messages["studio"] = {
   },
   joinDialog: {
     title: "参加コード",
-    description: "プレイヤーはこのコードか、QRコードの読み取りで参加できます。",
+    description: "プレイヤーはこのコードを入力するか、QRコードを読み取って参加できます。",
     linkCopied: "参加リンクをコピーしました",
   },
   deleteDialog: {

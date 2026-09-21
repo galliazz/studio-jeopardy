@@ -22,7 +22,7 @@ export const auth: Messages["auth"] = {
     signIn: "Anmelden",
     signUp: "Host-Konto erstellen",
   },
-  playersNoAccount: "Spieler brauchen nie ein Konto — sie treten mit einem Spielcode bei.",
+  playersNoAccount: "Spieler brauchen nie ein Konto – sie treten mit einem Spielcode bei.",
   errors: {
     failed: "Authentifizierung fehlgeschlagen",
     invalidCredentials: "Ungültige Anmeldedaten",

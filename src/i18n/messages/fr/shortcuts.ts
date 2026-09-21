@@ -10,7 +10,7 @@ export const shortcuts: Messages["shortcuts"] = {
     closeTile: "Fermer la case ouverte",
   },
   fixed: {
-    soundboard: "Jouer un son de la boîte à sons",
+    soundboard: "Déclencher un son de la boîte à sons",
     settings: "Ouvrir les paramètres",
   },
   keys: {
@@ -23,6 +23,7 @@ export const shortcuts: Messages["shortcuts"] = {
   },
   editor: {
     pressAKey: "appuie sur une touche…",
-    pausedHint: "Les raccourcis sont en pause quand un champ, une fenêtre ou un menu est actif.",
+    pausedHint:
+      "Les raccourcis sont en pause quand un champ, une boîte de dialogue ou un menu est actif.",
   },
 };

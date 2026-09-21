@@ -36,7 +36,7 @@ export const sound: Messages["sound"] = {
     dropTitle: "أفلت ملفًا صوتيًا أو اضغط للتصفّح",
     dropHint: "MP3 أو WAV أو OGG أو M4A · حتى 10 ميغابايت",
     unsupported: "صيغة غير مدعومة — استخدم MP3 أو WAV أو OGG أو M4A",
-    tooLarge: "الملف كبير — 10 ميغابايت كحد أقصى",
+    tooLarge: "الملف كبير جدًا — 10 ميغابايت كحد أقصى",
     failed: "فشل الرفع",
   },
   trim: {
@@ -70,7 +70,7 @@ export const sound: Messages["sound"] = {
     wrong: "إجابة خاطئة",
     alarm: "انتهى الوقت",
     drumroll: "قرع الطبول",
-    suspense: "وتر التشويق",
+    suspense: "نغمة تشويق",
     dailyDouble: "Daily Double",
     applause: "تصفيق",
     fanfare: "نفير النصر",

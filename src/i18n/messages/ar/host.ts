@@ -2,12 +2,12 @@ import type { Messages } from "../en/index";
 
 export const host: Messages["host"] = {
   bar: {
-    leaveConfirm: "تخرج من اللعبة المباشرة؟ يبقى اللاعبون متصلين ويمكنك العودة من Studio.",
+    leaveConfirm: "الخروج من اللعبة المباشرة؟ يبقى اللاعبون متصلين ويمكنك العودة من Studio.",
     closeSession: "إنهاء الجلسة والعودة إلى المحرّر",
   },
   menu: {
     defaultName: "المقدّم",
-    joinCode: "رمز الدخول و QR",
+    joinCode: "رمز الدخول ورمز QR",
     broadcastOverlays: "طبقات البث",
     dailyDoubleTiles: "خانات Daily Double",
     analytics: "الإحصاءات",
@@ -23,7 +23,7 @@ export const host: Messages["host"] = {
     nothingJudged: "لم يُحتسب شيء",
   },
   judge: {
-    everyoneMissed: "أخطأ الجميع — فُتحت الأجراس للكل",
+    everyoneMissed: "أخطأ الجميع — أُعيد فتح الأجراس للكل",
   },
   join: {
     title: "الدخول",
@@ -59,21 +59,21 @@ export const host: Messages["host"] = {
     title: "توليد روابط جديدة للطبقات؟",
     body: "تتوقّف الروابط الحالية فورًا. أي مصدر متصفّح في OBS ما زال يستخدمها سيصبح فارغًا حتى تلصق الروابط الجديدة.",
     confirm: "ولّد من جديد",
-    done: "تولّدت روابط جديدة للطبقات",
+    done: "أُنشئت روابط جديدة للطبقات",
   },
   confirmEnd: {
     title: "إنهاء اللعبة؟",
-    body: "يُنهي هذا الجلسة ويعرض منصّة التتويج. لا يمكن التراجع.",
+    body: "سيؤدي هذا إلى إنهاء الجلسة وعرض منصّة التتويج. لا يمكن التراجع.",
   },
   status: {
     tilesLeft: "بقي {remaining}/{total}",
     dailyDoublesLeft: {
-      zero: "لا Daily Double",
-      one: "Daily Double واحد",
-      two: "Daily Double اثنان",
-      few: "{count} Daily Double",
-      many: "{count} Daily Double",
-      other: "{count} Daily Double",
+      zero: "لا خانات Daily Double",
+      one: "خانة Daily Double",
+      two: "خانتا Daily Double",
+      few: "{count} خانات Daily Double",
+      many: "{count} خانة Daily Double",
+      other: "{count} خانة Daily Double",
     },
   },
   roster: {
@@ -103,14 +103,14 @@ export const host: Messages["host"] = {
     noScoreChange: "بلا تغيير في النقاط",
     closeTile: "إغلاق الخانة",
     wrong: "خطأ",
-    passToNext: "للتالي",
+    passToNext: "مرّر للتالي",
     timer: "المؤقّت",
     hostOnlyAnswer: "للمقدّم فقط · الإجابة",
     hint: "تلميح: {hint}",
     revealAnswer: "كشف الإجابة",
   },
   buzzer: {
-    title: "الجرس",
+    title: "الأجراس",
     armed: "الأجراس جاهزة",
     closed: "الأجراس مغلقة",
     openTileToArm: "افتح خانة لتجهيز الأجراس",
@@ -123,7 +123,7 @@ export const host: Messages["host"] = {
       other: "{count} لاعب محظور من أصل {total}",
     },
     nobodyBuzzed: "لم يضغط أحد بعد",
-    reopenForEveryone: "افتح للجميع",
+    reopenForEveryone: "أعد الفتح للجميع",
   },
   dailyDoubles: {
     title: "خانات Daily Double",

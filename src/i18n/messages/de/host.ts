@@ -15,7 +15,7 @@ export const host: Messages["host"] = {
     finalJeopardy: "Final Jeopardy",
     liveControlPanel: "Live-Steuerung",
     resetBuzzers: "Buzzer zurücksetzen",
-    buzzersReset: "Buzzer zurückgesetzt — alle können wieder buzzern",
+    buzzersReset: "Buzzer zurückgesetzt – alle können wieder buzzern",
     resetBoard: "Spielfeld zurücksetzen",
     endGame: "Spiel beenden",
   },
@@ -24,7 +24,7 @@ export const host: Messages["host"] = {
     nothingJudged: "Es wurde nichts gewertet",
   },
   judge: {
-    everyoneMissed: "Alle daneben — Buzzer wieder für alle offen",
+    everyoneMissed: "Alle daneben – Buzzer wieder für alle offen",
   },
   join: {
     title: "Beitreten",
@@ -64,7 +64,7 @@ export const host: Messages["host"] = {
   },
   confirmEnd: {
     title: "Spiel beenden?",
-    body: "Das schließt die Sitzung und zeigt das Podium. Rückgängig geht nicht.",
+    body: "Das schließt die Sitzung und zeigt das Podium. Das lässt sich nicht rückgängig machen.",
   },
   status: {
     tilesLeft: "{remaining}/{total} übrig",
@@ -117,15 +117,15 @@ export const host: Messages["host"] = {
   analytics: {
     title: "Spielauswertung",
     subtitle: "Punkteverlauf & Buzzer-Aktivität",
-    empty: "Noch nichts gewertet — die Daten kommen beim Spielen.",
+    empty: "Noch nichts gewertet – die Daten kommen beim Spielen.",
     buzzes: { one: "{count}× gebuzzert", other: "{count}× gebuzzert" },
   },
   finalSetup: {
     title: "Final Jeopardy",
-    subtitle: "Leg die letzte Frage fest — die Teams setzen und antworten",
+    subtitle: "Leg die letzte Frage fest – die Teams setzen und antworten",
     cluePlaceholder: "Die letzte Frage…",
     answerPlaceholder: "Richtige Antwort",
-    started: "Final Jeopardy läuft — die Teams setzen",
+    started: "Final Jeopardy läuft – die Teams setzen",
     start: "Final Jeopardy starten",
   },
   final: {

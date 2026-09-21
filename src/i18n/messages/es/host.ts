@@ -29,12 +29,12 @@ export const host: Messages["host"] = {
   join: {
     title: "Unirse",
     subtitle: "Escanea el código o manda el enlace",
-    linkCopied: "Enlace para unirse copiado",
+    linkCopied: "Enlace de la partida copiado",
   },
   overlays: {
     title: "Overlays de transmisión",
     subtitle: "Fuentes de navegador para OBS, 1920×1080",
-    copyLink: "Copiar el enlace de {label}",
+    copyLink: "Copiar enlace de {label}",
     openInNewTab: "Abrir {label} en una pestaña nueva",
     views: {
       board: { label: "Solo el tablero", hint: "Cuadrícula 5×5, pregunta y temporizador" },
@@ -142,7 +142,7 @@ export const host: Messages["host"] = {
     wrong: "Incorrecta",
     judgedCorrect: "Marcada correcta",
     judgedWrong: "Marcada incorrecta",
-    noAnswer: "No envió respuesta",
+    noAnswer: "Sin respuesta",
     finishGame: "Terminar partida",
   },
   podium: {

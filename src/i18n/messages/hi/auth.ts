@@ -2,7 +2,7 @@ import type { Messages } from "../en/index";
 
 export const auth: Messages["auth"] = {
   backToHome: "होम पर वापस",
-  subtitle: "होस्ट कंसोल में साइन इन",
+  subtitle: "होस्ट कंसोल में प्रवेश",
   checkEmail: {
     title: "अपना इनबॉक्स देखो",
     body: "हमने <b>{email}</b> पर पुष्टि का लिंक भेजा है। होस्ट अकाउंट चालू करने के लिए उस पर क्लिक करो, फिर साइन इन करो।",
@@ -24,7 +24,7 @@ export const auth: Messages["auth"] = {
   },
   playersNoAccount: "खिलाड़ियों को अकाउंट की ज़रूरत नहीं — वे गेम कोड से जुड़ते हैं।",
   errors: {
-    failed: "साइन इन नहीं हो पाया",
+    failed: "पहचान की पुष्टि नहीं हो पाई",
     invalidCredentials: "ईमेल या पासवर्ड गलत है",
     emailNotConfirmed: "ईमेल की पुष्टि नहीं हुई है",
     userAlreadyRegistered: "यह ईमेल पहले से रजिस्टर है",

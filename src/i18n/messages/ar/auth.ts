@@ -24,7 +24,7 @@ export const auth: Messages["auth"] = {
   },
   playersNoAccount: "اللاعبون لا يحتاجون حسابًا — يدخلون برمز اللعبة.",
   errors: {
-    failed: "فشل تسجيل الدخول",
+    failed: "فشلت المصادقة",
     invalidCredentials: "بيانات الدخول غير صحيحة",
     emailNotConfirmed: "البريد الإلكتروني غير مؤكَّد",
     userAlreadyRegistered: "المستخدم مسجَّل بالفعل",

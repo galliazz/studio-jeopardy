@@ -9,5 +9,5 @@ export const home: Messages["home"] = {
     submit: "Entrar",
   },
   openStudio: "Abra seu Studio",
-  hostYourOwn: "Apresente o seu painel",
+  hostYourOwn: "Apresente seu painel",
 };

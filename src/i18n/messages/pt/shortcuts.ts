@@ -5,7 +5,7 @@ export const shortcuts: Messages["shortcuts"] = {
     reveal: "Mostrar a resposta",
     judgeCorrect: "Marcar como certa",
     judgeWrong: "Marcar como errada",
-    passToNext: "Passar para o próximo jogador",
+    passToNext: "Passar ao próximo jogador",
     restartTimer: "Reiniciar o cronômetro",
     closeTile: "Fechar a casa aberta",
   },

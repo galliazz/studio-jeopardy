@@ -12,7 +12,7 @@ export const play: Messages["play"] = {
     notFoundBody: "Nenhum jogo ao vivo com o código “{code}”. Confira o código e tente de novo.",
   },
   join: {
-    intro: "Sem conta — escolha um nome, um avatar e um time.",
+    intro: "Não precisa de conta — escolha nome, avatar e time.",
     nameLabel: "Seu nome",
     nameLength: "Use de {min} a {max} caracteres",
     avatarLabel: "Seu avatar",
@@ -46,11 +46,11 @@ export const play: Messages["play"] = {
     buzz: "APERTAR",
     closed: "Os buzzers estão fechados",
     rejected: "Buzzer recusado",
-    failed: "O buzzer não foi — tente de novo",
+    failed: "Não deu para apertar — tente de novo",
   },
   reveal: {
     title: "Resposta revelada",
-    body: "Olhe o painel — vem outra casa aí.",
+    body: "Olhe o painel — já vem a próxima casa.",
   },
   finished: {
     tie: "Deu empate!",
@@ -62,8 +62,8 @@ export const play: Messages["play"] = {
     rules: "Um envio por time — {team} · aposta máxima {max}",
     wager: "Aposta",
     answerPlaceholder: "A resposta do seu time…",
-    lockInWager: "Confirmar a aposta",
-    submitAnswer: "Enviar a resposta final",
+    lockInWager: "Confirmar aposta",
+    submitAnswer: "Enviar resposta final",
     rejected: "Envio recusado",
     sentTitle: "Confirmado",
     sentBody: "A resposta final do seu time foi enviada. Esperando o apresentador…",

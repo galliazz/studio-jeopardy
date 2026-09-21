@@ -12,7 +12,7 @@ export const game: Messages["game"] = {
   queue: {
     title: "Coda dei buzzer",
     clear: "Svuota la coda",
-    clearConfirm: "Svuotare la coda dei buzzer? Chi è in attesa viene tolto.",
+    clearConfirm: "Svuotare la coda dei buzzer? Chi è in attesa viene rimosso.",
     position: "#{position}",
     firstIn: "primo",
     deltaMs: "+{ms}ms",

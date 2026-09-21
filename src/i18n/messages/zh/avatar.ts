@@ -32,7 +32,7 @@ export const avatar: Messages["avatar"] = {
   select: "选择",
   errors: {
     unsupported: "请使用 JPG、PNG 或 WebP 图片",
-    tooLarge: "图片超过了 5MB",
+    tooLarge: "图片超过 5MB",
     signInToUpload: "登录后才能上传照片",
     uploadFailed: "上传失败",
     saveFailed: "无法保存头像",

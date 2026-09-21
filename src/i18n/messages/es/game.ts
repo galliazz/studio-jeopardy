@@ -12,7 +12,7 @@ export const game: Messages["game"] = {
   queue: {
     title: "Cola de pulsadores",
     clear: "Vaciar cola",
-    clearConfirm: "¿Vaciar la cola de pulsadores? Se quita a todos los que esperan.",
+    clearConfirm: "¿Vaciar la cola de pulsadores? Salen todos los que están esperando.",
     position: "#{position}",
     firstIn: "primero",
     deltaMs: "+{ms}ms",

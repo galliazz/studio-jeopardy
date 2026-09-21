@@ -5,7 +5,7 @@ export const shortcuts: Messages["shortcuts"] = {
     reveal: "كشف الإجابة",
     judgeCorrect: "احتساب إجابة صحيحة",
     judgeWrong: "احتساب إجابة خاطئة",
-    passToNext: "التمرير للاعب التالي",
+    passToNext: "التمرير إلى اللاعب التالي",
     restartTimer: "إعادة تشغيل المؤقّت",
     closeTile: "إغلاق الخانة المفتوحة",
   },

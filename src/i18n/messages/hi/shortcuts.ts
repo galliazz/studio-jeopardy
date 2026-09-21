@@ -5,7 +5,7 @@ export const shortcuts: Messages["shortcuts"] = {
     reveal: "जवाब दिखाओ",
     judgeCorrect: "सही ठहराओ",
     judgeWrong: "गलत ठहराओ",
-    passToNext: "अगले खिलाड़ी को दो",
+    passToNext: "अगले खिलाड़ी को बारी दो",
     restartTimer: "टाइमर फिर से चालू करो",
     closeTile: "खुली टाइल बंद करो",
   },

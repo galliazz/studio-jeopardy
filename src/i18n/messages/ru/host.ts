@@ -40,7 +40,10 @@ export const host: Messages["host"] = {
       scores: { label: "Только счёт", hint: "Счёт обеих команд" },
       buzzer: { label: "Только кнопки", hint: "Кто нажал и в каком порядке" },
       combined: { label: "Общий оверлей", hint: "Табло, счёт и кнопки вместе" },
-      queue: { label: "Кнопки + счёт", hint: "Старая комбинация, оставлена для готовых сцен" },
+      queue: {
+        label: "Кнопки + счёт",
+        hint: "Старая комбинация, оставлена для уже настроенных сцен",
+      },
     },
     steps: {
       browserSource: "Добавь как источник «Браузер»",
@@ -83,7 +86,7 @@ export const host: Messages["host"] = {
     },
     inLobby: "В лобби",
     empty: "Пока никто не вошёл.",
-    live: "В игре",
+    live: "Онлайн",
     locked: "Блок",
     options: "Действия: {name}",
     switchTeam: "Сменить команду",

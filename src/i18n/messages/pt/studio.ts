@@ -6,8 +6,8 @@ export const studio: Messages["studio"] = {
   },
   defaultHostName: "Apresentador",
   header: {
-    welcomeBack: "Bem-vindo de volta, {name}",
-    welcomeBackGuest: "Bem-vindo de volta",
+    welcomeBack: "Que bom te ver de novo, {name}",
+    welcomeBackGuest: "Que bom te ver de novo",
     loadingBoards: "Carregando seus painéis…",
     signInToLoad: "Entre para carregar seus painéis",
     boardCount: { one: "{count} painel", other: "{count} painéis" },
@@ -24,7 +24,7 @@ export const studio: Messages["studio"] = {
     submit: "Criar",
   },
   signedOut: {
-    body: "Você precisa estar conectado para carregar e criar painéis.",
+    body: "Você precisa entrar para carregar e criar painéis.",
     signIn: "Entrar",
   },
   empty: "Nenhum painel ainda — crie o primeiro!",
@@ -45,7 +45,7 @@ export const studio: Messages["studio"] = {
   },
   joinDialog: {
     title: "Código de entrada",
-    description: "Os jogadores entram com este código ou lendo o QR.",
+    description: "Os jogadores entram com este código ou escaneando o QR.",
     linkCopied: "Link de entrada copiado",
   },
   deleteDialog: {

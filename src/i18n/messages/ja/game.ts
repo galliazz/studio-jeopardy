@@ -11,7 +11,7 @@ export const game: Messages["game"] = {
   },
   queue: {
     title: "早押し順",
-    clear: "順番をクリア",
+    clear: "早押し順をクリア",
     clearConfirm: "早押し順をクリアしますか？待っている全員が外れます。",
     position: "{position}番",
     firstIn: "一番乗り",

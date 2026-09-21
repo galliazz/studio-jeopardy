@@ -8,5 +8,5 @@ export const home: Messages["home"] = {
     submit: "دخول",
   },
   openStudio: "افتح Studio",
-  hostYourOwn: "قدّم لوحتك أنت",
+  hostYourOwn: "قدّم لوحتك الخاصة",
 };

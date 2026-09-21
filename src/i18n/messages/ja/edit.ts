@@ -9,14 +9,14 @@ export const edit: Messages["edit"] = {
     clickToRename: "クリックして名前を変更",
   },
   join: {
-    title: "参加コードとQR",
+    title: "参加コードとQRコード",
     copyCode: "参加コード {code} をコピー",
     codeCopied: "参加コードをコピーしました",
     linkCopied: "参加リンクをコピーしました",
   },
   play: {
     title: "プレイヤーはこのコードで参加",
-    subtitle: "どのスマホでも開けます — アプリは不要です",
+    subtitle: "どのスマホでも開けます。アプリは不要です",
     copyJoinLink: "参加リンクをコピー",
     preparing: "セッションを準備中…",
     openHostConsole: "司会者コンソールを開く",
@@ -27,7 +27,7 @@ export const edit: Messages["edit"] = {
     donePicking: "選択完了",
     maxReached: "Daily Double は2つまでです。先に1つ外してください",
     pickingHint:
-      "ボードのマスをタップして指定します。何も選ばなければ、ゲームがランダムに2つ選びます。",
+      "ボードのマスをタップして指定してください。何も選ばなければ、ゲームがランダムに2つ選びます。",
   },
   tile: {
     dailyDouble: "Daily Double",

@@ -20,7 +20,7 @@ export const host: Messages["host"] = {
     endGame: "Terminer la partie",
   },
   errors: {
-    actionFailed: "L'action n'est pas passée",
+    actionFailed: "L'action n'a pas abouti",
     nothingJudged: "Rien n'a été jugé",
   },
   judge: {
@@ -34,8 +34,8 @@ export const host: Messages["host"] = {
   overlays: {
     title: "Overlays de diffusion",
     subtitle: "Sources navigateur pour OBS, 1920×1080",
-    copyLink: "Copier le lien {label}",
-    openInNewTab: "Ouvrir {label} dans un nouvel onglet",
+    copyLink: "Copier le lien « {label} »",
+    openInNewTab: "Ouvrir « {label} » dans un nouvel onglet",
     views: {
       board: { label: "Plateau seul", hint: "Grille 5×5, question et chrono" },
       scores: { label: "Scores seuls", hint: "Les scores des deux équipes" },
@@ -49,7 +49,7 @@ export const host: Messages["host"] = {
     steps: {
       browserSource: "Ajoute-le comme source navigateur",
       size: "Largeur 1920, hauteur 1080",
-      shutdownSource: "Décoche « Éteindre la source lorsqu'elle n'est pas visible »",
+      shutdownSource: "Décoche « Fermer la source lorsqu'elle n'est pas visible »",
       refreshBrowser: "Décoche « Rafraîchir le navigateur lorsque la scène devient active »",
     },
     regenerateLinks: "Régénérer les liens",
@@ -61,13 +61,13 @@ export const host: Messages["host"] = {
   },
   confirmRotate: {
     title: "Régénérer les liens des overlays ?",
-    body: "Les liens actuels cessent de marcher tout de suite. Toute source navigateur OBS qui les utilise encore reste vide tant que tu n'as pas collé les nouveaux liens.",
+    body: "Les liens actuels cessent de fonctionner immédiatement. Toute source navigateur OBS qui les utilise encore reste vide tant que tu n'as pas collé les nouveaux liens.",
     confirm: "Régénérer",
     done: "Liens des overlays régénérés",
   },
   confirmEnd: {
     title: "Terminer la partie ?",
-    body: "Ça ferme la session et affiche le podium. C'est irréversible.",
+    body: "La session se ferme et le podium s'affiche. C'est irréversible.",
   },
   status: {
     tilesLeft: "{remaining}/{total} restantes",
@@ -103,22 +103,22 @@ export const host: Messages["host"] = {
     wrong: "Faux",
     passToNext: "Au suivant",
     timer: "Chrono",
-    hostOnlyAnswer: "Privé · réponse",
+    hostOnlyAnswer: "Réponse · privée",
     hint: "Indice : {hint}",
     revealAnswer: "Révéler la réponse",
   },
   buzzer: {
     title: "Buzzers",
-    armed: "Buzzers armés",
+    armed: "Buzzers actifs",
     closed: "Buzzers fermés",
-    openTileToArm: "Ouvre une case pour armer les buzzers",
+    openTileToArm: "Ouvre une case pour activer les buzzers",
     lockedOut: {
       one: "{count} joueur sur {total} est bloqué",
       many: "{count} de joueurs sur {total} sont bloqués",
       other: "{count} joueurs sur {total} sont bloqués",
     },
     nobodyBuzzed: "Personne n'a encore buzzé",
-    reopenForEveryone: "Rouvrir pour tout le monde",
+    reopenForEveryone: "Rouvrir pour tous",
   },
   dailyDoubles: {
     title: "Cases Daily Double",

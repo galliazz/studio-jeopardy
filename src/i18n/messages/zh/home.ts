@@ -8,5 +8,5 @@ export const home: Messages["home"] = {
     submit: "加入",
   },
   openStudio: "打开你的 Studio",
-  hostYourOwn: "主持你自己的题板",
+  hostYourOwn: "自己当主持人",
 };

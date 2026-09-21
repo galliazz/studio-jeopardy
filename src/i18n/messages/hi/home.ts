@@ -1,7 +1,7 @@
 import type { Messages } from "../en/index";
 
 export const home: Messages["home"] = {
-  tagline: "बोर्ड बनाओ। कोड शेयर करो। फ़ोन बनें बज़र, और होस्ट तुम।",
+  tagline: "बोर्ड बनाओ। कोड शेयर करो। फ़ोन बन जाएँ बज़र। होस्ट बनो तुम।",
   join: {
     label: "लाइव गेम से जुड़ो",
     placeholder: "गेम कोड",

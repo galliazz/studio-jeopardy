@@ -31,7 +31,7 @@ export const studio: Messages["studio"] = {
   card: {
     openInEditor: "Abrir en el editor",
     options: "Opciones del tablero",
-    joinCode: "Código para unirse",
+    joinCode: "Código de partida",
     rename: "Renombrar",
     duplicate: "Duplicar",
     exportJson: "Exportar JSON",
@@ -44,9 +44,9 @@ export const studio: Messages["studio"] = {
     play: "Jugar",
   },
   joinDialog: {
-    title: "Código para unirse",
+    title: "Código de partida",
     description: "Los jugadores pueden entrar con este código o escaneando el QR.",
-    linkCopied: "Enlace para unirse copiado",
+    linkCopied: "Enlace de la partida copiado",
   },
   deleteDialog: {
     title: "¿Eliminar “{title}”?",

@@ -20,7 +20,7 @@ export const avatar: Messages["avatar"] = {
     title: "Foto hochladen",
     yourPhoto: "Dein hochgeladenes Foto",
     dropZone: "Foto hochladen",
-    dropTitle: "Bild hier ablegen oder klicken zum Auswählen",
+    dropTitle: "Bild hier ablegen oder zum Auswählen klicken",
     dropHint: "JPG, PNG oder WebP · bis 5 MB",
   },
   crop: {

@@ -1,13 +1,13 @@
 import type { Messages } from "../en/index";
 
 export const settings: Messages["settings"] = {
-  description: "Le modifiche valgono subito.",
+  description: "Le modifiche hanno effetto subito.",
   account: {
     title: "Account",
     changeAvatar: "Cambia avatar",
     displayName: "Nome visualizzato",
     email: "Email",
-    notSignedIn: "Non hai effettuato l'accesso",
+    notSignedIn: "Accesso non effettuato",
     nameLength: "Da 2 a 24 caratteri",
     nameUpdated: "Nome aggiornato",
     nameSaveFailed: "Impossibile salvare il nome",

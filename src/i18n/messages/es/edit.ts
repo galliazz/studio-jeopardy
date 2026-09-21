@@ -12,7 +12,7 @@ export const edit: Messages["edit"] = {
     title: "Código y QR",
     copyCode: "Copiar el código {code}",
     codeCopied: "Código copiado",
-    linkCopied: "Enlace para unirse copiado",
+    linkCopied: "Enlace de la partida copiado",
   },
   play: {
     title: "Los jugadores entran con este código",
@@ -39,7 +39,7 @@ export const edit: Messages["edit"] = {
     nothingSelected: "Nada seleccionado",
     emptyHint: "Toca cualquier casilla para editar su pregunta, respuesta, multimedia y formato.",
     categoryHint:
-      "Los nombres de las categorías también se editan — haz clic en uno arriba del tablero.",
+      "Los nombres de las categorías también se pueden editar — haz clic en uno arriba del tablero.",
     closeEditor: "Cerrar editor",
     closeWithEsc: "Cerrar (Esc)",
     question: "Pregunta",
@@ -82,7 +82,7 @@ export const edit: Messages["edit"] = {
     weightAuto: "Auto",
     size: "Tamaño",
     textSize: "Tamaño del texto",
-    /* Las letras de los botones de estilo, como en Word en español: N, K, S. */
+    /* Anche Word in spagnolo mostra N, K e S su questi bottoni. */
     boldShort: "N",
     italicShort: "K",
     underlineShort: "S",

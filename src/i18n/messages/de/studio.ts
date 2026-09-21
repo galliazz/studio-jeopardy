@@ -27,7 +27,7 @@ export const studio: Messages["studio"] = {
     body: "Du musst angemeldet sein, um Spielfelder zu laden und zu erstellen.",
     signIn: "Anmelden",
   },
-  empty: "Noch keine Spielfelder — leg dein erstes an!",
+  empty: "Noch keine Spielfelder – leg dein erstes an!",
   card: {
     openInEditor: "Im Editor öffnen",
     options: "Spielfeld-Optionen",
@@ -68,7 +68,7 @@ export const studio: Messages["studio"] = {
     renamed: "Spielfeld umbenannt",
     renameFailed: "Umbenennen fehlgeschlagen",
     imported: "Spielfeld importiert",
-    importFailed: "Import fehlgeschlagen — ungültige Datei",
+    importFailed: "Import fehlgeschlagen – ungültige Datei",
   },
   excel: {
     sheet: "Spielfeld",

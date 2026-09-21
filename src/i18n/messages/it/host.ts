@@ -29,7 +29,7 @@ export const host: Messages["host"] = {
   join: {
     title: "Entra",
     subtitle: "Inquadra il codice o manda il link",
-    linkCopied: "Link di accesso copiato",
+    linkCopied: "Link della partita copiato",
   },
   overlays: {
     title: "Overlay per la diretta",
@@ -58,7 +58,7 @@ export const host: Messages["host"] = {
   },
   confirmRotate: {
     title: "Rigenerare i link degli overlay?",
-    body: "I link di adesso smettono subito di funzionare. Le sorgenti browser di OBS che li usano restano vuote finché non incolli i nuovi link.",
+    body: "I link attuali smettono subito di funzionare. Le sorgenti browser di OBS che li usano restano vuote finché non incolli i nuovi link.",
     confirm: "Rigenera",
     done: "Link degli overlay rigenerati",
   },
@@ -90,7 +90,7 @@ export const host: Messages["host"] = {
     noScoreChange: "Punteggio invariato",
     closeTile: "Chiudi la casella",
     wrong: "Sbagliata",
-    passToNext: "Passa al prossimo",
+    passToNext: "Al prossimo",
     timer: "Timer",
     hostOnlyAnswer: "Solo host · risposta",
     hint: "Suggerimento: {hint}",

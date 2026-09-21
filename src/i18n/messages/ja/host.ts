@@ -7,7 +7,7 @@ export const host: Messages["host"] = {
   },
   menu: {
     defaultName: "司会者",
-    joinCode: "参加コードとQR",
+    joinCode: "参加コードとQRコード",
     broadcastOverlays: "配信用オーバーレイ",
     dailyDoubleTiles: "Daily Double のマス",
     analytics: "分析",
@@ -52,7 +52,7 @@ export const host: Messages["host"] = {
   },
   confirmReset: {
     title: "ボードをリセットしますか？",
-    body: "スコアが0に戻り、すべてのマスが未使用に戻り、新しい Daily Double が選ばれます。",
+    body: "スコアは0になり、すべてのマスが未使用に戻り、新しい Daily Double が選ばれます。",
     done: "ボードをリセットしました",
   },
   confirmRotate: {
@@ -111,14 +111,14 @@ export const host: Messages["host"] = {
     save: "保存（{selected}/2）",
   },
   analytics: {
-    title: "試合の分析",
+    title: "ゲームの分析",
     subtitle: "スコアの推移と早押しの記録",
     empty: "判定済みの解答はまだありません。プレイするとデータが表示されます。",
     buzzes: { other: "早押し{count}回" },
   },
   finalSetup: {
     title: "Final Jeopardy",
-    subtitle: "最終問題を設定します。各チームがベットして解答します",
+    subtitle: "最終問題を設定してください。各チームがベットして解答します",
     cluePlaceholder: "最終問題…",
     answerPlaceholder: "正解",
     started: "Final Jeopardy 開始。各チームがベット中です",

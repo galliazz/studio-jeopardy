@@ -42,7 +42,7 @@ export const settings: Messages["settings"] = {
   keyboard: {
     title: "キーボードショートカット",
     customKeys: "カスタムキー",
-    customKeysHint: "プロフィールに保存 — どのパソコンでも同じキー",
+    customKeysHint: "プロフィールに保存され、どのパソコンでも同じキーが使えます",
     hide: "閉じる",
     customise: "カスタマイズ",
   },

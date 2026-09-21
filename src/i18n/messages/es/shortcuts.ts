@@ -23,6 +23,6 @@ export const shortcuts: Messages["shortcuts"] = {
   },
   editor: {
     pressAKey: "presiona una tecla…",
-    pausedHint: "Los atajos se pausan cuando un campo, diálogo o menú está activo.",
+    pausedHint: "Los atajos se pausan mientras un campo, diálogo o menú tiene el foco.",
   },
 };

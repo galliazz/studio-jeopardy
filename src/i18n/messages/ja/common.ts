@@ -8,7 +8,7 @@ export const common: Messages["common"] = {
   copyLink: "リンクをコピー",
   linkCopied: "リンクをコピーしました",
   delete: "削除",
-  remove: "外す",
+  remove: "削除",
   back: "戻る",
   done: "完了",
   retry: "再試行",

@@ -21,7 +21,7 @@ export const play: Messages["play"] = {
     notAccepting: "यह गेम अभी नए खिलाड़ी नहीं ले रहा।",
     gameGone: "वह गेम खत्म हो चुका है या अब मौजूद नहीं है।",
     fullOrClosed: "गेम भर गया है या बंद है — होस्ट से पूछो।",
-    failed: "जुड़ नहीं पाए — फिर से कोशिश करो।",
+    failed: "जुड़ना नहीं हो पाया — फिर से कोशिश करो।",
     joining: "जुड़ रहे हैं…",
     joinGame: "गेम से जुड़ो",
   },
@@ -45,8 +45,8 @@ export const play: Messages["play"] = {
     lockedIn: "तुम्हारा बज़र दर्ज हो गया!",
     buzz: "दबाओ!",
     closed: "बज़र बंद हैं",
-    rejected: "बज़र नहीं माना गया",
-    failed: "बज़र नहीं दबा — फिर से कोशिश करो",
+    rejected: "बज़र स्वीकार नहीं हुआ",
+    failed: "बज़र दर्ज नहीं हुआ — फिर से कोशिश करो",
   },
   reveal: {
     title: "जवाब खुल गया",
@@ -59,7 +59,7 @@ export const play: Messages["play"] = {
   },
   final: {
     title: "Final Jeopardy",
-    rules: "हर टीम सिर्फ़ एक बार भेज सकती है — {team} · अधिकतम दाँव {max}",
+    rules: "हर टीम सिर्फ़ एक बार भेज सकती है — {team} · दाँव {max} तक",
     wager: "दाँव",
     answerPlaceholder: "तुम्हारी टीम का जवाब…",
     lockInWager: "दाँव पक्का करो",

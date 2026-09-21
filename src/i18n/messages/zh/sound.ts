@@ -4,7 +4,7 @@ export const sound: Messages["sound"] = {
   board: {
     title: "音效板",
     addSound: "添加音效",
-    empty: "还没有音效，添加预设或上传你自己的",
+    empty: "还没有音效，添加预设或上传自己的音频",
     addFull: "添加（已满）",
     volume: "音效板音量",
     stopAll: "全部停止",

@@ -5,7 +5,7 @@ export const sound: Messages["sound"] = {
     title: "サウンドボード",
     addSound: "サウンドを追加",
     empty: "サウンドはまだありません。プリセットを追加するか、アップロードしてください",
-    addFull: "追加（満杯）",
+    addFull: "追加（上限）",
     volume: "サウンドボードの音量",
     stopAll: "すべて停止",
     clipAdded: "{name}を追加しました",

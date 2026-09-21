@@ -75,7 +75,7 @@ export const studio: Messages["studio"] = {
     renamed: "Табло переименовано",
     renameFailed: "Не удалось переименовать",
     imported: "Табло импортировано",
-    importFailed: "Импорт не удался — неверный файл",
+    importFailed: "Не удалось импортировать — неверный файл",
   },
   excel: {
     sheet: "Табло",

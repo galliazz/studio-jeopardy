@@ -14,7 +14,7 @@ export const errors: Messages["errors"] = {
     signedOut: "Ta session est fermée ou a expiré. Reconnecte-toi.",
   },
   data: {
-    notFound: "Introuvable. Ça a peut-être été supprimé.",
+    notFound: "Introuvable. L'élément a peut-être été supprimé.",
     notAllowed: "Tu n'as pas la permission de faire ça.",
   },
   upload: {

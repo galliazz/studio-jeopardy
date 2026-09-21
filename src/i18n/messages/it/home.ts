@@ -8,5 +8,5 @@ export const home: Messages["home"] = {
     submit: "Entra",
   },
   openStudio: "Apri il tuo Studio",
-  hostYourOwn: "Crea il tuo tabellone",
+  hostYourOwn: "Conduci la tua partita",
 };

@@ -33,7 +33,7 @@ export const settings: Messages["settings"] = {
     title: "परफ़ॉर्मेंस",
     graphicsQuality: "ग्राफ़िक्स क्वालिटी",
     graphicsQualityHint: "ब्लर, ग्रेडिएंट और भारी एनिमेशन",
-    qualityHigh: "ऊँची",
+    qualityHigh: "उच्च",
     qualityMedium: "मध्यम",
     qualityLow: "कम",
     backgroundEffects: "बैकग्राउंड इफ़ेक्ट",

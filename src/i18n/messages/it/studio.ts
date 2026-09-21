@@ -46,7 +46,7 @@ export const studio: Messages["studio"] = {
   joinDialog: {
     title: "Codice partita",
     description: "I giocatori entrano con questo codice o inquadrando il QR.",
-    linkCopied: "Link di accesso copiato",
+    linkCopied: "Link della partita copiato",
   },
   deleteDialog: {
     title: "Eliminare “{title}”?",
@@ -59,7 +59,7 @@ export const studio: Messages["studio"] = {
     createFailed: "Impossibile creare il tabellone",
     duplicated: "Tabellone duplicato",
     duplicateFailed: "Duplicazione non riuscita",
-    deleted: "“{title}” eliminato",
+    deleted: "Tabellone “{title}” eliminato",
     deleteFailed: "Eliminazione non riuscita",
     exportedJson: "Esportato in JSON",
     exportedExcel: "Esportato in Excel",

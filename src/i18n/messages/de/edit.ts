@@ -16,16 +16,16 @@ export const edit: Messages["edit"] = {
   },
   play: {
     title: "Mit diesem Code treten Spieler bei",
-    subtitle: "Läuft auf jedem Handy — keine App nötig",
+    subtitle: "Läuft auf jedem Handy – keine App nötig",
     copyJoinLink: "Beitrittslink kopieren",
     preparing: "Sitzung wird vorbereitet…",
     openHostConsole: "Host-Konsole öffnen",
   },
   dailyDoubles: {
     title: "Daily Doubles",
-    pickOnBoard: "Auf dem Spielfeld wählen",
+    pickOnBoard: "Felder markieren",
     donePicking: "Fertig",
-    maxReached: "Höchstens zwei Daily Doubles — nimm erst eins weg",
+    maxReached: "Höchstens zwei Daily Doubles – nimm erst eins weg",
     pickingHint:
       "Tipp Felder auf dem Spielfeld an, um sie zu markieren. Markierst du keins, wählt das Spiel zwei zufällig aus.",
   },
@@ -39,7 +39,7 @@ export const edit: Messages["edit"] = {
     nothingSelected: "Nichts ausgewählt",
     emptyHint: "Tipp ein Feld an, um Frage, Antwort, Medien und Formatierung zu bearbeiten.",
     categoryHint:
-      "Auch Kategorienamen lassen sich ändern — klick oben am Spielfeld auf einen davon.",
+      "Auch Kategorienamen lassen sich ändern – klick oben am Spielfeld auf einen davon.",
     closeEditor: "Editor schließen",
     closeWithEsc: "Schließen (Esc)",
     question: "Frage",
@@ -50,7 +50,7 @@ export const edit: Messages["edit"] = {
     media: "Medien",
     image: "Bild",
     audio: "Audio",
-    mediaAlt: "Medien im Feld",
+    mediaAlt: "Medien zum Feld",
     removeImage: "Bild entfernen",
     removeAudio: "Audio entfernen",
     mediaLimits: "Bilder ≤ 5 MB · Audio ≤ 10 MB · privat gespeichert",

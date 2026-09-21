@@ -5,7 +5,7 @@ export const sound: Messages["sound"] = {
     title: "Soundboard",
     addSound: "Adicionar som",
     empty: "Nenhum som ainda — adicione os prontos ou envie os seus",
-    addFull: "Cheia (máx.)",
+    addFull: "Soundboard cheia",
     volume: "Volume da soundboard",
     stopAll: "Parar tudo",
     clipAdded: "{name} adicionado",

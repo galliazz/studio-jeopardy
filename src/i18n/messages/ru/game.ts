@@ -12,7 +12,7 @@ export const game: Messages["game"] = {
   queue: {
     title: "Очередь нажатий",
     clear: "Очистить очередь",
-    clearConfirm: "Очистить очередь нажатий? Из неё пропадут все, кто ждёт.",
+    clearConfirm: "Очистить очередь нажатий? Все, кто ждёт, из неё пропадут.",
     position: "№{position}",
     firstIn: "первый",
     deltaMs: "+{ms} мс",
@@ -33,7 +33,7 @@ export const game: Messages["game"] = {
     },
     subtractFrom: "Вычесть {step} из счёта {name}",
     addTo: "Добавить {step} к счёту {name}",
-    customChangeFor: "Своё изменение счёта для {name}",
+    customChangeFor: "Изменить счёт вручную: {name}",
     customAmount: "Своё значение",
     subtract: "Вычесть",
     teamScore: "Счёт {name}",

@@ -27,7 +27,7 @@ export const avatar: Messages["avatar"] = {
     preview: "Предпросмотр кадрирования",
     zoom: "Масштаб",
     hint: "Перетащи фото, чтобы сдвинуть его.",
-    usePhoto: "Взять фото",
+    usePhoto: "Использовать фото",
   },
   select: "Выбрать",
   errors: {

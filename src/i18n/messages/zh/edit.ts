@@ -26,7 +26,7 @@ export const edit: Messages["edit"] = {
     pickOnBoard: "在题板上选择",
     donePicking: "选好了",
     maxReached: "最多两个 Daily Double，请先移除一个",
-    pickingHint: "点击题板上的题格进行标记。一个都不选的话，游戏会随机挑两个。",
+    pickingHint: "点击题板上的题格来标记。一个都不选，游戏就会随机挑两个。",
   },
   tile: {
     dailyDouble: "Daily Double",

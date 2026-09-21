@@ -4,9 +4,9 @@ export const auth: Messages["auth"] = {
   backToHome: "Voltar ao início",
   subtitle: "Acesso ao console do apresentador",
   checkEmail: {
-    title: "Olhe sua caixa de entrada",
+    title: "Confira sua caixa de entrada",
     body: "Enviamos um link de confirmação para <b>{email}</b>. Clique nele para ativar sua conta de apresentador e depois entre.",
-    backToSignIn: "Voltar para entrar",
+    backToSignIn: "Voltar para o login",
   },
   tabs: {
     signIn: "Entrar",
@@ -22,7 +22,7 @@ export const auth: Messages["auth"] = {
     signIn: "Entrar",
     signUp: "Criar conta de apresentador",
   },
-  playersNoAccount: "Os jogadores nunca precisam de conta — eles entram com um código.",
+  playersNoAccount: "Os jogadores nunca precisam de conta — entram com o código do jogo.",
   errors: {
     failed: "Não foi possível entrar",
     invalidCredentials: "E-mail ou senha incorretos",
@@ -34,7 +34,7 @@ export const auth: Messages["auth"] = {
     },
     emailInvalid: "O e-mail “{email}” não é válido",
     emailInvalidFormat: "Não foi possível validar o e-mail: formato inválido",
-    emailRateLimit: "Limite de e-mails excedido, tente mais tarde",
+    emailRateLimit: "Limite de e-mails excedido — tente mais tarde",
     retryAfter: {
       one: "Por segurança, você só pode pedir de novo em {count} segundo.",
       other: "Por segurança, você só pode pedir de novo em {count} segundos.",

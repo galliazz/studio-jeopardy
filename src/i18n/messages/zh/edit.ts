@@ -113,6 +113,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "分值阶梯",
     rowPoints: "第 {row} 行分值",
     pointLadderSaved: "分值阶梯已保存",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "经典",
+    finalScoringDuel: "对决",
+    finalScoringClassicHint: "每队赢得或失去自己的赌注，和电视上一样。",
+    finalScoringDuelHint: "答错一方的赌注归答对的队伍。",
   },
   stepper: {
     increase: "{label} +1",

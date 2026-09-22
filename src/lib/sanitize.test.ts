@@ -298,15 +298,9 @@ describe("stripHtml", () => {
     assert.equal(stripHtml("&amp;lt;"), "&lt;");
   });
 
-  test(
-    "un tag con più attributi fra virgolette doppie sparisce anche lui",
-    {
-      todo: "la regex di stripHtml ammette testo libero solo dopo un valore fra apici singoli: dopo il primo valore fra doppie il tag non si chiude e resta a schermo",
-    },
-    () => {
-      // È la forma che il sanificatore stesso produce per il tag font.
-      assert.equal(stripHtml('<font color="red" size="3">Ciao</font>'), "Ciao");
-      assert.equal(stripHtml('<span style="a>b" class="c">Ciao</span>'), "Ciao");
-    },
-  );
+  test("un tag con più attributi fra virgolette doppie sparisce anche lui", () => {
+    // È la forma che il sanificatore stesso produce per il tag font.
+    assert.equal(stripHtml('<font color="red" size="3">Ciao</font>'), "Ciao");
+    assert.equal(stripHtml('<span style="a>b" class="c">Ciao</span>'), "Ciao");
+  });
 });

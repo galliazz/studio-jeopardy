@@ -115,6 +115,12 @@ export const edit: Messages["edit"] = {
     pointsLadder: "Punkteleiter",
     rowPoints: "Punkte in Reihe {row}",
     pointLadderSaved: "Punkteleiter gespeichert",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "Klassisch",
+    finalScoringDuel: "Duell",
+    finalScoringClassicHint: "Jedes Team gewinnt oder verliert seinen eigenen Einsatz, wie im TV.",
+    finalScoringDuelHint:
+      "Der Einsatz des Teams mit der falschen Antwort geht an das richtige Team.",
   },
   stepper: {
     increase: "{label} +1",

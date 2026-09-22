@@ -60,6 +60,7 @@ export const play: Messages["play"] = {
   final: {
     title: "Final Jeopardy",
     rules: "हर टीम सिर्फ़ एक बार भेज सकती है — {team} · दाँव {max} तक",
+    answerRules: "हर टीम सिर्फ़ एक बार भेज सकती है — {team} · दाँव तय हो चुका है",
     wager: "दाँव",
     answerPlaceholder: "तुम्हारी टीम का जवाब…",
     lockInWager: "दाँव पक्का करो",

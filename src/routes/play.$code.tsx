@@ -677,7 +677,11 @@ function LivePlayer({
           {(status === "final" || phase === "final_wager" || phase === "final_answer") &&
             status !== "finished" && (
               <FinalForm
-                key="final"
+                /* La chiave contiene la fase: passando dalla puntata alla
+                   risposta il modulo riparte pulito. Con una chiave fissa
+                   restava lo stato «inviato», e chi aveva mandato la puntata
+                   non riusciva più a mandare la risposta. */
+                key={`final-${session!.phase}`}
                 session={session!}
                 identity={identity}
                 myTeam={myTeam}
@@ -742,6 +746,7 @@ function FinalForm({
   const [answer, setAnswer] = useState("");
   const [sent, setSent] = useState(false);
   const maxWager = Math.max(0, myTeam === "alpha" ? session.score_alpha : session.score_bravo);
+  const wagerPhase = session.phase === "final_wager";
 
   if (sent) {
     return (
@@ -760,21 +765,27 @@ function FinalForm({
         {t("play.final.title")}
       </h2>
       <p className="mb-5 text-center text-xs text-muted-foreground">
-        {t("play.final.rules", { team: teamName(theme, myTeam), max: maxWager })}
+        {wagerPhase
+          ? t("play.final.rules", { team: teamName(theme, myTeam), max: maxWager })
+          : t("play.final.answerRules", { team: teamName(theme, myTeam) })}
       </p>
-      <label className="mb-3 block">
-        <span className="mb-1 block text-xs font-semibold text-muted-foreground">
-          {t("play.final.wager")}
-        </span>
-        <input
-          type="number"
-          min={0}
-          max={maxWager}
-          value={wager}
-          onChange={(e) => setWager(Math.max(0, Math.min(maxWager, Number(e.target.value))))}
-          className="h-14 w-full rounded-full bg-butter px-5 text-center font-display text-xl font-black text-ink-gold outline-none"
-        />
-      </label>
+      {/* La puntata si mette solo nella sua fase: una volta rivelata la
+          domanda è bloccata, e il server non la riscrive più. */}
+      {wagerPhase && (
+        <label className="mb-3 block">
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">
+            {t("play.final.wager")}
+          </span>
+          <input
+            type="number"
+            min={0}
+            max={maxWager}
+            value={wager}
+            onChange={(e) => setWager(Math.max(0, Math.min(maxWager, Number(e.target.value))))}
+            className="h-14 w-full rounded-full bg-butter px-5 text-center font-display text-xl font-black text-ink-gold outline-none"
+          />
+        </label>
+      )}
       {session.phase === "final_answer" && (
         <label className="mb-3 block">
           <span className="mb-1 block text-xs font-semibold text-muted-foreground">

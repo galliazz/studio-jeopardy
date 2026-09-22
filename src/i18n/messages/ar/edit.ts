@@ -115,6 +115,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "سُلّم النقاط",
     rowPoints: "نقاط الصف {row}",
     pointLadderSaved: "حُفظ سُلّم النقاط",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "التقليدية",
+    finalScoringDuel: "مبارزة",
+    finalScoringClassicHint: "كل فريق يربح أو يخسر رهانه هو، كما في التلفزيون.",
+    finalScoringDuelHint: "رهان الفريق المخطئ ينتقل إلى الفريق الذي أجاب بشكل صحيح.",
   },
   stepper: {
     increase: "{label} +1",

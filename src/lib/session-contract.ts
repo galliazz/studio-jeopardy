@@ -136,12 +136,23 @@ export function toSessionState({
           }
         : null,
     active_answer: phase === "revealed" && activeTile ? activeTile.answer : null,
-    buzz_order: queue.map((q) => ({
-      player_id: q.player_id,
-      display_name: playerName.get(q.player_id) ?? "Player",
-      team_id: playerTeam.get(q.player_id) ?? "alpha",
-      buzzed_at: q.created_at,
-    })),
+    /*
+     * Solo le prenotazioni della casella aperta, e solo quelle ancora in
+     * gioco. Le pagine leggono la coda di tutta la sessione: senza filtro, in
+     * cima alla seconda casella sarebbero comparsi i buzz della prima.
+     */
+    buzz_order: queue
+      .filter(
+        (q) =>
+          q.tile_id === session.current_tile_id && (q.status === "queued" || q.status === "active"),
+      )
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((q) => ({
+        player_id: q.player_id,
+        display_name: playerName.get(q.player_id) ?? "Player",
+        team_id: playerTeam.get(q.player_id) ?? "alpha",
+        buzzed_at: q.created_at,
+      })),
     active_player_id: session.active_player_id,
     timer_started_at: startedAt,
     timer_duration_ms: durationMs,
@@ -151,7 +162,12 @@ export function toSessionState({
       display_name: p.name,
       avatar_url: p.avatar,
       team_id: p.team,
-      connected: !p.locked_out,
+      /*
+       * Chi è davvero connesso non lo sappiamo ancora: arriva con la presenza
+       * in tempo reale. Qui valeva `!locked_out`, che dava per disconnesso chi
+       * aveva soltanto sbagliato la casella.
+       */
+      connected: true,
     })),
     teams: [
       {

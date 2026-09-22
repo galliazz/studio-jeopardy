@@ -44,6 +44,7 @@ import {
   teamColorVars,
   radiusCq,
 } from "@/lib/types";
+import { finalScoringOf, type FinalScoring } from "@/lib/game-rules";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
@@ -1028,6 +1029,7 @@ function ThemeBar({
 }) {
   const t = useT();
   const queryClient = useQueryClient();
+  const finalScoring = finalScoringOf(theme);
   const [rowPoints, setRowPointsState] = useState(theme.rowPoints);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => setRowPointsState(theme.rowPoints), [theme.rowPoints]);
@@ -1100,6 +1102,15 @@ function ThemeBar({
     patchThemeCache(patch);
     await saveTheme(patch);
     toast.success(t("edit.game.teamNameSaved"), { duration: 1000 });
+  };
+
+  /**
+   * La regola della finale. Vive sul tema come le Daily Double: la sceglie
+   * l'host qui, e ogni partita di questo gioco la eredita.
+   */
+  const applyFinalScoring = async (rule: FinalScoring) => {
+    patchThemeCache({ finalScoring: rule });
+    await saveTheme({ finalScoring: rule });
   };
 
   const applyRowPoints = async () => {
@@ -1273,6 +1284,37 @@ function ThemeBar({
             />
           ))}
         </div>
+
+        <span className={`${ROW_LABEL} mb-2 mt-3 block text-center`}>
+          {t("edit.game.finalScoring")}
+        </span>
+        {/* Due pastiglie invece di un elenco: sono due sole, e la differenza
+            fra le due si capisce solo leggendo la riga sotto. */}
+        <div className="flex gap-1.5">
+          {(["classic", "duel"] as const).map((rule) => {
+            const selected = finalScoring === rule;
+            return (
+              <button
+                key={rule}
+                type="button"
+                onClick={() => void applyFinalScoring(rule)}
+                aria-pressed={selected}
+                className={`min-h-11 flex-1 rounded-full px-3 text-xs font-black transition-colors ${
+                  selected ? "bg-ink-accent text-background" : "bg-muted hover:bg-foreground/10"
+                }`}
+              >
+                {rule === "classic"
+                  ? t("edit.game.finalScoringClassic")
+                  : t("edit.game.finalScoringDuel")}
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-center text-[11px] leading-snug text-muted-foreground">
+          {finalScoring === "classic"
+            ? t("edit.game.finalScoringClassicHint")
+            : t("edit.game.finalScoringDuelHint")}
+        </p>
       </Panel>
     </>
   );

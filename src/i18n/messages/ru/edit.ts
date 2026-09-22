@@ -114,6 +114,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "Шкала очков",
     rowPoints: "Очки ряда {row}",
     pointLadderSaved: "Шкала очков сохранена",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "Классические",
+    finalScoringDuel: "Дуэль",
+    finalScoringClassicHint: "Каждая команда выигрывает или теряет свою ставку, как на ТВ.",
+    finalScoringDuelHint: "Ставка ошибившейся команды достаётся той, которая ответила верно.",
   },
   stepper: {
     increase: "{label} +1",

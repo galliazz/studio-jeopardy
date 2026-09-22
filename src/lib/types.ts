@@ -41,6 +41,13 @@ export interface ThemeSettings {
    * eredita, e se la lista è vuota il server ne sorteggia due.
    */
   dailyDoubleTileIds?: string[];
+  /**
+   * Come si contano i punti nella finale: "classic" (ognuno guadagna o perde
+   * la propria puntata) oppure "duel" (la puntata di chi sbaglia passa a chi
+   * ha indovinato). La sceglie l'host nella pagina di Edit; in mancanza vale
+   * la prima. Vedi `finalScoringOf` in game-rules.
+   */
+  finalScoring?: "classic" | "duel";
 }
 
 export const DEFAULT_THEME: ThemeSettings = {

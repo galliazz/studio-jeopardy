@@ -114,6 +114,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "Escada de pontos",
     rowPoints: "Pontos da linha {row}",
     pointLadderSaved: "Escada de pontos salva",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "Clássica",
+    finalScoringDuel: "Duelo",
+    finalScoringClassicHint: "Cada equipe ganha ou perde a própria aposta, como na TV.",
+    finalScoringDuelHint: "A aposta de quem erra vai para a equipe que acertou.",
   },
   stepper: {
     increase: "{label} +1",

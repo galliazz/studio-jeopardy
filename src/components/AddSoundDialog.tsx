@@ -27,7 +27,10 @@ const ACCEPTED = [
 ];
 
 export interface NewClip {
+  /** Il nome salvato. Vuoto per i suoni pronti, che si traducono a schermo. */
   name: string;
+  /** Solo per il messaggio di conferma: cosa ha appena aggiunto l'host. */
+  label?: string;
   source: "preset" | "upload";
   presetKey?: string | null;
   storagePath?: string | null;
@@ -118,7 +121,9 @@ export function AddSoundDialog({
                 added={addedPresetKeys}
                 onAdd={async (p) => {
                   await onAdd({
-                    name: t(p.nameKey),
+                    // Vuoto apposta: il nome lo dà il preset, tradotto a schermo.
+                    name: "",
+                    label: t(p.nameKey),
                     source: "preset",
                     presetKey: p.key,
                     trimStartMs: 0,

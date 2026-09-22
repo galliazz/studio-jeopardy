@@ -62,6 +62,7 @@ export const play: Messages["play"] = {
   final: {
     title: "Final Jeopardy",
     rules: "提出は各チーム1回のみ — {team} · 最大ベット {max}",
+    answerRules: "提出は各チーム1回のみ — {team} · ベットは確定済み",
     wager: "ベット",
     answerPlaceholder: "チームの解答…",
     lockInWager: "ベットを確定",

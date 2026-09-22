@@ -62,6 +62,7 @@ export const play: Messages["play"] = {
   final: {
     title: "Final Jeopardy",
     rules: "Une seule réponse par équipe — {team} · mise max {max}",
+    answerRules: "Une seule réponse par équipe — {team} · mise déjà validée",
     wager: "Mise",
     answerPlaceholder: "La réponse de ton équipe…",
     lockInWager: "Valider la mise",

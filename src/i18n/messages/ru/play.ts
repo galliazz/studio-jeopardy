@@ -60,6 +60,7 @@ export const play: Messages["play"] = {
   final: {
     title: "Final Jeopardy",
     rules: "Один ответ на команду — {team} · макс. ставка {max}",
+    answerRules: "Один ответ на команду — {team} · ставка уже сделана",
     wager: "Ставка",
     answerPlaceholder: "Ответ твоей команды…",
     lockInWager: "Сделать ставку",

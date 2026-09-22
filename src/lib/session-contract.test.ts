@@ -192,6 +192,7 @@ describe("orologio", () => {
 describe("giocatori, squadre e board", () => {
   test("la coda porta nome e squadra di chi ha premuto", () => {
     const s = state({
+      session: session({ current_tile_id: "t1" }),
       players: [player("p1", { name: "Giulia", team: "bravo" })],
       queue: [entry("p1")],
     });
@@ -206,31 +207,45 @@ describe("giocatori, squadre e board", () => {
   });
 
   test("un giocatore uscito resta in coda con un nome di ripiego", () => {
-    const s = state({ queue: [entry("ghost")] });
+    const s = state({ session: session({ current_tile_id: "t1" }), queue: [entry("ghost")] });
     assert.equal(s.buzz_order[0]?.display_name, "Player");
     assert.equal(s.buzz_order[0]?.team_id, "alpha");
   });
 
-  test(
-    "la coda mostra solo chi è ancora in gioco sulla casella aperta",
-    {
-      todo: "buzz_order proietta ogni riga ricevuta, e le pagine leggono la coda per sessione: comparirebbero i buzz delle caselle già chiuse. Latente, toSessionState oggi non ha chiamanti",
-    },
-    () => {
-      const s = state({
-        session: session({ phase: "answering", current_tile_id: "t2", active_player_id: "p2" }),
-        players: [player("p1"), player("p2")],
-        queue: [
-          entry("p1", { tile_id: "t1", status: "correct" }),
-          entry("p2", { tile_id: "t2", status: "active" }),
-        ],
-      });
-      assert.deepEqual(
-        s.buzz_order.map((b) => b.player_id),
-        ["p2"],
-      );
-    },
-  );
+  test("la coda mostra solo chi è ancora in gioco sulla casella aperta", () => {
+    const s = state({
+      session: session({ phase: "answering", current_tile_id: "t2", active_player_id: "p2" }),
+      players: [player("p1"), player("p2")],
+      queue: [
+        entry("p1", { tile_id: "t1", status: "correct" }),
+        entry("p2", { tile_id: "t2", status: "active" }),
+      ],
+    });
+    assert.deepEqual(
+      s.buzz_order.map((b) => b.player_id),
+      ["p2"],
+    );
+  });
+
+  test("la coda segue l'ordine d'arrivo, non quello in cui arrivano le righe", () => {
+    const s = state({
+      session: session({ phase: "answering", current_tile_id: "t1", active_player_id: "p2" }),
+      players: [player("p1"), player("p2")],
+      queue: [
+        entry("p1", { tile_id: "t1", status: "queued", created_at: "2026-09-01T20:00:03.000Z" }),
+        entry("p2", { tile_id: "t1", status: "active", created_at: "2026-09-01T20:00:01.000Z" }),
+      ],
+    });
+    assert.deepEqual(
+      s.buzz_order.map((b) => b.player_id),
+      ["p2", "p1"],
+    );
+  });
+
+  test("chi ha sbagliato la casella non risulta disconnesso", () => {
+    const s = state({ players: [player("p1", { locked_out: true })] });
+    assert.equal(s.players[0]?.connected, true);
+  });
 
   test("le squadre portano punteggio e nome scelto dall'host", () => {
     const s = state({

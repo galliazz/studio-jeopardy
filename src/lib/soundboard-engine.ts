@@ -59,6 +59,22 @@ export function presetByKey(key: string | null): PresetDef | undefined {
   return PRESETS.find((p) => p.key === key);
 }
 
+/**
+ * Il nome da mostrare. Per i suoni pronti nel database non c'è scritto
+ * niente: il nome è quello del preset, tradotto ogni volta nella lingua di
+ * chi guarda. Prima si salvava il testo tradotto al momento, e un suono
+ * aggiunto in italiano restava italiano anche con l'app in inglese.
+ * Se l'host lo rinomina a mano, il suo nome vince e non si traduce più.
+ */
+export function clipLabel(
+  clip: Pick<SoundboardClip, "name" | "preset_key">,
+  t: (key: MessageKey) => string,
+): string {
+  if (clip.name.trim()) return clip.name;
+  const preset = presetByKey(clip.preset_key);
+  return preset ? t(preset.nameKey) : "";
+}
+
 /* ------------------------------ audio context ----------------------------- */
 
 let ctx: AudioContext | null = null;

@@ -22,6 +22,7 @@ import {
 } from "@/lib/soundboard.functions";
 import { shortcutsSuppressed } from "@/lib/shortcuts";
 import {
+  clipLabel,
   getBoardVolume,
   playClip,
   preloadAll,
@@ -111,7 +112,7 @@ export function Soundboard({ gameId, hostId }: { gameId: string; hostId: string 
         },
       });
       await refresh();
-      toast.success(t("sound.board.clipAdded", { name: clip.name }));
+      toast.success(t("sound.board.clipAdded", { name: clip.label ?? clip.name }));
     } catch (err) {
       toast.error(localizeError(err, "sound.board.addFailed"));
     }
@@ -245,6 +246,7 @@ function ClipChip({
   onRemove: () => Promise<void>;
 }) {
   const t = useT();
+  const name = clipLabel(clip, t);
   const [progress, setProgress] = useState<number | null>(null);
   const [editingTrim, setEditingTrim] = useState(false);
   const key = index < 9 ? String(index + 1) : null;
@@ -287,13 +289,11 @@ function ClipChip({
       <button
         onClick={onPlay}
         aria-label={
-          key
-            ? t("sound.clip.playWithKey", { name: clip.name, key })
-            : t("sound.clip.play", { name: clip.name })
+          key ? t("sound.clip.playWithKey", { name, key }) : t("sound.clip.play", { name })
         }
         className="min-w-0 flex-1 truncate py-2.5 text-start text-xs font-bold text-foreground"
       >
-        {clip.name}
+        {name}
       </button>
       {key && (
         <span
@@ -306,7 +306,7 @@ function ClipChip({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            aria-label={t("sound.clip.options", { name: clip.name })}
+            aria-label={t("sound.clip.options", { name })}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-card"
           >
             <MoreVertical className="h-4 w-4" />
@@ -315,7 +315,7 @@ function ClipChip({
         <DropdownMenuContent align="end" className="rounded-[20px]">
           <DropdownMenuItem
             onSelect={() => {
-              const next = window.prompt(t("sound.clip.renamePrompt"), clip.name);
+              const next = window.prompt(t("sound.clip.renamePrompt"), name);
               if (next && next.trim()) void onRename(next.trim().slice(0, 40));
             }}
           >

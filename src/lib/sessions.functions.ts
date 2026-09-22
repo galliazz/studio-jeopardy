@@ -6,6 +6,7 @@ import {
   BOARD_TILES,
   answerDelta,
   everyoneLockedOut,
+  finalScoringOf,
   findNextBuzzer,
   isDailyDouble,
   judgeFinalScores,
@@ -672,11 +673,21 @@ export const judgeFinal = createServerFn({ method: "POST" })
 
     const { data: others } = await supabase
       .from("final_answers")
-      .select("judged, wager")
+      .select("team, judged, wager")
       .eq("session_id", data.sessionId)
       .neq("team", data.team);
-    // Una risposta giusta muove DUE punteggi: la regola è in `judgeFinalScores`.
+    /*
+     * La regola della finale la sceglie l'host nella pagina di Edit e vive sul
+     * tema del gioco, come le Daily Double: la si legge al momento del
+     * giudizio, così cambiarla non richiede di ricominciare la partita.
+     */
+    const { data: game } = await supabase
+      .from("games")
+      .select("theme")
+      .eq("id", session.game_id)
+      .maybeSingle();
     const result = judgeFinalScores({
+      rule: finalScoringOf(game?.theme),
       team: data.team,
       correct: data.correct,
       ownWager: entry.wager,
@@ -776,6 +787,16 @@ export const passToNext = createServerFn({ method: "POST" })
         .eq("tile_id", session.current_tile_id)
         .eq("player_id", session.active_player_id)
         .eq("status", "active");
+      /*
+       * Chi viene saltato esce da questa casella, come se avesse sbagliato.
+       * Senza, il suo telefono riaccendeva il buzzer: premeva, la prenotazione
+       * urtava il vincolo unico della riga appena archiviata, e lui restava ad
+       * aspettare un turno che non sarebbe mai arrivato.
+       */
+      await supabase
+        .from("players")
+        .update({ locked_out: true })
+        .eq("id", session.active_player_id);
     }
     if (next) await supabase.from("buzzer_queue").update({ status: "active" }).eq("id", next.id);
     return { ok: true, promoted: next?.player_id ?? null };

@@ -73,13 +73,15 @@ export async function switchLocale(next: Locale) {
 
 /* -------------------------------- documento -------------------------------- */
 
-const loadedFonts = new Set<string>();
-
 /**
  * `lang` e `dir` su <html>: il primo sceglie i glifi giusti per cinese e
- * giapponese e fa leggere la pagina nella lingua giusta agli screen reader, il
- * secondo gira tutta l'interfaccia per l'arabo. Il carattere Noto si scarica
- * solo la prima volta che serve.
+ * giapponese e fa leggere la pagina nella lingua giusta agli screen reader,
+ * il secondo gira tutta l'interfaccia per l'arabo.
+ *
+ * I caratteri per quegli alfabeti li mette il dispositivo. Prima si
+ * scaricavano i Noto dai server di Google, il che spediva l'indirizzo IP di
+ * chi gioca a un terzo solo per disegnare del testo: per una riga di
+ * interfaccia non vale il consenso che avrebbe richiesto.
  */
 function applyDocumentLocale(code: Locale) {
   if (typeof document === "undefined") return;
@@ -87,19 +89,6 @@ function applyDocumentLocale(code: Locale) {
   const root = document.documentElement;
   root.lang = code;
   root.dir = info.dir;
-  const font = "font" in info ? info.font : undefined;
-  if (font) {
-    if (!loadedFonts.has(font)) {
-      loadedFonts.add(font);
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(font).replace(/%20/g, "+")}:wght@400;500;700;800;900&display=swap`;
-      document.head.appendChild(link);
-    }
-    root.style.setProperty("--font-locale", `"${font}"`);
-  } else {
-    root.style.removeProperty("--font-locale");
-  }
 }
 
 /* -------------------------------- traduzione ------------------------------- */

@@ -1,0 +1,11 @@
+I caratteri di questa cartella sono ospitati qui, e non presi dai server di
+Google, così l'indirizzo IP di chi visita il sito non esce verso terzi.
+
+- Plus Jakarta Sans — Tokotype, SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Plus+Jakarta+Sans
+- Roboto Flex — Google, SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Roboto+Flex
+
+Il testo della licenza è in OFL.txt e vale per entrambi. I file sono i
+sottoinsiemi latino, latino esteso e cirillico: gli altri alfabeti usano i
+caratteri di sistema del dispositivo.

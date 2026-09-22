@@ -8,6 +8,8 @@ import { SPRING_UI } from "@/lib/motion";
 import { AppBar, GuestSettingsButton } from "@/components/AppBar";
 import { NAV_BUTTON } from "@/components/app-bar";
 import { localizeError, useT, type TFunction } from "@/i18n";
+import { LegalFooter } from "@/components/LegalFooter";
+import { MIN_AGE } from "@/legal/holder";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -74,6 +76,9 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
+  /* L'accettazione dei termini vale solo per chi crea l'account: chi ha già
+     un account li ha accettati quando l'ha creato. */
+  const [accepted, setAccepted] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
 
   const submit = async () => {
@@ -205,9 +210,36 @@ function AuthPage() {
                   placeholder={t("auth.fields.password")}
                   className="h-12 w-full rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent transition-all focus:ring-ink-accent"
                 />
+                {mode === "signup" && (
+                  <label className="flex cursor-pointer items-start gap-3 rounded-[22px] bg-muted/60 p-3 text-start text-xs leading-snug text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={accepted}
+                      onChange={(e) => setAccepted(e.target.checked)}
+                      className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--ink-accent)]"
+                    />
+                    <span>
+                      {t.rich("legal.consentSignup", undefined, {
+                        terms: (chunk) => (
+                          <Link to="/terms" className="underline underline-offset-2">
+                            {chunk}
+                          </Link>
+                        ),
+                        privacy: (chunk) => (
+                          <Link to="/privacy" className="underline underline-offset-2">
+                            {chunk}
+                          </Link>
+                        ),
+                      })}{" "}
+                      {t("legal.minAge", { age: MIN_AGE })}
+                    </span>
+                  </label>
+                )}
                 <motion.button
                   whileTap={{ scale: 0.97 }}
-                  disabled={busy || !email || password.length < 6}
+                  disabled={
+                    busy || !email || password.length < 6 || (mode === "signup" && !accepted)
+                  }
                   onClick={() => void submit()}
                   className="h-12 w-full rounded-full bg-coral font-display font-black text-foreground elev-2 transition-transform hover:scale-[1.02] disabled:opacity-50"
                 >
@@ -226,6 +258,7 @@ function AuthPage() {
           )}
         </motion.div>
       </div>
+      <LegalFooter className="relative z-10" />
     </div>
   );
 }

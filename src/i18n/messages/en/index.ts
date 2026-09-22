@@ -15,6 +15,7 @@ import { edit } from "./edit";
 import { errors } from "./errors";
 import { game } from "./game";
 import { home } from "./home";
+import { legal } from "./legal";
 import { host } from "./host";
 import { overlay } from "./overlay";
 import { play } from "./play";
@@ -33,6 +34,7 @@ export const en = {
   studio,
   edit,
   host,
+  legal,
   play,
   overlay,
   settings,

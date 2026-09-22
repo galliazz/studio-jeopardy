@@ -10,6 +10,7 @@ import { AccountMenu } from "@/components/AccountMenu";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { useT } from "@/i18n";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -138,7 +139,7 @@ function LandingPage() {
                 onKeyDown={(e) => e.key === "Enter" && join()}
                 placeholder={t("home.join.placeholder")}
                 maxLength={8}
-                className="h-14 flex-1 rounded-full bg-muted px-6 text-center font-display text-xl font-bold tracking-[0.3em] text-foreground outline-none ring-2 ring-transparent transition-all placeholder:text-muted-foreground/50 focus:ring-ink-accent"
+                className="h-14 flex-1 rounded-full bg-muted px-6 text-center font-display text-xl font-bold tracking-[0.3em] text-foreground outline-none ring-2 ring-transparent transition-all placeholder:text-muted-foreground focus:ring-ink-accent"
               />
               <motion.button
                 whileTap={{ scale: 0.94 }}
@@ -160,6 +161,7 @@ function LandingPage() {
           </motion.button>
         </motion.div>
       </div>
+      <LegalFooter className="relative z-10" />
     </div>
   );
 }

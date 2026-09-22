@@ -368,7 +368,7 @@ function StudioPage() {
               }}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("studio.actions.searchPlaceholder")}
-              className="h-10 w-full min-w-0 bg-transparent pe-4 text-sm outline-none placeholder:text-muted-foreground/60"
+              className="h-10 w-full min-w-0 bg-transparent pe-4 text-sm outline-none placeholder:text-muted-foreground"
             />
           </motion.div>
           <input

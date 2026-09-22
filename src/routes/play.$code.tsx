@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,6 +28,7 @@ import {
 import { SPRING_UI } from "@/lib/motion";
 import { AppBar, GuestSettingsButton } from "@/components/AppBar";
 import { localizeError, useT } from "@/i18n";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const Route = createFileRoute("/play/$code")({
   head: () => ({
@@ -325,6 +326,20 @@ function JoinForm({
           })}
         </div>
 
+        <p className="mb-4 text-center text-[11px] leading-snug text-muted-foreground">
+          {t.rich("legal.consentJoin", undefined, {
+            terms: (chunk) => (
+              <Link to="/terms" className="underline underline-offset-2">
+                {chunk}
+              </Link>
+            ),
+            privacy: (chunk) => (
+              <Link to="/privacy" className="underline underline-offset-2">
+                {chunk}
+              </Link>
+            ),
+          })}
+        </p>
         {joinError && (
           <p role="alert" className="mb-3 text-center text-sm font-semibold text-destructive">
             {joinError}
@@ -908,6 +923,7 @@ function Shell({ children, title }: { children: React.ReactNode; title?: string 
       <div className="flex flex-1 items-center justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6">
         <div className="w-full max-w-md lg:max-w-xl">{children}</div>
       </div>
+      <LegalFooter />
     </div>
   );
 }

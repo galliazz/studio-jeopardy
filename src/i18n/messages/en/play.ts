@@ -59,6 +59,7 @@ export const play = {
   final: {
     title: "Final Jeopardy",
     rules: "One submission per team — {team} · max wager {max}",
+    answerRules: "One submission per team — {team} · wager already locked in",
     wager: "Wager",
     answerPlaceholder: "Your team's answer…",
     lockInWager: "Lock in wager",

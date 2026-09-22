@@ -59,6 +59,7 @@ export const play: Messages["play"] = {
   final: {
     title: "Final Jeopardy",
     rules: "每队只能提交一次 · {team} · 最多下注 {max}",
+    answerRules: "每队只能提交一次 · {team} · 赌注已锁定",
     wager: "下注",
     answerPlaceholder: "你们队的答案…",
     lockInWager: "确认下注",

@@ -115,6 +115,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "配点",
     rowPoints: "{row}行目の点数",
     pointLadderSaved: "配点を保存しました",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "クラシック",
+    finalScoringDuel: "デュエル",
+    finalScoringClassicHint: "各チームは自分のベット分だけ増減します。テレビと同じです。",
+    finalScoringDuelHint: "不正解だったチームのベットが、正解したチームに移ります。",
   },
   stepper: {
     increase: "{label} +1",

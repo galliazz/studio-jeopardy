@@ -122,13 +122,21 @@ export function buzzInsertRejected(error: { code?: string } | null): boolean {
   return !!error && error.code !== UNIQUE_VIOLATION;
 }
 
-/** La risposta a chi ha premuto: la sua posizione fra le righe ancora in gioco. */
+/**
+ * La risposta a chi ha premuto: la sua posizione fra le righe ancora in gioco.
+ *
+ * Se fra quelle righe non c'è, la prenotazione NON è entrata: era un doppione
+ * assorbito dal vincolo unico su una riga già archiviata. Prima si rispondeva
+ * comunque «va bene, sei in coda alla posizione 0», e il telefono restava
+ * acceso ad aspettare un turno che non sarebbe arrivato.
+ */
 export function buzzReply(
   rows: readonly { player_id: string }[],
   playerId: string,
   activePlayerId: string | null,
 ) {
   const position = rows.findIndex((r) => r.player_id === playerId) + 1;
+  if (position === 0) return { ok: false as const, reason: "closed" as const };
   return { ok: true as const, position, active: activePlayerId === playerId };
 }
 
@@ -213,15 +221,33 @@ export function finalSubmissionOpen(session: { status: string; phase: string }):
 }
 
 /**
+ * La puntata non può superare quello che la squadra ha in cassa. Il telefono
+ * lo impedisce già, ma il limite vero sta qui: una richiesta costruita a mano
+ * con una puntata da centomila deciderebbe la partita.
+ */
+export function clampWager(scores: Scores, team: string, wager: number): number {
+  const available = team === "alpha" ? scores.score_alpha : scores.score_bravo;
+  return Math.max(0, Math.min(Math.trunc(wager), Math.max(0, available)));
+}
+
+/**
  * La riga da salvare per la squadra. La squadra viene dal giocatore
  * verificato, mai da quello che scrive il telefono.
+ *
+ * Si scrive solo il campo della fase in corso. Le due fasi condividono una
+ * riga sola: quando si rispondeva scrivendo anche la puntata, un secondo
+ * telefono — o lo stesso dopo una ricarica, che riparte da zero — azzerava la
+ * puntata già bloccata, e chiunque poteva rifarla dopo aver letto la domanda.
  */
 export function finalAnswerRow(
-  session: Pick<Session, "id">,
+  session: Pick<Session, "id" | "score_alpha" | "score_bravo"> & { phase: string },
   team: string,
   input: { wager: number; answer: string },
-) {
-  return { session_id: session.id, team, wager: input.wager, answer: input.answer };
+): { session_id: string; team: string; wager?: number; answer?: string } {
+  const base = { session_id: session.id, team };
+  return session.phase === "final_answer"
+    ? { ...base, answer: input.answer }
+    : { ...base, wager: clampWager(session, team, input.wager) };
 }
 
 /** La domanda della finale arriva ai telefoni solo quando è ora di rispondere. */
@@ -230,26 +256,53 @@ export function finalQuestionVisible(phase: string): boolean {
 }
 
 export interface FinalEntry {
+  team?: string | null;
   judged: boolean | null;
   wager: number | null;
 }
 
 /**
- * Il giudizio di una squadra nella finale.
+ * Le due regole possibili per la finale, scelte dall'host nella pagina di
+ * Edit e salvate sul tema del gioco.
  *
- * La finale è una scommessa fra le due squadre, non contro il banco.
- * Chi risponde bene tiene la propria puntata e si prende quella avversaria;
- * chi sbaglia perde la propria. Quindi una risposta giusta muove DUE
- * punteggi, non uno: per questo si calcolano entrambi. La partita finisce
- * quando anche l'altra squadra è stata giudicata.
+ * - `classic`: come in televisione. Chi indovina guadagna la propria puntata,
+ *   chi sbaglia la perde. Le due squadre non si toccano fra loro, e si può
+ *   vincere anche se l'altra sbaglia.
+ * - `duel`: la puntata di chi sbaglia passa a chi ha indovinato. Se sbagliano
+ *   entrambe ognuna perde la propria, se indovinano entrambe non si muove
+ *   niente.
+ */
+export type FinalScoring = "classic" | "duel";
+
+export const DEFAULT_FINAL_SCORING: FinalScoring = "classic";
+
+/** La regola scelta sul tema del gioco; in mancanza, quella televisiva. */
+export function finalScoringOf(theme: unknown): FinalScoring {
+  if (!theme || typeof theme !== "object") return DEFAULT_FINAL_SCORING;
+  return (theme as { finalScoring?: unknown }).finalScoring === "duel"
+    ? "duel"
+    : DEFAULT_FINAL_SCORING;
+}
+
+/**
+ * Il giudizio di una squadra nella finale, con la regola scelta per la
+ * partita. La partita finisce quando anche l'altra squadra è stata giudicata.
+ *
+ * Nel duello la puntata cambia mano UNA VOLTA SOLA, ed è il giudizio di chi la
+ * perde a spostarla: prima si toglieva a chi sbagliava anche quando
+ * l'avversaria, indovinando, se l'era già presa — e con 250 in palio chi
+ * sbagliava ne perdeva 500. Contare sulla riga di chi paga, e non su quella di
+ * chi incassa, rende anche indifferente l'ordine in cui l'host giudica.
  */
 export function judgeFinalScores({
+  rule = DEFAULT_FINAL_SCORING,
   team,
   correct,
   ownWager,
   rivals,
   scores,
 }: {
+  rule?: FinalScoring;
   team: Team;
   correct: boolean;
   ownWager: number | null;
@@ -258,28 +311,32 @@ export function judgeFinalScores({
 }): { score_alpha: number; score_bravo: number; finished: boolean; delta: number } {
   const finished = rivals.every((o) => o.judged !== null) && rivals.length > 0;
   const own = ownWager ?? 0;
-  const rivalWager = rivals.reduce((sum, o) => sum + (o.wager ?? 0), 0);
   let scoreAlpha = scores.score_alpha;
   let scoreBravo = scores.score_bravo;
-  if (correct) {
-    if (team === "alpha") {
-      scoreAlpha += rivalWager;
-      scoreBravo -= rivalWager;
-    } else {
-      scoreBravo += rivalWager;
-      scoreAlpha -= rivalWager;
-    }
-  } else if (team === "alpha") {
-    scoreAlpha -= own;
-  } else {
-    scoreBravo -= own;
-  }
-  return {
-    score_alpha: scoreAlpha,
-    score_bravo: scoreBravo,
-    finished,
-    delta: correct ? rivalWager : -own,
+  const add = (side: string | null | undefined, amount: number) => {
+    if (side === "alpha") scoreAlpha += amount;
+    else if (side === "bravo") scoreBravo += amount;
   };
+
+  let delta: number;
+  if (rule === "classic") {
+    delta = correct ? own : -own;
+    add(team, delta);
+  } else if (correct) {
+    // Incassa le puntate delle rivali già giudicate sbagliate: quelle ancora
+    // da giudicare pagheranno quando toccherà a loro.
+    delta = rivals.reduce((sum, o) => sum + (o.judged === false ? (o.wager ?? 0) : 0), 0);
+    add(team, delta);
+  } else {
+    delta = -own;
+    add(team, delta);
+    // La puntata persa va alle rivali che hanno già indovinato.
+    for (const rival of rivals) if (rival.judged === true) add(rival.team, own);
+  }
+
+  // `delta || 0` normalizza lo zero negativo: a schermo sarebbe "-0", e in un
+  // confronto stretto non risulta uguale a zero.
+  return { score_alpha: scoreAlpha, score_bravo: scoreBravo, finished, delta: delta || 0 };
 }
 
 /* --------------------------------- Overlay --------------------------------- */

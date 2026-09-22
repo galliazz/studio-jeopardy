@@ -114,6 +114,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "Scala dei punti",
     rowPoints: "Punti della riga {row}",
     pointLadderSaved: "Scala dei punti salvata",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "Classica",
+    finalScoringDuel: "Duello",
+    finalScoringClassicHint: "Ogni squadra guadagna o perde la propria puntata, come in TV.",
+    finalScoringDuelHint: "La puntata di chi sbaglia passa alla squadra che ha indovinato.",
   },
   stepper: {
     increase: "{label} +1",

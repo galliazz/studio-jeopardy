@@ -23,6 +23,7 @@ import {
   everyoneLockedOut,
   finalAnswerRow,
   finalQuestionVisible,
+  finalScoringOf,
   finalSubmissionOpen,
   findNextBuzzer,
   isDailyDouble,
@@ -40,6 +41,7 @@ import {
   timerEndsAt,
   turnPatch,
   type FinalEntry,
+  type FinalScoring,
 } from "./game-rules.ts";
 import { PLAYER_AVATARS, type Session, type Team } from "./types.ts";
 
@@ -356,19 +358,12 @@ describe("la pressione arriva al server", () => {
     assert.equal(buzzReply([row("p1")], "p1", null).active, false);
   });
 
-  test(
-    "un buzz assorbito come doppione, senza una riga in gioco, non risponde ok",
-    {
-      todo: "passToNext marca 'cleared' la riga di chi salta senza bloccarlo: il suo buzzer torna acceso, ma il buzz urta il vincolo unico e torna ok con posizione 0",
-    },
-    () => {
-      // Il giocatore ha già una riga 'cleared' per questa casella: fra quelle
-      // ancora in gioco non c'è, eppure oggi il server gli dice di sì, e il
-      // telefono lo mette in coda con una riga ottimistica che non esiste.
-      const reply = buzzReply([row("p2")], "p1", "p2");
-      assert.equal(reply.ok, false);
-    },
-  );
+  test("un buzz assorbito come doppione, senza una riga in gioco, non risponde ok", () => {
+    // Il giocatore ha già una riga archiviata per questa casella: fra quelle
+    // ancora in gioco non c'è. Rispondergli «va bene» lo lascerebbe ad
+    // aspettare un turno che non arriva.
+    assert.deepEqual(buzzReply([row("p2")], "p1", "p2"), { ok: false, reason: "closed" });
+  });
 });
 
 /* --------------------------------- Giudizio -------------------------------- */
@@ -548,37 +543,35 @@ describe("invio della finale", () => {
 
   test("la squadra viene dal giocatore verificato, non da ciò che manda il telefono", () => {
     const fromPhone = { wager: 300, answer: "Chi è Verdi?", team: "bravo" };
-    assert.deepEqual(finalAnswerRow(session({ id: "s9" }), "alpha", fromPhone), {
+    const s = session({ id: "s9", status: "final", phase: "final_wager", score_alpha: 1000 });
+    assert.deepEqual(finalAnswerRow(s, "alpha", fromPhone), {
       session_id: "s9",
       team: "alpha",
       wager: 300,
-      answer: "Chi è Verdi?",
     });
   });
 
-  test(
-    "la puntata non supera il punteggio della squadra",
-    {
-      todo: "il server accetta qualunque puntata fino a 100000: il limite esiste solo sul telefono",
-    },
-    () => {
-      const s = session({ status: "final", phase: "final_wager", score_alpha: 500 });
-      const row = finalAnswerRow(s, "alpha", { wager: 100_000, answer: "" });
-      assert.ok(row.wager <= 500, `puntata di ${row.wager} con 500 punti`);
-    },
-  );
+  test("la puntata non supera il punteggio della squadra", () => {
+    const s = session({ status: "final", phase: "final_wager", score_alpha: 500 });
+    assert.equal(finalAnswerRow(s, "alpha", { wager: 100_000, answer: "" }).wager, 500);
+    assert.equal(finalAnswerRow(s, "alpha", { wager: 200, answer: "" }).wager, 200);
+    // Una squadra in rosso non può puntare nulla, e nessuno può puntare meno di zero.
+    const rosso = session({ status: "final", phase: "final_wager", score_bravo: -300 });
+    assert.equal(finalAnswerRow(rosso, "bravo", { wager: 100, answer: "" }).wager, 0);
+    assert.equal(finalAnswerRow(s, "alpha", { wager: -50, answer: "" }).wager, 0);
+  });
 
-  test(
-    "una volta rivelata la domanda, la puntata già bloccata non si riscrive",
-    {
-      todo: "in final_answer l'upsert riscrive anche la puntata: chi risponde da un altro telefono, o dopo aver ricaricato, manda 0 e la azzera; e la si può cambiare dopo aver letto la domanda",
-    },
-    () => {
-      const s = session({ status: "final", phase: "final_answer" });
-      const row = finalAnswerRow(s, "alpha", { wager: 0, answer: "Chi è Verdi?" });
-      assert.equal("wager" in row, false);
-    },
-  );
+  test("una volta rivelata la domanda, la puntata già bloccata non si riscrive", () => {
+    const s = session({ status: "final", phase: "final_answer" });
+    const row = finalAnswerRow(s, "alpha", { wager: 0, answer: "Chi è Verdi?" });
+    assert.deepEqual(row, { session_id: s.id, team: "alpha", answer: "Chi è Verdi?" });
+  });
+
+  test("mentre si punta non si scrive la risposta", () => {
+    const s = session({ status: "final", phase: "final_wager", score_alpha: 900 });
+    const row = finalAnswerRow(s, "alpha", { wager: 400, answer: "provo a sbirciare" });
+    assert.deepEqual(row, { session_id: s.id, team: "alpha", wager: 400 });
+  });
 
   test("la domanda arriva ai telefoni solo quando è ora di rispondere", () => {
     assert.equal(finalQuestionVisible("final_answer"), true);
@@ -590,41 +583,78 @@ describe("invio della finale", () => {
 
 describe("giudizio della finale", () => {
   const start = { score_alpha: 1000, score_bravo: 800 };
-  const pending = (wager: number | null): FinalEntry => ({ judged: null, wager });
+  const pending = (wager: number | null): FinalEntry => ({ team: "bravo", judged: null, wager });
 
-  test("chi indovina si prende la puntata avversaria", () => {
+  test("la regola sta sul tema del gioco, e in mancanza è quella televisiva", () => {
+    assert.equal(finalScoringOf({ finalScoring: "duel" }), "duel");
+    assert.equal(finalScoringOf({ finalScoring: "classic" }), "classic");
+    assert.equal(finalScoringOf({}), "classic");
+    assert.equal(finalScoringOf(null), "classic");
+    assert.equal(finalScoringOf({ finalScoring: "qualcosa" }), "classic");
+  });
+
+  test("regola televisiva: chi indovina guadagna la propria puntata", () => {
     const r = judgeFinalScores({
+      rule: "classic",
       team: "alpha",
       correct: true,
       ownWager: 500,
       rivals: [pending(300)],
       scores: start,
     });
-    assert.deepEqual(r, { score_alpha: 1300, score_bravo: 500, finished: false, delta: 300 });
+    assert.deepEqual(r, { score_alpha: 1500, score_bravo: 800, finished: false, delta: 500 });
   });
 
-  test("chi sbaglia perde la propria", () => {
+  test("regola televisiva: chi sbaglia perde la propria, e l'altra non si muove", () => {
     const r = judgeFinalScores({
+      rule: "classic",
       team: "bravo",
       correct: false,
       ownWager: 300,
-      rivals: [pending(500)],
+      rivals: [{ team: "alpha", judged: null, wager: 500 }],
       scores: start,
     });
     assert.deepEqual(r, { score_alpha: 1000, score_bravo: 500, finished: false, delta: -300 });
+  });
+
+  test("duello: la puntata passa a chi ha indovinato", () => {
+    // Alpha ha già indovinato; ora Bravo sbaglia e le lascia i suoi 300.
+    const r = judgeFinalScores({
+      rule: "duel",
+      team: "bravo",
+      correct: false,
+      ownWager: 300,
+      rivals: [{ team: "alpha", judged: true, wager: 500 }],
+      scores: start,
+    });
+    assert.deepEqual(r, { score_alpha: 1300, score_bravo: 500, finished: true, delta: -300 });
+  });
+
+  test("duello: chi indovina per primo aspetta il giudizio dell'altra", () => {
+    const r = judgeFinalScores({
+      rule: "duel",
+      team: "alpha",
+      correct: true,
+      ownWager: 500,
+      rivals: [pending(300)],
+      scores: start,
+    });
+    assert.deepEqual(r, { score_alpha: 1000, score_bravo: 800, finished: false, delta: 0 });
   });
 
   test("la partita finisce solo quando anche l'altra squadra è stata giudicata", () => {
     const base = { team: "alpha" as const, correct: true, ownWager: 100, scores: start };
     assert.equal(judgeFinalScores({ ...base, rivals: [pending(100)] }).finished, false);
     assert.equal(
-      judgeFinalScores({ ...base, rivals: [{ judged: false, wager: 100 }] }).finished,
+      judgeFinalScores({ ...base, rivals: [{ team: "bravo", judged: false, wager: 100 }] })
+        .finished,
       true,
     );
   });
 
   test("senza l'altra squadra non si chiude da sola: la chiude l'host", () => {
     const r = judgeFinalScores({
+      rule: "duel",
       team: "alpha",
       correct: true,
       ownWager: 100,
@@ -635,36 +665,42 @@ describe("giudizio della finale", () => {
   });
 
   test("una puntata mancante vale zero", () => {
-    const r = judgeFinalScores({
-      team: "bravo",
-      correct: false,
-      ownWager: null,
-      rivals: [pending(null)],
-      scores: start,
-    });
-    assert.equal(r.score_bravo, 800);
-    assert.equal(r.delta + 0, 0);
+    for (const rule of ["classic", "duel"] as const) {
+      const r = judgeFinalScores({
+        rule,
+        team: "bravo",
+        correct: false,
+        ownWager: null,
+        rivals: [pending(null)],
+        scores: start,
+      });
+      assert.equal(r.score_bravo, 800, rule);
+      assert.equal(r.delta, 0, rule);
+    }
   });
 
   /** Giudica entrambe le squadre come fa l'host, una dopo l'altra. */
   function judgeBoth(
+    rule: FinalScoring,
     wagers: Record<Team, number>,
     correct: Record<Team, boolean>,
     first: Team,
   ): { score_alpha: number; score_bravo: number } {
     const second: Team = first === "alpha" ? "bravo" : "alpha";
     const a = judgeFinalScores({
+      rule,
       team: first,
       correct: correct[first],
       ownWager: wagers[first],
-      rivals: [pending(wagers[second])],
+      rivals: [{ team: second, judged: null, wager: wagers[second] }],
       scores: start,
     });
     const b = judgeFinalScores({
+      rule,
       team: second,
       correct: correct[second],
       ownWager: wagers[second],
-      rivals: [{ judged: correct[first], wager: wagers[first] }],
+      rivals: [{ team: first, judged: correct[first], wager: wagers[first] }],
       scores: a,
     });
     assert.equal(a.finished, false);
@@ -672,47 +708,58 @@ describe("giudizio della finale", () => {
     return { score_alpha: b.score_alpha, score_bravo: b.score_bravo };
   }
 
-  test("l'ordine in cui l'host giudica non cambia il risultato", () => {
+  test("l'ordine in cui l'host giudica non cambia il risultato, con nessuna delle due regole", () => {
     const wagers = { alpha: 600, bravo: 250 };
-    for (const alpha of [true, false]) {
-      for (const bravo of [true, false]) {
-        const correct = { alpha, bravo };
-        assert.deepEqual(
-          judgeBoth(wagers, correct, "alpha"),
-          judgeBoth(wagers, correct, "bravo"),
-          `alpha ${alpha}, bravo ${bravo}`,
-        );
+    for (const rule of ["classic", "duel"] as const) {
+      for (const alpha of [true, false]) {
+        for (const bravo of [true, false]) {
+          const correct = { alpha, bravo };
+          assert.deepEqual(
+            judgeBoth(rule, wagers, correct, "alpha"),
+            judgeBoth(rule, wagers, correct, "bravo"),
+            `${rule}: alpha ${alpha}, bravo ${bravo}`,
+          );
+        }
       }
     }
   });
 
   test("se sbagliano entrambe, ciascuna perde la propria puntata", () => {
+    for (const rule of ["classic", "duel"] as const) {
+      assert.deepEqual(
+        judgeBoth(rule, { alpha: 600, bravo: 250 }, { alpha: false, bravo: false }, "alpha"),
+        { score_alpha: 400, score_bravo: 550 },
+        rule,
+      );
+    }
+  });
+
+  test("chi sbaglia mentre l'altra indovina perde la sua puntata una volta sola", () => {
+    // Era il difetto: con 250 in palio Bravo ne perdeva 500, e chiudeva a 300.
     assert.deepEqual(
-      judgeBoth({ alpha: 600, bravo: 250 }, { alpha: false, bravo: false }, "alpha"),
-      {
-        score_alpha: 400,
-        score_bravo: 550,
-      },
+      judgeBoth("duel", { alpha: 600, bravo: 250 }, { alpha: true, bravo: false }, "alpha"),
+      { score_alpha: 1250, score_bravo: 550 },
+    );
+    // Con la regola televisiva ognuna risponde solo della propria puntata.
+    assert.deepEqual(
+      judgeBoth("classic", { alpha: 600, bravo: 250 }, { alpha: true, bravo: false }, "alpha"),
+      { score_alpha: 1600, score_bravo: 550 },
     );
   });
 
-  test(
-    "chi sbaglia mentre l'altra indovina perde la sua puntata una volta sola",
-    {
-      todo: "la puntata di chi sbaglia si toglie due volte: una quando l'avversaria indovina, una quando la si giudica sbagliata",
-    },
-    () => {
-      // Alpha giusta, Bravo sbagliata, 250 in palio: Alpha +250, Bravo -250.
-      // Oggi Bravo chiude a 300 invece di 550.
-      assert.deepEqual(
-        judgeBoth({ alpha: 600, bravo: 250 }, { alpha: true, bravo: false }, "alpha"),
-        {
-          score_alpha: 1250,
-          score_bravo: 550,
-        },
-      );
-    },
-  );
+  test("duello: se indovinano entrambe non si muove niente", () => {
+    assert.deepEqual(
+      judgeBoth("duel", { alpha: 600, bravo: 250 }, { alpha: true, bravo: true }, "alpha"),
+      { score_alpha: 1000, score_bravo: 800 },
+    );
+  });
+
+  test("regola televisiva: se indovinano entrambe, ognuna incassa la propria", () => {
+    assert.deepEqual(
+      judgeBoth("classic", { alpha: 600, bravo: 250 }, { alpha: true, bravo: true }, "alpha"),
+      { score_alpha: 1600, score_bravo: 1050 },
+    );
+  });
 });
 
 /* --------------------------------- Overlay --------------------------------- */

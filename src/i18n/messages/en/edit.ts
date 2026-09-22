@@ -114,6 +114,12 @@ export const edit = {
     pointsLadder: "Points ladder",
     rowPoints: "Row {row} points",
     pointLadderSaved: "Point ladder saved",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "Classic",
+    finalScoringDuel: "Duel",
+    finalScoringClassicHint: "Each team wins or loses its own wager, like on TV.",
+    finalScoringDuelHint:
+      "The wager of the team that answers wrong goes to the team that got it right.",
   },
   stepper: {
     increase: "{label} +1",

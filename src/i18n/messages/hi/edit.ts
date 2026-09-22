@@ -114,6 +114,11 @@ export const edit: Messages["edit"] = {
     pointsLadder: "अंकों की सीढ़ी",
     rowPoints: "पंक्ति {row} के अंक",
     pointLadderSaved: "अंकों की सीढ़ी सेव हो गई",
+    finalScoring: "Final Jeopardy",
+    finalScoringClassic: "क्लासिक",
+    finalScoringDuel: "मुकाबला",
+    finalScoringClassicHint: "हर टीम अपनी ही शर्त जीतती या गँवाती है, जैसे टीवी पर होता है।",
+    finalScoringDuelHint: "गलत जवाब देने वाली टीम की शर्त सही जवाब देने वाली टीम को मिलती है।",
   },
   stepper: {
     increase: "{label} +1",

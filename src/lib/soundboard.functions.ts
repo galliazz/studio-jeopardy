@@ -6,7 +6,8 @@ export const MAX_CLIPS = 20;
 
 const clipInput = z.object({
   gameId: z.string().uuid(),
-  name: z.string().trim().min(1).max(40),
+  /* Vuoto per i suoni pronti: il nome è quello del preset, tradotto a schermo. */
+  name: z.string().trim().max(40),
   source: z.enum(["preset", "upload"]),
   presetKey: z.string().max(40).nullable().optional(),
   storagePath: z.string().max(400).nullable().optional(),

@@ -163,10 +163,15 @@ export function sanitizeHtml(html: string): string {
 /**
  * Testo semplice per le anteprime. La regex tiene conto dei valori quotati,
  * altrimenti un `>` dentro un attributo lasciava frammenti di markup a schermo.
+ *
+ * È la stessa forma usata sopra per leggere i tag: la versione precedente
+ * ammetteva testo libero solo dopo un valore fra apici singoli, così un tag
+ * con virgolette doppie — cioè tutto quello che scrive `sanitizeHtml` — non si
+ * chiudeva mai, e nell'anteprima della casella si leggeva `<font color="red">`.
  */
 export function stripHtml(html: string): string {
   return html
-    .replace(/<[a-zA-Z/][^>"']*(?:"[^"]*"|'[^']*'[^>"']*)*>/g, " ")
+    .replace(/<[a-zA-Z/](?:[^>"']|"[^"]*"|'[^']*')*>/g, " ")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&")

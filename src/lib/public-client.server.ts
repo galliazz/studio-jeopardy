@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { supabasePublishableKey, supabaseUrl } from "@/integrations/supabase/env";
 
 /**
  * Server-local publishable client for anonymous/public Data API access.
@@ -8,8 +9,8 @@ import type { Database } from "@/integrations/supabase/types";
  * Call inside handlers only — env is injected at request time.
  */
 export function createPublicClient() {
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-  return createClient<Database>(process.env["SUPABASE_URL"]!, key, {
+  const key = supabasePublishableKey()!;
+  return createClient<Database>(supabaseUrl()!, key, {
     auth: { persistSession: false, autoRefreshToken: false, storage: undefined },
     global: {
       fetch: (input, init) => {

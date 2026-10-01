@@ -1,11 +1,20 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Play,
+  Redo2,
   Palette,
   ImagePlus,
   Music,
@@ -14,6 +23,7 @@ import {
   ExternalLink,
   Type,
   Sparkles,
+  Undo2,
   Trash2,
   Minus,
   Plus,
@@ -52,6 +62,18 @@ import { SettingsDialog } from "@/components/SettingsDialog";
 import { AccountMenu } from "@/components/AccountMenu";
 import { AppBar } from "@/components/AppBar";
 import { APP_GUTTER, NAV_BUTTON } from "@/components/app-bar";
+import { isCategoryUntitled, isTileIncomplete } from "@/lib/board-check";
+import {
+  EMPTY_HISTORY,
+  canRedo,
+  canUndo,
+  historyShortcut,
+  pushed,
+  redone,
+  undone,
+  type HistoryAction,
+  type HistoryState,
+} from "@/lib/edit-history";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
@@ -147,6 +169,141 @@ function EditorPage() {
   );
 
   /*
+   * La board come matrice: serve sia alle frecce della tastiera sia al
+   * controllo di completezza. L'ordine è quello che si vede — colonne da
+   * sinistra a destra, righe dall'alto in basso — e non quello in cui il
+   * database restituisce le caselle.
+   */
+  const grid = useMemo(() => {
+    if (!board) return [] as (Tile | null)[][];
+    return [0, 1, 2, 3, 4].map((row) =>
+      board.categories.map(
+        (cat) =>
+          board.tiles.find((tile) => tile.category_id === cat.id && tile.row_index === row) ?? null,
+      ),
+    );
+  }, [board]);
+
+  /** Le caselle senza domanda o senza risposta, nell'ordine di lettura. */
+  const incompleteTiles = useMemo(
+    () => grid.flat().filter((tile): tile is Tile => !!tile && isTileIncomplete(tile)),
+    [grid],
+  );
+
+  const untitledCategories = useMemo(
+    () => (board?.categories ?? []).filter((cat) => isCategoryUntitled(cat.title)),
+    [board],
+  );
+
+  /**
+   * Le frecce spostano la selezione di una casella, e il fuoco la segue: chi
+   * scrive un tabellone tiene le mani sulla tastiera, e prima ogni casella
+   * andava presa col mouse.
+   */
+  const moveSelection = useCallback(
+    (dx: number, dy: number) => {
+      if (!grid.length) return;
+      let r = 0;
+      let c = 0;
+      if (selectedTileId) {
+        for (let row = 0; row < grid.length; row++) {
+          const col = grid[row]!.findIndex((tile) => tile?.id === selectedTileId);
+          if (col >= 0) {
+            r = row;
+            c = col;
+            break;
+          }
+        }
+        r = Math.min(grid.length - 1, Math.max(0, r + dy));
+        c = Math.min((grid[r]?.length ?? 1) - 1, Math.max(0, c + dx));
+      }
+      const next = grid[r]?.[c];
+      if (!next) return;
+      setSelectedTileId(next.id);
+      document.querySelector<HTMLElement>(`[data-tile-id="${next.id}"]`)?.focus();
+    },
+    [grid, selectedTileId],
+  );
+
+  /*
+   * La cronologia sta in un ref e non in uno stato: le azioni si registrano
+   * dentro callback che vivono a lungo, e con lo stato catturerebbero una
+   * pila vecchia. Il contatore serve solo a ridisegnare i due pulsanti.
+   */
+  const historyRef = useRef<HistoryState>(EMPTY_HISTORY);
+  const [historyTick, bumpHistory] = useReducer((n: number) => n + 1, 0);
+
+  const record = useCallback((action: HistoryAction) => {
+    historyRef.current = pushed(historyRef.current, action);
+    bumpHistory();
+  }, []);
+
+  const step = useCallback(
+    async (direction: "undo" | "redo") => {
+      const result = direction === "undo" ? undone(historyRef.current) : redone(historyRef.current);
+      if (!result.action) return;
+      historyRef.current = result.state;
+      bumpHistory();
+      try {
+        await (direction === "undo" ? result.action.undo() : result.action.redo());
+        await refresh();
+        toast.success(
+          t(direction === "undo" ? "edit.history.undone" : "edit.history.redone", {
+            what: result.action.label,
+          }),
+          { duration: 1500 },
+        );
+      } catch (err) {
+        // Se il server rifiuta, la pila torna com'era: altrimenti il pulsante
+        // direbbe di aver disfatto una cosa che sul database è ancora lì.
+        historyRef.current =
+          direction === "undo"
+            ? pushed(result.state, result.action)
+            : {
+                past: result.state.past.slice(0, -1),
+                future: [result.action, ...result.state.future],
+              };
+        bumpHistory();
+        toast.error(localizeError(err, "edit.history.failed"));
+      }
+    },
+    [refresh, t],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const direction = historyShortcut({
+        key: e.key,
+        metaKey: e.metaKey,
+        ctrlKey: e.ctrlKey,
+        shiftKey: e.shiftKey,
+        target: e.target as { tagName?: string; isContentEditable?: boolean } | null,
+      });
+      if (!direction) return;
+      e.preventDefault();
+      void step(direction);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [step]);
+
+  const onBoardKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const moves: Record<string, [number, number]> = {
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0],
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1],
+      };
+      const move = moves[e.key];
+      if (!move) return;
+      e.preventDefault();
+      moveSelection(move[0], move[1]);
+    },
+    [moveSelection],
+  );
+
+  /*
    * Le Daily Double si scelgono qui e vivono sul gioco, non sulla partita: la
    * sessione nasce solo quando si preme Play, e ogni nuova partita le eredita.
    * Se non ne scegli nessuna, il server ne sorteggia due.
@@ -166,10 +323,18 @@ function EditorPage() {
         : [...current, tileId];
       // `themeOf(board.game)` e non il tema già adattato al tema scuro:
       // salvare quello inciderebbe i colori notturni nel gioco.
-      await updateGame({ data: { gameId, theme: { ...base, dailyDoubleTileIds: next } } });
+      const apply = async (ids: string[]) => {
+        await updateGame({ data: { gameId, theme: { ...base, dailyDoubleTileIds: ids } } });
+      };
+      await apply(next);
+      record({
+        label: t("edit.history.dailyDouble"),
+        undo: () => apply(current),
+        redo: () => apply(next),
+      });
       await refresh();
     },
-    [board, gameId, refresh, t],
+    [board, gameId, record, refresh, t],
   );
 
   if (!board || !theme) {
@@ -218,6 +383,15 @@ function EditorPage() {
         }
         right={
           <>
+            {/* Annulla e ripristina: la pila vive finché la pagina è aperta.
+                `historyTick` li ridisegna quando cambia. */}
+            <HistoryButtons
+              tick={historyTick}
+              canUndo={canUndo(historyRef.current)}
+              canRedo={canRedo(historyRef.current)}
+              onUndo={() => void step("undo")}
+              onRedo={() => void step("redo")}
+            />
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
@@ -262,13 +436,24 @@ function EditorPage() {
           <aside className="order-2 flex flex-col gap-3 min-[1100px]:order-1 min-[1100px]:mt-[var(--board-offset)] min-[1100px]:max-h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:justify-self-end min-[1100px]:self-start min-[1100px]:overflow-y-auto min-[1100px]:pe-1">
             {/* Ordine chiesto: il testo è quello che si tocca di più mentre si
                 scrive un gioco, le Daily Double una volta sola alla fine. */}
-            <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} />
+            <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} onRecord={record} />
             <DailyDoublePanel
               count={dailyDoubles.length}
               picking={ddMode}
               onToggle={() => {
                 setDdMode((v) => !v);
                 setSelectedTileId(null);
+              }}
+            />
+            <ReadyPanel
+              missingTiles={incompleteTiles.length}
+              missingCategories={untitledCategories.length}
+              onGoToFirst={() => {
+                const first = incompleteTiles[0];
+                if (!first) return;
+                setDdMode(false);
+                setSelectedTileId(first.id);
+                document.querySelector<HTMLElement>(`[data-tile-id="${first.id}"]`)?.focus();
               }}
             />
           </aside>
@@ -287,9 +472,18 @@ function EditorPage() {
               className="h-full w-full overflow-hidden p-[2.2cqmin] elev-3"
               style={{ backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) }}
             >
-              <div className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]">
+              <div
+                onKeyDown={onBoardKeyDown}
+                className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]"
+              >
                 {board.categories.map((cat) => (
-                  <CategoryHeader key={cat.id} category={cat} theme={theme} onSaved={refresh} />
+                  <CategoryHeader
+                    key={cat.id}
+                    category={cat}
+                    theme={theme}
+                    onSaved={refresh}
+                    onRecord={record}
+                  />
                 ))}
                 {[0, 1, 2, 3, 4].map((row) =>
                   board.categories.map((cat) => {
@@ -331,6 +525,7 @@ function EditorPage() {
                 theme={theme}
                 onClose={() => setSelectedTileId(null)}
                 onSaved={refresh}
+                onRecord={record}
               />
             ) : (
               <Panel
@@ -367,6 +562,55 @@ function EditorPage() {
         )}
       </AnimatePresence>
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+    </div>
+  );
+}
+
+/**
+ * Annulla e ripristina. Restano spenti quando non c'è niente da disfare, e il
+ * titolo dice la scorciatoia: è la prima cosa che si cerca dopo aver
+ * cancellato una casella per sbaglio.
+ */
+function HistoryButtons({
+  tick,
+  canUndo: undoable,
+  canRedo: redoable,
+  onUndo,
+  onRedo,
+}: {
+  /** Cambia a ogni azione: serve solo a far ridisegnare i pulsanti. */
+  tick: number;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+}) {
+  const t = useT();
+  void tick;
+  const style =
+    "flex h-12 w-12 items-center justify-center rounded-full border border-foreground/20 transition-colors hover:bg-foreground/5 disabled:opacity-35 disabled:hover:bg-transparent";
+  return (
+    <div className="hidden items-center gap-1.5 sm:flex">
+      <button
+        type="button"
+        onClick={onUndo}
+        disabled={!undoable}
+        title={t("edit.history.undoHint")}
+        aria-label={t("common.undo")}
+        className={style}
+      >
+        <Undo2 className="h-5 w-5 rtl:-scale-x-100" />
+      </button>
+      <button
+        type="button"
+        onClick={onRedo}
+        disabled={!redoable}
+        title={t("edit.history.redoHint")}
+        aria-label={t("common.redo")}
+        className={style}
+      >
+        <Redo2 className="h-5 w-5 rtl:-scale-x-100" />
+      </button>
     </div>
   );
 }
@@ -455,6 +699,46 @@ function DailyDoublePanel({
 }
 
 /* ------------------------------ Inline title ------------------------------ */
+
+/**
+ * Il controllo prima di giocare: quante caselle sono ancora senza domanda o
+ * senza risposta, e quante categorie non hanno un titolo. Un clic porta sulla
+ * prima da sistemare — prima bisognava aprirle tutte per scoprirlo, e le
+ * caselle vuote si trovavano in diretta.
+ */
+function ReadyPanel({
+  missingTiles,
+  missingCategories,
+  onGoToFirst,
+}: {
+  missingTiles: number;
+  missingCategories: number;
+  onGoToFirst: () => void;
+}) {
+  const t = useT();
+  const ready = missingTiles === 0 && missingCategories === 0;
+
+  return (
+    <Panel title={t("edit.check.title")}>
+      <p className={`text-center text-sm ${ready ? "text-success-ink" : "text-muted-foreground"}`}>
+        {ready ? t("edit.check.allGood") : t("edit.check.missingTiles", { count: missingTiles })}
+      </p>
+      {!ready && missingCategories > 0 && (
+        <p className="mt-1 text-center text-sm text-muted-foreground">
+          {t("edit.check.missingCategories", { count: missingCategories })}
+        </p>
+      )}
+      {missingTiles > 0 && (
+        <button
+          onClick={onGoToFirst}
+          className="mt-3 min-h-11 w-full rounded-full bg-muted text-sm font-bold transition-colors hover:bg-foreground/10"
+        >
+          {t("edit.check.goToFirst")}
+        </button>
+      )}
+    </Panel>
+  );
+}
 
 function InlineTitle({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> }) {
   const t = useT();
@@ -559,10 +843,12 @@ function CategoryHeader({
   category,
   theme,
   onSaved,
+  onRecord,
 }: {
   category: Category;
   theme: ThemeSettings;
   onSaved: () => void;
+  onRecord: (action: HistoryAction) => void;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -571,11 +857,20 @@ function CategoryHeader({
 
   const commit = async () => {
     setEditing(false);
-    if (draft.trim() && draft !== category.title) {
-      await updateCategoryTitle({ data: { categoryId: category.id, title: draft.trim() } });
-      onSaved();
-      toast.success(t("common.saved"), { duration: 1200 });
-    }
+    const next = draft.trim();
+    if (!next || next === category.title) return;
+    const previous = category.title;
+    const apply = async (title: string) => {
+      await updateCategoryTitle({ data: { categoryId: category.id, title } });
+    };
+    await apply(next);
+    onRecord({
+      label: t("edit.history.categoryTitle"),
+      undo: () => apply(previous),
+      redo: () => apply(next),
+    });
+    onSaved();
+    toast.success(t("common.saved"), { duration: 1200 });
   };
 
   return (
@@ -631,6 +926,7 @@ function TileCell({
     <motion.button
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
+      data-tile-id={tile.id}
       aria-pressed={picking ? dailyDouble : undefined}
       /* Riempie la sua cella: l'altezza la decide la griglia, che a sua volta
          entra sempre intera nella finestra. Niente aspetto fisso, o la board
@@ -726,6 +1022,7 @@ function TileEditor({
   theme,
   onClose,
   onSaved,
+  onRecord,
 }: {
   tile: Tile;
   /** Serve a dire QUALE casella: di "200" ce ne sono cinque. */
@@ -737,6 +1034,7 @@ function TileEditor({
   theme: ThemeSettings;
   onClose: () => void;
   onSaved: () => void;
+  onRecord: (action: HistoryAction) => void;
 }) {
   const t = useT();
   // Esc chiude, come ci si aspetta da un ispettore. Ignorato mentre si scrive
@@ -777,18 +1075,44 @@ function TileEditor({
     image_url?: string | null;
     audio_url?: string | null;
   }
+  /**
+   * Salva e registra come si torna indietro: i valori di prima si leggono
+   * dalla casella così com'è adesso, campo per campo, e l'annullamento li
+   * riscrive. Solo i campi toccati, per non sovrascrivere quello che nel
+   * frattempo ha cambiato qualcun altro.
+   */
   const save = useCallback(
-    async (patch: TilePatch) => {
+    async (patch: TilePatch, label?: string) => {
+      const before: TilePatch = {};
+      for (const key of Object.keys(patch) as (keyof TilePatch)[]) {
+        if (key === "question") before.question = tile.question;
+        else if (key === "answer") before.answer = tile.answer;
+        else if (key === "hint") before.hint = tile.hint;
+        else if (key === "points") before.points = tile.points;
+        else if (key === "image_url") before.image_url = tile.image_url;
+        else if (key === "audio_url") before.audio_url = tile.audio_url;
+      }
       await updateTile({ data: { tileId: tile.id, ...patch } });
+      if (label) {
+        onRecord({
+          label,
+          undo: async () => {
+            await updateTile({ data: { tileId: tile.id, ...before } });
+          },
+          redo: async () => {
+            await updateTile({ data: { tileId: tile.id, ...patch } });
+          },
+        });
+      }
       onSaved();
     },
-    [tile.id, onSaved],
+    [tile, onSaved, onRecord],
   );
 
   const saveQuestion = () => {
     const html = editorRef.current?.innerHTML ?? "";
     if (html !== tile.question) {
-      void save({ question: html });
+      void save({ question: html }, t("edit.history.question"));
       toast.success(t("common.saved"), { duration: 1000 });
     }
   };
@@ -805,7 +1129,10 @@ function TileEditor({
     }
     try {
       const path = await uploadMedia("game-media", hostId, gameId, file);
-      await save(kind === "image" ? { image_url: path } : { audio_url: path });
+      await save(
+        kind === "image" ? { image_url: path } : { audio_url: path },
+        t(kind === "image" ? "edit.history.image" : "edit.history.audio"),
+      );
       toast.success(t(kind === "image" ? "edit.media.imageAttached" : "edit.media.audioAttached"));
     } catch (err) {
       toast.error(localizeError(err, "edit.media.uploadFailed"));
@@ -893,7 +1220,7 @@ function TileEditor({
           <input
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            onBlur={() => answer !== tile.answer && void save({ answer })}
+            onBlur={() => answer !== tile.answer && void save({ answer }, t("edit.history.answer"))}
             placeholder={t("edit.inspector.answerPlaceholder")}
             className="h-12 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
@@ -905,7 +1232,10 @@ function TileEditor({
             value={hint}
             onChange={(e) => setHint(e.target.value)}
             placeholder={t("edit.inspector.hintPlaceholder")}
-            onBlur={() => hint !== (tile.hint ?? "") && void save({ hint: hint || null })}
+            onBlur={() =>
+              hint !== (tile.hint ?? "") &&
+              void save({ hint: hint || null }, t("edit.history.hint"))
+            }
             className="h-12 w-full rounded-full bg-muted px-4 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
           />
         </label>
@@ -956,7 +1286,7 @@ function TileEditor({
                 className="max-h-32 w-full rounded-[26px] object-cover"
               />
               <button
-                onClick={() => void save({ image_url: null })}
+                onClick={() => void save({ image_url: null }, t("edit.history.image"))}
                 className="absolute end-2 top-2 rounded-full bg-card p-1.5 text-foreground elev-1"
                 aria-label={t("edit.inspector.removeImage")}
               >
@@ -968,7 +1298,7 @@ function TileEditor({
             <div className="mt-2 flex items-center gap-2">
               <audio controls src={audioUrl} className="h-8 w-full" />
               <button
-                onClick={() => void save({ audio_url: null })}
+                onClick={() => void save({ audio_url: null }, t("edit.history.audio"))}
                 className="rounded-full bg-muted p-1.5"
                 aria-label={t("edit.inspector.removeAudio")}
               >
@@ -1004,7 +1334,10 @@ function TileEditor({
               if (editorRef.current) editorRef.current.innerHTML = "";
               setAnswer("");
               setHint("");
-              void save({ question: "", answer: "", hint: null, image_url: null, audio_url: null });
+              void save(
+                { question: "", answer: "", hint: null, image_url: null, audio_url: null },
+                t("edit.history.clearTile"),
+              );
             }}
             className="mt-2 flex min-h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-bold text-danger-ink transition-colors hover:bg-danger-ink/10"
           >
@@ -1022,10 +1355,12 @@ function ThemeBar({
   gameId,
   theme,
   onSaved,
+  onRecord,
 }: {
   gameId: string;
   theme: ThemeSettings;
   onSaved: () => void;
+  onRecord: (action: HistoryAction) => void;
 }) {
   const t = useT();
   const queryClient = useQueryClient();
@@ -1046,12 +1381,29 @@ function ThemeBar({
     [queryClient, gameId],
   );
 
+  /**
+   * Salva una parte del tema e registra come si torna indietro. I valori di
+   * prima sono quelli delle sole chiavi toccate: annullare il raggio non deve
+   * riportare indietro anche i colori cambiati nel frattempo.
+   */
   const saveTheme = useCallback(
-    async (patch: Partial<ThemeSettings>) => {
+    async (patch: Partial<ThemeSettings>, label?: string) => {
+      const before = Object.fromEntries(
+        Object.keys(patch).map((key) => [key, theme[key as keyof ThemeSettings]]),
+      ) as Partial<ThemeSettings>;
+      const apply = async (next: Partial<ThemeSettings>) => {
+        patchThemeCache(next);
+        await updateGame({ data: { gameId, theme: { ...theme, ...next } } });
+      };
       await updateGame({ data: { gameId, theme: { ...theme, ...patch } } });
+      onRecord({
+        label: label ?? t("edit.history.appearance"),
+        undo: () => apply(before),
+        redo: () => apply(patch),
+      });
       onSaved();
     },
-    [gameId, theme, onSaved],
+    [gameId, theme, onSaved, onRecord, patchThemeCache, t],
   );
 
   /** Colori scelti a mano: salva e basta. Un avviso a ogni scatto del
@@ -1059,12 +1411,12 @@ function ThemeBar({
   const applyColors = (patch: Pick<ThemeSettings, "bg" | "card" | "accent">) => {
     patchThemeCache(patch);
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void saveTheme(patch), 400);
+    saveTimer.current = setTimeout(() => void saveTheme(patch, t("edit.history.colours")), 400);
   };
 
   const applyPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
     patchThemeCache(preset.theme);
-    await saveTheme(preset.theme);
+    await saveTheme(preset.theme, t("edit.history.theme"));
     toast.success(t("edit.appearance.themeApplied", { name: t(preset.nameKey) }), {
       duration: 1200,
     });
@@ -1074,7 +1426,10 @@ function ThemeBar({
   const applyRadius = (radius: number) => {
     patchThemeCache({ radius });
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void saveTheme({ radius }), 400);
+    saveTimer.current = setTimeout(
+      () => void saveTheme({ radius }, t("edit.history.roundness")),
+      400,
+    );
   };
 
   const [scope, setScope] = useState<TextScope | "all">("numbers");
@@ -1087,20 +1442,23 @@ function ThemeBar({
     const next = { ...(theme.textStyles ?? {}) };
     for (const sc of scopes) next[sc] = { ...(next[sc] ?? {}), ...patch };
     patchThemeCache({ textStyles: next });
-    await saveTheme({ textStyles: next });
+    await saveTheme({ textStyles: next }, t("edit.history.text"));
   };
 
   /** Il colore di una squadra: salvato in ritardo, come le altre tinte. */
   const applyTeamColor = (key: "teamAlphaColor" | "teamBravoColor", value: string) => {
     patchThemeCache({ [key]: value });
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => void saveTheme({ [key]: value }), 400);
+    saveTimer.current = setTimeout(
+      () => void saveTheme({ [key]: value }, t("edit.history.teamColour")),
+      400,
+    );
   };
 
   const applyTeamName = async (key: "teamAlpha" | "teamBravo", value: string) => {
     const patch = { [key]: value.trim() };
     patchThemeCache(patch);
-    await saveTheme(patch);
+    await saveTheme(patch, t("edit.history.teamName"));
     toast.success(t("edit.game.teamNameSaved"), { duration: 1000 });
   };
 
@@ -1110,7 +1468,7 @@ function ThemeBar({
    */
   const applyFinalScoring = async (rule: FinalScoring) => {
     patchThemeCache({ finalScoring: rule });
-    await saveTheme({ finalScoring: rule });
+    await saveTheme({ finalScoring: rule }, t("edit.history.finalScoring"));
   };
 
   const applyRowPoints = async () => {

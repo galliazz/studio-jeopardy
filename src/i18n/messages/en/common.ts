@@ -14,6 +14,7 @@ export const common = {
   add: "Add",
   reset: "Reset",
   undo: "Undo",
+  redo: "Redo",
   settings: "Settings",
   home: "Home",
   language: "Language",

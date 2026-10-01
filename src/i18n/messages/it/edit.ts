@@ -139,6 +139,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Vai alla prima",
   },
   history: {
+    categoryOrder: "l'ordine delle categorie",
     undone: "Annullato: {what}",
     redone: "Ripristinato: {what}",
     failed: "Non sono riuscito ad annullare",
@@ -160,5 +161,10 @@ export const edit: Messages["edit"] = {
     teamName: "il nome della squadra",
     teamColour: "il colore della squadra",
     finalScoring: "la regola della finale",
+  },
+  category: {
+    position:
+      "Categoria {index} di {total}: {title}. Trascinala, oppure tieni Alt e usa le frecce, per spostarla.",
+    hint: "{title} — clicca per rinominare, trascina per spostare",
   },
 };

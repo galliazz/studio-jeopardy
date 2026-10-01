@@ -139,6 +139,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "पहले पर जाएँ",
   },
   history: {
+    categoryOrder: "श्रेणियों का क्रम",
     undone: "पूर्ववत किया: {what}",
     redone: "फिर से किया: {what}",
     failed: "पूर्ववत नहीं हो सका",
@@ -160,5 +161,9 @@ export const edit: Messages["edit"] = {
     teamName: "टीम का नाम",
     teamColour: "टीम का रंग",
     finalScoring: "Final Jeopardy नियम",
+  },
+  category: {
+    position: "श्रेणी {index}/{total}: {title}। खींचकर, या Alt के साथ तीर कुंजियों से, इसे हटाएँ।",
+    hint: "{title} — नाम बदलने के लिए क्लिक करें, हटाने के लिए खींचें",
   },
 };

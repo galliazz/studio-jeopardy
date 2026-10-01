@@ -148,6 +148,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "اذهب إلى الأول",
   },
   history: {
+    categoryOrder: "ترتيب الفئات",
     undone: "تم التراجع: {what}",
     redone: "تمت الإعادة: {what}",
     failed: "تعذّر التراجع",
@@ -169,5 +170,9 @@ export const edit: Messages["edit"] = {
     teamName: "اسم الفريق",
     teamColour: "لون الفريق",
     finalScoring: "قاعدة Final Jeopardy",
+  },
+  category: {
+    position: "الفئة {index} من {total}: {title}. اسحبها، أو اضغط Alt مع الأسهم، لتحريكها.",
+    hint: "{title} — انقر لإعادة التسمية، واسحب للتحريك",
   },
 };

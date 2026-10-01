@@ -136,6 +136,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "跳到第一个",
   },
   history: {
+    categoryOrder: "分类顺序",
     undone: "已撤销：{what}",
     redone: "已重做：{what}",
     failed: "无法撤销",
@@ -157,5 +158,9 @@ export const edit: Messages["edit"] = {
     teamName: "队伍名称",
     teamColour: "队伍颜色",
     finalScoring: "Final Jeopardy 规则",
+  },
+  category: {
+    position: "第 {index} / {total} 个分类：{title}。拖动，或按住 Alt 加方向键，可以移动。",
+    hint: "{title} — 点击重命名，拖动移动",
   },
 };

@@ -143,6 +143,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Перейти к первой",
   },
   history: {
+    categoryOrder: "порядок категорий",
     undone: "Отменено: {what}",
     redone: "Возвращено: {what}",
     failed: "Не удалось отменить",
@@ -164,5 +165,10 @@ export const edit: Messages["edit"] = {
     teamName: "название команды",
     teamColour: "цвет команды",
     finalScoring: "правило Final Jeopardy",
+  },
+  category: {
+    position:
+      "Категория {index} из {total}: {title}. Перетащи или удерживай Alt со стрелками, чтобы переместить.",
+    hint: "{title} — клик, чтобы переименовать; перетащи, чтобы переместить",
   },
 };

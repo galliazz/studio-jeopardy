@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import {
   getGameBoard,
+  reorderCategories,
   updateGame,
   updateCategoryTitle,
   updateTile,
@@ -287,6 +288,40 @@ function EditorPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [step]);
 
+  /**
+   * Riordino delle colonne. Si trascina l'intestazione, oppure, da tastiera,
+   * Alt con le frecce: il trascinamento da solo lascerebbe fuori chi non può
+   * usare il mouse.
+   */
+  const [draggingCategory, setDraggingCategory] = useState<string | null>(null);
+
+  const applyOrder = useCallback(
+    async (ids: string[]) => {
+      await reorderCategories({ data: { gameId, categoryIds: ids } });
+    },
+    [gameId],
+  );
+
+  const moveCategory = useCallback(
+    async (categoryId: string, toIndex: number) => {
+      if (!board) return;
+      const ids = board.categories.map((c) => c.id);
+      const from = ids.indexOf(categoryId);
+      const to = Math.min(ids.length - 1, Math.max(0, toIndex));
+      if (from < 0 || from === to) return;
+      const next = [...ids];
+      next.splice(to, 0, ...next.splice(from, 1));
+      await applyOrder(next);
+      record({
+        label: t("edit.history.categoryOrder"),
+        undo: () => applyOrder(ids),
+        redo: () => applyOrder(next),
+      });
+      await refresh();
+    },
+    [board, applyOrder, record, refresh, t],
+  );
+
   const onBoardKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       const moves: Record<string, [number, number]> = {
@@ -476,13 +511,25 @@ function EditorPage() {
                 onKeyDown={onBoardKeyDown}
                 className="grid h-full w-full grid-cols-5 grid-rows-[auto_repeat(5,1fr)] gap-[1.2cqmin]"
               >
-                {board.categories.map((cat) => (
+                {board.categories.map((cat, index) => (
                   <CategoryHeader
                     key={cat.id}
                     category={cat}
                     theme={theme}
                     onSaved={refresh}
                     onRecord={record}
+                    index={index}
+                    total={board.categories.length}
+                    dragging={draggingCategory === cat.id}
+                    onDragStart={() => setDraggingCategory(cat.id)}
+                    onDragEnd={() => setDraggingCategory(null)}
+                    onDropOn={() => {
+                      if (draggingCategory && draggingCategory !== cat.id) {
+                        void moveCategory(draggingCategory, index);
+                      }
+                      setDraggingCategory(null);
+                    }}
+                    onMove={(delta) => void moveCategory(cat.id, index + delta)}
                   />
                 ))}
                 {[0, 1, 2, 3, 4].map((row) =>
@@ -844,11 +891,26 @@ function CategoryHeader({
   theme,
   onSaved,
   onRecord,
+  index,
+  total,
+  dragging,
+  onDragStart,
+  onDragEnd,
+  onDropOn,
+  onMove,
 }: {
   category: Category;
   theme: ThemeSettings;
   onSaved: () => void;
   onRecord: (action: HistoryAction) => void;
+  index: number;
+  total: number;
+  dragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+  onDropOn: () => void;
+  /** -1 o +1: sposta la colonna di un posto, da tastiera. */
+  onMove: (delta: number) => void;
 }) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -873,9 +935,42 @@ function CategoryHeader({
     toast.success(t("common.saved"), { duration: 1200 });
   };
 
+  /*
+   * Trascinare la colonna la sposta; con Alt e le frecce fa lo stesso senza
+   * mouse. `preventDefault` su `dragover` è ciò che rende la casella un
+   * bersaglio valido: senza, il cursore mostra il divieto e il rilascio non
+   * arriva mai.
+   */
   return (
     <div
-      className="flex min-h-0 items-center justify-center overflow-hidden p-[0.8cqmin] text-center transition-[border-radius] duration-300"
+      draggable={!editing}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", category.id);
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDropOn();
+      }}
+      onKeyDown={(e) => {
+        if (!e.altKey || editing) return;
+        const delta = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+        if (!delta) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onMove(delta);
+      }}
+      aria-label={t("edit.category.position", {
+        title: category.title,
+        index: index + 1,
+        total,
+      })}
+      className={`flex min-h-0 cursor-grab items-center justify-center overflow-hidden p-[0.8cqmin] text-center transition-[border-radius,opacity] duration-300 active:cursor-grabbing ${
+        dragging ? "opacity-40" : ""
+      }`}
       style={{ backgroundColor: theme.card, borderRadius: radiusCq(theme.radius, 0.6) }}
     >
       {editing ? (
@@ -894,7 +989,7 @@ function CategoryHeader({
           onClick={() => setEditing(true)}
           className="h-full w-full font-bold uppercase leading-tight tracking-wide transition-opacity hover:opacity-70"
           style={{ color: theme.accent, ...boardTextCss(theme, "categories", null, 1.6) }}
-          title={category.title}
+          title={t("edit.category.hint", { title: category.title })}
         >
           <span className="line-clamp-2 w-full break-words">{category.title}</span>
         </button>

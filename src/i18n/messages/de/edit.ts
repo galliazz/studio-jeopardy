@@ -141,6 +141,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Zum ersten springen",
   },
   history: {
+    categoryOrder: "die Reihenfolge der Kategorien",
     undone: "Rückgängig: {what}",
     redone: "Wiederhergestellt: {what}",
     failed: "Konnte nicht rückgängig gemacht werden",
@@ -162,5 +163,10 @@ export const edit: Messages["edit"] = {
     teamName: "der Teamname",
     teamColour: "die Teamfarbe",
     finalScoring: "die Final-Jeopardy-Regel",
+  },
+  category: {
+    position:
+      "Kategorie {index} von {total}: {title}. Zum Verschieben ziehen oder Alt mit den Pfeiltasten halten.",
+    hint: "{title} — klicken zum Umbenennen, ziehen zum Verschieben",
   },
 };

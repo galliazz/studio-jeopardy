@@ -138,6 +138,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "最初のマスへ",
   },
   history: {
+    categoryOrder: "カテゴリの並び",
     undone: "元に戻しました：{what}",
     redone: "やり直しました：{what}",
     failed: "元に戻せませんでした",
@@ -159,5 +160,10 @@ export const edit: Messages["edit"] = {
     teamName: "チーム名",
     teamColour: "チームの色",
     finalScoring: "Final Jeopardy のルール",
+  },
+  category: {
+    position:
+      "カテゴリ {index} / {total}：{title}。ドラッグ、または Alt と矢印キーで移動できます。",
+    hint: "{title} — クリックで名前変更、ドラッグで移動",
   },
 };

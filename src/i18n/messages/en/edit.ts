@@ -140,6 +140,7 @@ export const edit = {
     goToFirst: "Go to the first one",
   },
   history: {
+    categoryOrder: "the category order",
     undone: "Undone: {what}",
     redone: "Redone: {what}",
     failed: "Could not undo that",
@@ -161,5 +162,10 @@ export const edit = {
     teamName: "the team name",
     teamColour: "the team colour",
     finalScoring: "the Final Jeopardy rule",
+  },
+  category: {
+    position:
+      "Category {index} of {total}: {title}. Drag it, or hold Alt and use the arrow keys, to move it.",
+    hint: "{title} — click to rename, drag to move",
   },
 };

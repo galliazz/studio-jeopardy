@@ -139,6 +139,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Ir para a primeira",
   },
   history: {
+    categoryOrder: "a ordem das categorias",
     undone: "Desfeito: {what}",
     redone: "Refeito: {what}",
     failed: "Não deu para desfazer",
@@ -160,5 +161,10 @@ export const edit: Messages["edit"] = {
     teamName: "o nome do time",
     teamColour: "a cor do time",
     finalScoring: "a regra do Final Jeopardy",
+  },
+  category: {
+    position:
+      "Categoria {index} de {total}: {title}. Arraste, ou segure Alt e use as setas, para mover.",
+    hint: "{title} — clique para renomear, arraste para mover",
   },
 };

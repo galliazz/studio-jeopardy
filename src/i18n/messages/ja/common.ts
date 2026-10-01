@@ -15,6 +15,7 @@ export const common: Messages["common"] = {
   add: "追加",
   reset: "リセット",
   undo: "元に戻す",
+  redo: "やり直す",
   settings: "設定",
   home: "ホーム",
   language: "言語",

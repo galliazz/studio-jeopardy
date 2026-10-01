@@ -190,6 +190,45 @@ export const updateTile = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Rimette le categorie nell'ordine dato. Arriva l'elenco completo degli id,
+ * non «sposta la terza in seconda»: due riordini ravvicinati, con gli indici,
+ * si sovrascriverebbero a vicenda lasciando due colonne con la stessa
+ * posizione.
+ *
+ * Le righe che non appartengono al gioco vengono ignorate: la RLS già impedge
+ * di toccarle, ma così la posizione non si sposta nemmeno per sbaglio.
+ */
+export const reorderCategories = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        gameId: z.string().uuid(),
+        categoryIds: z.array(z.string().uuid()).min(1).max(12),
+      })
+      .parse(data),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    const { data: existing, error } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("game_id", data.gameId);
+    if (error) throw new Error(error.message);
+    const mine = new Set((existing ?? []).map((c) => c.id));
+    const ordered = data.categoryIds.filter((id) => mine.has(id));
+    for (const [position, id] of ordered.entries()) {
+      const { error: uErr } = await supabase
+        .from("categories")
+        .update({ position })
+        .eq("id", id)
+        .eq("game_id", data.gameId);
+      if (uErr) throw new Error(uErr.message);
+    }
+    return { ok: true, count: ordered.length };
+  });
+
 /** Applies a new per-row point ladder to every tile of the game. */
 export const setRowPoints = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

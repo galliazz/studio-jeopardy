@@ -15,6 +15,7 @@ export const common: Messages["common"] = {
   add: "添加",
   reset: "重置",
   undo: "撤销",
+  redo: "重做",
   settings: "设置",
   home: "首页",
   language: "语言",

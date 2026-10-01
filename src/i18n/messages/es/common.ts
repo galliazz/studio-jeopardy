@@ -15,6 +15,7 @@ export const common: Messages["common"] = {
   add: "Agregar",
   reset: "Restablecer",
   undo: "Deshacer",
+  redo: "Rehacer",
   settings: "Ajustes",
   home: "Inicio",
   language: "Idioma",

@@ -15,6 +15,7 @@ export const common: Messages["common"] = {
   add: "जोड़ो",
   reset: "रीसेट करो",
   undo: "वापस लाओ",
+  redo: "फिर से करें",
   settings: "सेटिंग्स",
   home: "होम",
   language: "भाषा",

@@ -97,10 +97,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      /* Installabile sul telefono: la barra di sistema prende il colore del
+         fondo, e in standalone la pagina parte senza barra del browser. */
+      { name: "theme-color", content: "#140c17" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "JEOPARDESTINY" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       /* I caratteri li serve il sito, non Google: vedi styles.css. */
     ],
   }),
@@ -144,6 +153,20 @@ function AuthListener() {
   return null;
 }
 
+/**
+ * Il service worker serve a una cosa sola: far considerare il sito
+ * installabile dal telefono (vedi public/sw.js, che non mette niente in
+ * cache). In sviluppo resta spento, altrimenti si mette in mezzo al
+ * ricaricamento a caldo di Vite.
+ */
+function registerServiceWorker() {
+  if (import.meta.env?.DEV) return;
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  void navigator.serviceWorker.register("/sw.js").catch(() => {
+    /* Niente installazione: l'app funziona lo stesso. */
+  });
+}
+
 function AppToaster() {
   const t = useT();
   return (
@@ -168,6 +191,7 @@ function RootComponent() {
   useEffect(() => {
     initThemeMode();
     startLocaleSync();
+    registerServiceWorker();
   }, []);
 
   return (

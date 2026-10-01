@@ -73,6 +73,7 @@ import {
   shortcutsSuppressed,
 } from "@/lib/shortcuts";
 import { useSettings } from "@/lib/settings";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useOrigin } from "@/hooks/use-origin";
 import { sfx } from "@/lib/sfx";
@@ -234,6 +235,8 @@ function HostPage() {
     refetchOnWindowFocus: false,
   });
   useSessionRealtime(sessionId, [["host", sessionId]]);
+  /* Anche la console: l'host guarda la board e tocca lo schermo di rado. */
+  useWakeLock(true);
 
   const rotateOverlayToken = useServerFn(regenerateOverlayToken);
   const bootstrap = useServerFn(bootstrapStudio);

@@ -169,4 +169,12 @@ export const edit: Messages["edit"] = {
       "Kategorie {index} von {total}: {title}. Zum Verschieben ziehen oder Alt mit den Pfeiltasten halten.",
     hint: "{title} — klicken zum Umbenennen, ziehen zum Verschieben",
   },
+  preview: {
+    open: "Vorschau",
+    badge: "Vorschau — sieht sonst niemand",
+    hint: "Öffne ein Feld so, wie es die Spielenden sehen. Esc schließt, Leertaste zeigt die Antwort.",
+    reveal: "Antwort zeigen",
+    closeTile: "Feld schließen",
+    restart: "Neu starten",
+  },
 };

@@ -170,4 +170,12 @@ export const edit: Messages["edit"] = {
       "Categoría {index} de {total}: {title}. Arrástrala, o mantén Alt y usa las flechas, para moverla.",
     hint: "{title} — haz clic para renombrar, arrastra para mover",
   },
+  preview: {
+    open: "Vista previa",
+    badge: "Vista previa — nadie más la ve",
+    hint: "Abre una casilla como la verán los jugadores. Esc cierra, Espacio revela la respuesta.",
+    reveal: "Revelar la respuesta",
+    closeTile: "Cerrar la casilla",
+    restart: "Empezar de nuevo",
+  },
 };

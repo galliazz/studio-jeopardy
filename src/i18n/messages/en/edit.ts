@@ -168,4 +168,12 @@ export const edit = {
       "Category {index} of {total}: {title}. Drag it, or hold Alt and use the arrow keys, to move it.",
     hint: "{title} — click to rename, drag to move",
   },
+  preview: {
+    open: "Preview",
+    badge: "Preview — nobody else sees this",
+    hint: "Open a tile as the players will see it. Esc closes, Space reveals the answer.",
+    reveal: "Reveal the answer",
+    closeTile: "Close the tile",
+    restart: "Start over",
+  },
 };

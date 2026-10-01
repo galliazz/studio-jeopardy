@@ -167,4 +167,12 @@ export const edit: Messages["edit"] = {
       "Categoria {index} di {total}: {title}. Trascinala, oppure tieni Alt e usa le frecce, per spostarla.",
     hint: "{title} — clicca per rinominare, trascina per spostare",
   },
+  preview: {
+    open: "Prova",
+    badge: "Prova — non la vede nessun altro",
+    hint: "Apri una casella come la vedranno i giocatori. Esc chiude, Spazio rivela la risposta.",
+    reveal: "Rivela la risposta",
+    closeTile: "Chiudi la casella",
+    restart: "Ricomincia",
+  },
 };

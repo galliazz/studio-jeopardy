@@ -167,4 +167,12 @@ export const edit: Messages["edit"] = {
       "Categoria {index} de {total}: {title}. Arraste, ou segure Alt e use as setas, para mover.",
     hint: "{title} — clique para renomear, arraste para mover",
   },
+  preview: {
+    open: "Prévia",
+    badge: "Prévia — mais ninguém vê",
+    hint: "Abra uma casa como os jogadores vão ver. Esc fecha, Espaço revela a resposta.",
+    reveal: "Revelar a resposta",
+    closeTile: "Fechar a casa",
+    restart: "Começar de novo",
+  },
 };

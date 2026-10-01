@@ -166,4 +166,12 @@ export const edit: Messages["edit"] = {
       "カテゴリ {index} / {total}：{title}。ドラッグ、または Alt と矢印キーで移動できます。",
     hint: "{title} — クリックで名前変更、ドラッグで移動",
   },
+  preview: {
+    open: "プレビュー",
+    badge: "プレビュー — ほかの人には見えません",
+    hint: "プレイヤーに見えるとおりにマスを開きます。Esc で閉じ、スペースで答えを表示。",
+    reveal: "答えを表示",
+    closeTile: "マスを閉じる",
+    restart: "最初から",
+  },
 };

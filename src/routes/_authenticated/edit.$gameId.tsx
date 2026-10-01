@@ -21,6 +21,7 @@ import {
   X,
   Copy,
   ExternalLink,
+  Eye,
   Type,
   Sparkles,
   Undo2,
@@ -60,6 +61,7 @@ import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { BoardPreview } from "@/components/game/BoardPreview";
 import { AccountMenu } from "@/components/AccountMenu";
 import { AppBar } from "@/components/AppBar";
 import { APP_GUTTER, NAV_BUTTON } from "@/components/app-bar";
@@ -153,6 +155,7 @@ function EditorPage() {
 
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [playOpen, setPlayOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   /** Mentre è attivo, toccare una casella la promuove invece di aprirla. */
@@ -427,6 +430,14 @@ function EditorPage() {
               onUndo={() => void step("undo")}
               onRedo={() => void step("redo")}
             />
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              title={t("edit.preview.hint")}
+              className="hidden h-12 items-center gap-2 rounded-full border border-foreground/20 px-4 text-sm font-bold transition-colors hover:bg-foreground/5 sm:flex"
+            >
+              <Eye className="h-4 w-4" /> {t("edit.preview.open")}
+            </button>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setPlayOpen(true)}
@@ -606,6 +617,16 @@ function EditorPage() {
         )}
         {joinOpen && (
           <JoinDialog joinCode={board.game.join_code} onClose={() => setJoinOpen(false)} />
+        )}
+        {previewOpen && (
+          <BoardPreview
+            game={board.game}
+            categories={board.categories}
+            tiles={board.tiles}
+            theme={theme}
+            dailyDoubleTileIds={dailyDoubles}
+            onClose={() => setPreviewOpen(false)}
+          />
         )}
       </AnimatePresence>
       {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}

@@ -170,4 +170,12 @@ export const edit: Messages["edit"] = {
       "Catégorie {index} sur {total} : {title}. Fais-la glisser, ou maintiens Alt avec les flèches, pour la déplacer.",
     hint: "{title} — clique pour renommer, glisse pour déplacer",
   },
+  preview: {
+    open: "Aperçu",
+    badge: "Aperçu — personne d'autre ne le voit",
+    hint: "Ouvre une case comme la verront les joueurs. Échap ferme, Espace révèle la réponse.",
+    reveal: "Révéler la réponse",
+    closeTile: "Fermer la case",
+    restart: "Recommencer",
+  },
 };

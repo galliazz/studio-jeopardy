@@ -163,4 +163,12 @@ export const edit: Messages["edit"] = {
     position: "第 {index} / {total} 个分类：{title}。拖动，或按住 Alt 加方向键，可以移动。",
     hint: "{title} — 点击重命名，拖动移动",
   },
+  preview: {
+    open: "预览",
+    badge: "预览 — 其他人看不到",
+    hint: "按玩家看到的样子打开格子。Esc 关闭，空格显示答案。",
+    reveal: "显示答案",
+    closeTile: "关闭格子",
+    restart: "重新开始",
+  },
 };

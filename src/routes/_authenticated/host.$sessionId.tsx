@@ -19,6 +19,7 @@ import {
   Sparkles,
   BarChart3,
   Crown,
+  ImageDown,
   X,
   Check,
   Flag,
@@ -97,6 +98,8 @@ import { BoardSkeleton } from "@/components/game/BoardSkeleton";
 import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
 import { ScoreFly, type ScoreFlight } from "@/components/game/ScoreFly";
+import { buildRecap, type Recap } from "@/lib/recap";
+import { drawRecap, recapLines } from "@/lib/recap-image";
 import { ScorePill } from "@/components/game/ScorePill";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
@@ -851,6 +854,8 @@ function HostPage() {
             session={session}
             players={players}
             theme={theme}
+            recap={buildRecap({ queue, tiles, categories, players })}
+            gameTitle={game.title}
             onExit={() => void navigate({ to: "/studio" })}
           />
         )}
@@ -1724,11 +1729,15 @@ function Podium({
   session,
   players,
   theme,
+  recap,
+  gameTitle,
   onExit,
 }: {
   session: Session;
   players: Player[];
   theme: ThemeSettings;
+  recap: Recap;
+  gameTitle: string;
   onExit: () => void;
 }) {
   const t = useT();
@@ -1753,6 +1762,33 @@ function Podium({
   const loseScore = loser === "alpha" ? session.score_alpha : session.score_bravo;
   const winners = players.filter((p) => p.team === winner);
   const losers = players.filter((p) => p.team === loser);
+  const lines = recapLines(recap, (key, vars) => t(key as MessageKey, vars));
+
+  /**
+   * L'immagine si disegna al momento e si scarica: niente da caricare da
+   * nessuna parte, e quindi niente da cancellare dopo.
+   */
+  const shareImage = () => {
+    const canvas = document.createElement("canvas");
+    drawRecap(canvas, {
+      title: gameTitle,
+      teams: [
+        { name: teamName(theme, "alpha"), score: session.score_alpha, colour: "#9ad0ff" },
+        { name: teamName(theme, "bravo"), score: session.score_bravo, colour: "#ffb3a7" },
+      ],
+      lines,
+      footer: t("host.recap.footer"),
+    });
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${gameTitle.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  };
 
   return (
     <motion.div
@@ -1800,6 +1836,27 @@ function Podium({
             ))}
           </div>
         </div>
+
+        {/* Quello che si racconta dopo: chi ha il dito più veloce, chi ha
+            risposto bene più volte, quale categoria ha fatto cadere tutti. */}
+        {lines.length > 0 && (
+          <ul className="mt-5 space-y-1.5 text-start text-sm text-muted-foreground">
+            {lines.map((line) => (
+              <li key={line} className="flex gap-2">
+                <span aria-hidden>·</span>
+                <span className="flex-1">{line}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <button
+          type="button"
+          onClick={shareImage}
+          className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-lilac text-sm font-bold text-foreground elev-1"
+        >
+          <ImageDown className="h-4 w-4" /> {t("host.recap.saveImage")}
+        </button>
       </motion.div>
     </motion.div>
   );

@@ -150,4 +150,12 @@ export const host: Messages["host"] = {
     tie: "¡Empate!",
     wins: "¡Gana {team}!",
   },
+  recap: {
+    fastest: "Dedo más rápido: {name}, primero {count} veces",
+    topScorer: "Más aciertos: {name}, {count}",
+    hardest: "Categoría más dura: {category}, {count} fallos",
+    totals: "{buzzes} pulsaciones en {tiles} casillas",
+    saveImage: "Guardar el resumen como imagen",
+    footer: "JEOPARDESTINY",
+  },
 };

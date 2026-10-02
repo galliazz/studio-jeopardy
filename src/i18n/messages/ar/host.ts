@@ -174,4 +174,12 @@ export const host: Messages["host"] = {
     tie: "تعادل!",
     wins: "فاز {team}!",
   },
+  recap: {
+    fastest: "أسرع إصبع: {name}، سبق {count} مرات",
+    topScorer: "أكثر إجابات صحيحة: {name}، {count}",
+    hardest: "أصعب فئة: {category}، {count} خطأ",
+    totals: "{buzzes} ضغطة على {tiles} مربعًا",
+    saveImage: "احفظ الملخّص كصورة",
+    footer: "JEOPARDESTINY",
+  },
 };

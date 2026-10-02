@@ -151,4 +151,12 @@ export const host = {
     tie: "It's a tie!",
     wins: "{team} wins!",
   },
+  recap: {
+    fastest: "Fastest finger: {name}, first in {count} times",
+    topScorer: "Most right answers: {name}, {count}",
+    hardest: "Hardest category: {category}, {count} wrong",
+    totals: "{buzzes} buzzes on {tiles} tiles",
+    saveImage: "Save the recap as an image",
+    footer: "JEOPARDESTINY",
+  },
 };

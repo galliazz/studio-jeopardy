@@ -146,4 +146,12 @@ export const host: Messages["host"] = {
     tie: "引き分け！",
     wins: "{team}の勝利！",
   },
+  recap: {
+    fastest: "最速ボタン：{name}、{count} 回先取",
+    topScorer: "正解数トップ：{name}、{count} 回",
+    hardest: "最難関カテゴリ：{category}、不正解 {count} 回",
+    totals: "{tiles} マスで {buzzes} 回の早押し",
+    saveImage: "まとめを画像で保存",
+    footer: "JEOPARDESTINY",
+  },
 };

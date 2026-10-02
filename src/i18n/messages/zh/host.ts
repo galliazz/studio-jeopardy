@@ -148,4 +148,12 @@ export const host: Messages["host"] = {
     tie: "平局！",
     wins: "{team} 获胜！",
   },
+  recap: {
+    fastest: "手速最快：{name}，抢到 {count} 次",
+    topScorer: "答对最多：{name}，{count} 次",
+    hardest: "最难分类：{category}，答错 {count} 次",
+    totals: "{tiles} 个格子，共 {buzzes} 次抢答",
+    saveImage: "把总结存成图片",
+    footer: "JEOPARDESTINY",
+  },
 };

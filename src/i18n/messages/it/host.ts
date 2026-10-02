@@ -150,4 +150,12 @@ export const host: Messages["host"] = {
     tie: "Pareggio!",
     wins: "Vince {team}!",
   },
+  recap: {
+    fastest: "Dito più veloce: {name}, primo {count} volte",
+    topScorer: "Più risposte giuste: {name}, {count}",
+    hardest: "Categoria più dura: {category}, {count} sbagliate",
+    totals: "{buzzes} prenotazioni su {tiles} caselle",
+    saveImage: "Salva il riepilogo come immagine",
+    footer: "JEOPARDESTINY",
+  },
 };

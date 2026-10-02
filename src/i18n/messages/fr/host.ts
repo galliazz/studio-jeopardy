@@ -162,4 +162,12 @@ export const host: Messages["host"] = {
     tie: "Égalité !",
     wins: "{team} gagne !",
   },
+  recap: {
+    fastest: "Doigt le plus rapide : {name}, premier {count} fois",
+    topScorer: "Plus de bonnes réponses : {name}, {count}",
+    hardest: "Catégorie la plus dure : {category}, {count} erreurs",
+    totals: "{buzzes} buzz sur {tiles} cases",
+    saveImage: "Enregistrer le récap en image",
+    footer: "JEOPARDESTINY",
+  },
 };

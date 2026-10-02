@@ -149,4 +149,12 @@ export const host: Messages["host"] = {
     tie: "मुकाबला बराबर!",
     wins: "{team} की जीत!",
   },
+  recap: {
+    fastest: "सबसे तेज़ उँगली: {name}, {count} बार पहले",
+    topScorer: "सबसे ज़्यादा सही जवाब: {name}, {count}",
+    hardest: "सबसे कठिन श्रेणी: {category}, {count} गलत",
+    totals: "{tiles} खानों पर {buzzes} बार बज़",
+    saveImage: "सारांश को तस्वीर में सहेजें",
+    footer: "JEOPARDESTINY",
+  },
 };

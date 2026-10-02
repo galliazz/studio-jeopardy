@@ -169,4 +169,12 @@ export const host: Messages["host"] = {
     tie: "Ничья!",
     wins: "{team} побеждает!",
   },
+  recap: {
+    fastest: "Самый быстрый палец: {name}, первым {count} раз",
+    topScorer: "Больше всего верных ответов: {name}, {count}",
+    hardest: "Самая трудная категория: {category}, {count} ошибок",
+    totals: "{buzzes} нажатий на {tiles} клетках",
+    saveImage: "Сохранить итоги картинкой",
+    footer: "JEOPARDESTINY",
+  },
 };

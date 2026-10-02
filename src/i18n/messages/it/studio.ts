@@ -111,4 +111,16 @@ export const studio: Messages["studio"] = {
     done: "{count} indizi scritti — rileggili prima di giocare.",
     review: "Scritto dall'IA: controlla i fatti prima della partita.",
   },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "La tua prima partita, in tre mosse",
+    intro: "Nella libreria c'è già un tabellone demo: aprilo, e il resto viene da sé.",
+    steps: {
+      one: "Apri il tabellone demo e cambia un indizio o due, giusto per vedere come funziona l'editor.",
+      two: "Premi Gioca: il tabellone va a schermo intero e compare un codice d'ingresso.",
+      three:
+        "Chi gioca apre il sito dal telefono e scrive quel codice. Niente app, niente account.",
+    },
+    dismiss: "Nascondi",
+  },
 };

@@ -111,4 +111,16 @@ export const studio: Messages["studio"] = {
     done: "{count} Hinweise geschrieben – lies sie vor dem Spiel durch.",
     review: "Von KI geschrieben: Prüfe die Fakten vor dem Spiel.",
   },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "Dein erstes Spiel, in drei Schritten",
+    intro: "In deiner Bibliothek liegt schon ein Demo-Spielfeld – öffne es, der Rest ergibt sich.",
+    steps: {
+      one: "Öffne das Demo-Spielfeld und ändere ein, zwei Hinweise, nur um den Editor zu sehen.",
+      two: "Drück auf Spielen: Das Spielfeld geht auf Vollbild und ein Beitrittscode erscheint.",
+      three:
+        "Die Mitspielenden öffnen die Seite am Handy und tippen den Code ein. Keine App, kein Konto.",
+    },
+    dismiss: "Ausblenden",
+  },
 };

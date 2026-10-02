@@ -110,4 +110,15 @@ export const studio = {
     done: "{count} clues written — read them through before you play.",
     review: "Written by AI: check the facts before the game.",
   },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "Your first game, in three moves",
+    intro: "There's already a demo board in your library — open it and the rest follows.",
+    steps: {
+      one: "Open the demo board and change a clue or two, just to see how the editor works.",
+      two: "Press Play: the board goes full screen and a join code appears.",
+      three: "Your players open the site on their phones and type that code. No app, no account.",
+    },
+    dismiss: "Hide this",
+  },
 };

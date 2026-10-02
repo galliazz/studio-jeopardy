@@ -117,4 +117,16 @@ export const studio: Messages["studio"] = {
     done: "{count} indices écrits — relis-les avant de jouer.",
     review: "Écrit par l'IA : vérifie les faits avant la partie.",
   },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "Ta première partie, en trois gestes",
+    intro: "Un plateau de démonstration est déjà dans ta bibliothèque : ouvre-le, le reste suit.",
+    steps: {
+      one: "Ouvre le plateau de démonstration et change un indice ou deux, juste pour voir l'éditeur.",
+      two: "Appuie sur Jouer : le plateau passe en plein écran et un code d'entrée apparaît.",
+      three:
+        "Les joueurs ouvrent le site sur leur téléphone et tapent ce code. Pas d'appli, pas de compte.",
+    },
+    dismiss: "Masquer",
+  },
 };

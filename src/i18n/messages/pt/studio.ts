@@ -110,4 +110,15 @@ export const studio: Messages["studio"] = {
     done: "{count} pistas escritas — relê-as antes de jogar.",
     review: "Escrito por IA: confirma os factos antes da partida.",
   },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "A tua primeira partida, em três passos",
+    intro: "Já tens um tabuleiro de demonstração na biblioteca: abre-o, e o resto vem sozinho.",
+    steps: {
+      one: "Abre o tabuleiro de demonstração e muda uma pista ou duas, só para ver o editor.",
+      two: "Carrega em Jogar: o tabuleiro vai para ecrã inteiro e aparece um código de entrada.",
+      three: "Quem joga abre o site no telemóvel e escreve esse código. Sem app, sem conta.",
+    },
+    dismiss: "Esconder",
+  },
 };

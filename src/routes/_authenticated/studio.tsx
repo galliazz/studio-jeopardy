@@ -37,11 +37,13 @@ import { useThemeMode } from "@/components/ThemeToggle";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { StudioTopBar } from "@/components/StudioTopBar";
+import { FirstRunCard } from "@/components/FirstRunCard";
 import { APP_GUTTER } from "@/components/app-bar";
 import { localizeError, useT } from "@/i18n";
 import { boardFromRows, parseCsv, sheetCsvUrl } from "@/lib/csv-import";
 import { aiAvailable, generateBoard } from "@/lib/ai-board.functions";
 import type { AiDifficulty } from "@/lib/ai-board";
+import { dismissFirstRun, firstRunDismissed, shouldShowFirstRun } from "@/lib/first-run";
 
 import { getSettings } from "@/lib/settings";
 import {
@@ -221,6 +223,11 @@ function StudioPage() {
   const [aiTopic, setAiTopic] = useState("");
   const [aiDifficulty, setAiDifficulty] = useState<AiDifficulty>("mixed");
   const [generating, setGenerating] = useState(false);
+  /* Il ricordo sta in localStorage, che sul server non esiste: si legge dopo
+     il primo render, altrimenti l'HTML del server e quello del browser non
+     combaciano e React ricostruisce tutto. */
+  const [firstRunHidden, setFirstRunHidden] = useState(true);
+  useEffect(() => setFirstRunHidden(firstRunDismissed()), []);
 
   const handleExport = async (gameId: string) => {
     try {
@@ -395,6 +402,15 @@ function StudioPage() {
     }
   };
 
+  const showFirstRun =
+    !firstRunHidden &&
+    !isLoading &&
+    shouldShowFirstRun({
+      boards: (data?.games ?? []).length,
+      dismissed: false,
+      hasPlayed: data?.hasPlayed ?? true,
+    });
+
   const username = data?.profile?.username;
   const boardCount = (data?.games ?? []).length;
 
@@ -435,6 +451,15 @@ function StudioPage() {
         </header>
 
         {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+
+        {showFirstRun && (
+          <FirstRunCard
+            onDismiss={() => {
+              dismissFirstRun();
+              setFirstRunHidden(true);
+            }}
+          />
+        )}
 
         {/* Action row: primary CTA, secondary action, spacer, low-emphasis search */}
         <div className="relative mb-8 flex items-center gap-3">

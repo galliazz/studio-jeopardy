@@ -107,4 +107,15 @@ export const studio: Messages["studio"] = {
     done: "已写出 {count} 条线索——开始前请通读一遍。",
     review: "由 AI 撰写：开始前请核对事实。",
   },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "三步开始第一场游戏",
+    intro: "你的资料库里已经有一个示例题板——打开它，剩下的自然就懂了。",
+    steps: {
+      one: "打开示例题板，改一两条线索，看看编辑器怎么用。",
+      two: "按「开始游戏」：题板会全屏显示，并出现一个加入码。",
+      three: "玩家用手机打开网站，输入这个码。不用装应用，也不用注册。",
+    },
+    dismiss: "隐藏",
+  },
 };

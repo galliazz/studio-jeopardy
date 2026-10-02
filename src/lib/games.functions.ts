@@ -86,7 +86,17 @@ export const bootstrapStudio = createServerFn({ method: "GET" })
       const col = s.grid[meta.position];
       if (col && t.row_index >= 0 && t.row_index < 5) col[t.row_index] = ok;
     }
-    return { profile, games: list, stats };
+    /* Una sola riga, solo per sapere se esiste: serve alla scheda del primo
+       giro, che sparisce appena si è condotta una partita. `head` non è il
+       caso — la riga non la leggiamo, ma il conteggio esatto non interessa. */
+    const { data: anySession } = await supabase
+      .from("sessions")
+      .select("id")
+      .eq("host_id", userId)
+      .limit(1);
+    const hasPlayed = (anySession ?? []).length > 0;
+
+    return { profile, games: list, stats, hasPlayed };
   });
 
 export const createGame = createServerFn({ method: "POST" })

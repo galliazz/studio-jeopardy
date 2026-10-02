@@ -606,7 +606,7 @@ function EditorPage() {
                 {!ddMode && (
                   /* L'unica cosa non evidente della pagina: le categorie si
                    rinominano cliccandole, e niente lo diceva. */
-                  <p className="mt-3 text-xs text-muted-foreground/80">
+                  <p className="mt-3 text-xs text-muted-foreground">
                     {t("edit.inspector.categoryHint")}
                   </p>
                 )}

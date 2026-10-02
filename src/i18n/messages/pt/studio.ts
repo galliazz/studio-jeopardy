@@ -99,6 +99,7 @@ export const studio: Messages["studio"] = {
     help: "Diz do que é a partida: a IA escreve 25 pistas com as respostas, e tu corriges no editor. Nada é publicado, e nada é definitivo.",
     placeholder: "ex. história do rock, anatomia humana, Nápoles",
     difficulty: {
+      label: "Dificuldade",
       easy: "Fácil",
       mixed: "Misto",
       hard: "Difícil",

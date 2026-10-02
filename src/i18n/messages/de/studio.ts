@@ -100,6 +100,7 @@ export const studio: Messages["studio"] = {
     help: "Sag, worum es geht: Die KI schreibt 25 Hinweise mit Antworten, du korrigierst sie im Editor. Nichts wird veröffentlicht, nichts ist endgültig.",
     placeholder: "z. B. Geschichte des Rock, Anatomie, Neapel",
     difficulty: {
+      label: "Schwierigkeit",
       easy: "Leicht",
       mixed: "Gemischt",
       hard: "Schwer",

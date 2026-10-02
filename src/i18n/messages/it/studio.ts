@@ -100,6 +100,7 @@ export const studio: Messages["studio"] = {
     help: "Dì di cosa parla la partita: l'IA scrive 25 indizi con le loro risposte, e tu li correggi nell'editor. Non si pubblica niente, e niente è definitivo.",
     placeholder: "es. storia del rock, anatomia umana, Napoli",
     difficulty: {
+      label: "Difficoltà",
       easy: "Facile",
       mixed: "Misto",
       hard: "Difficile",

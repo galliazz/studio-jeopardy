@@ -51,7 +51,9 @@ export function FirstRunCard({ onDismiss }: { onDismiss: () => void }) {
         onClick={onDismiss}
         aria-label={t("studio.firstRun.dismiss")}
         title={t("studio.firstRun.dismiss")}
-        className="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+        /* 60% di opacità dava 4.2:1, sotto la soglia di leggibilità: a 70
+            arriva a 5.1 nei due temi e resta comunque più quieto del titolo. */
+        className="absolute end-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
       >
         <X className="h-4 w-4" />
       </button>

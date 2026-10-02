@@ -99,6 +99,7 @@ export const studio = {
     help: "Say what the game is about: AI writes 25 clues with their answers, and you fix them in the editor. Nothing is published, and nothing is final.",
     placeholder: "e.g. history of rock, human anatomy, Naples",
     difficulty: {
+      label: "Difficulty",
       easy: "Easy",
       mixed: "Mixed",
       hard: "Hard",

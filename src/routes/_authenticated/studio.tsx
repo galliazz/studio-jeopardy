@@ -573,17 +573,20 @@ function StudioPage() {
                 className="h-12 min-w-0 flex-1 basis-64 rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent disabled:opacity-60"
               />
               {/* Tre livelli, visibili tutti e tre: una tendina a tre voci
-                  costa un clic in più e non spiega niente di più. */}
+                  costa un clic in più e non spiega niente di più.
+                  Sono tre interruttori e non un gruppo di radio: le radio
+                  vere si attraversano con le frecce, e tre bottoni che
+                  dicono «premuto» si raggiungono col tabulatore come tutto
+                  il resto della riga, senza regole a parte. */}
               <div
-                role="radiogroup"
-                aria-label={t("studio.ai.difficulty.help")}
+                role="group"
+                aria-label={t("studio.ai.difficulty.label")}
                 className="flex h-12 shrink-0 items-center gap-1 rounded-full bg-muted p-1"
               >
                 {(["easy", "mixed", "hard"] as const).map((level) => (
                   <button
                     key={level}
-                    role="radio"
-                    aria-checked={aiDifficulty === level}
+                    aria-pressed={aiDifficulty === level}
                     disabled={generating}
                     onClick={() => setAiDifficulty(level)}
                     className={`h-10 rounded-full px-4 text-sm font-bold transition-colors ${

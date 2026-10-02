@@ -106,6 +106,7 @@ export const studio: Messages["studio"] = {
     help: "Dis de quoi parle la partie : l'IA écrit 25 indices avec leurs réponses, et tu les corriges dans l'éditeur. Rien n'est publié, et rien n'est définitif.",
     placeholder: "ex. histoire du rock, anatomie humaine, Naples",
     difficulty: {
+      label: "Difficulté",
       easy: "Facile",
       mixed: "Mixte",
       hard: "Difficile",

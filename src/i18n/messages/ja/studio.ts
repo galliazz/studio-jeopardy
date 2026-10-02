@@ -96,6 +96,7 @@ export const studio: Messages["studio"] = {
     help: "テーマを伝えれば、AI が 25 問の問題と答えを書きます。エディタで直してください。公開されるものはなく、どれも確定ではありません。",
     placeholder: "例：ロックの歴史、人体の解剖、ナポリ",
     difficulty: {
+      label: "難しさ",
       easy: "やさしい",
       mixed: "混合",
       hard: "むずかしい",

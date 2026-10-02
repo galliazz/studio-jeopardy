@@ -96,6 +96,7 @@ export const studio: Messages["studio"] = {
     help: "说出这场游戏的主题：AI 会写出 25 条线索和答案，你在编辑器里修改。不会发布任何内容，也没有什么是定稿。",
     placeholder: "例如：摇滚历史、人体解剖、那不勒斯",
     difficulty: {
+      label: "难度",
       easy: "简单",
       mixed: "混合",
       hard: "困难",

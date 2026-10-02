@@ -104,6 +104,8 @@ export const edit = {
       text: "Text",
     },
     roundness: "Roundness",
+    lowContrast:
+      "These colours give {ratio}: on the board the clues will be hard to read. Try a darker accent, or a lighter tile.",
   },
   game: {
     title: "Game",

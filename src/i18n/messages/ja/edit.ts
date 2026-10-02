@@ -105,6 +105,8 @@ export const edit: Messages["edit"] = {
       text: "テキスト",
     },
     roundness: "角の丸み",
+    lowContrast:
+      "この配色では {ratio} しかなく、ボード上の問題が読みにくくなります。アクセントを暗く、またはマスを明るくしてみてください。",
   },
   game: {
     title: "ゲーム",

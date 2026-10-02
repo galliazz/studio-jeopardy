@@ -104,6 +104,8 @@ export const edit: Messages["edit"] = {
       text: "टेक्स्ट",
     },
     roundness: "गोलाई",
+    lowContrast:
+      "इन रंगों का अनुपात {ratio} है: बोर्ड पर सवाल मुश्किल से पढ़े जाएँगे। गहरा एक्सेंट या हल्का खाना आज़माएँ।",
   },
   game: {
     title: "गेम",

@@ -107,6 +107,8 @@ export const edit: Messages["edit"] = {
       text: "Texte",
     },
     roundness: "Arrondi",
+    lowContrast:
+      "Ces couleurs donnent {ratio} : sur le tableau, les questions seront difficiles à lire. Essaie un accent plus foncé, ou une case plus claire.",
   },
   game: {
     title: "Partie",

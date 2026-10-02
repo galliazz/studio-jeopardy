@@ -103,6 +103,7 @@ export const edit: Messages["edit"] = {
       text: "文字",
     },
     roundness: "圆角",
+    lowContrast: "这组颜色只有 {ratio}：题目在板上会很难看清。试试更深的强调色，或更浅的格子。",
   },
   game: {
     title: "游戏",

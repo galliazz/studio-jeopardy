@@ -105,6 +105,8 @@ export const edit: Messages["edit"] = {
       text: "النص",
     },
     roundness: "استدارة الحواف",
+    lowContrast:
+      "هذه الألوان تعطي {ratio}: ستصعب قراءة الأسئلة على اللوحة. جرّب لونًا مميزًا أغمق أو مربعًا أفتح.",
   },
   game: {
     title: "اللعبة",

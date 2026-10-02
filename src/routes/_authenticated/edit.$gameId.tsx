@@ -57,6 +57,7 @@ import {
   radiusCq,
 } from "@/lib/types";
 import { finalScoringOf, type FinalScoring } from "@/lib/game-rules";
+import { contrastLabel, contrastRatio, meetsContrast } from "@/lib/contrast";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
@@ -477,7 +478,13 @@ function EditorPage() {
           <aside className="order-2 flex flex-col gap-3 min-[1100px]:order-1 min-[1100px]:mt-[var(--board-offset)] min-[1100px]:max-h-[var(--board-side)] min-[1100px]:w-full min-[1100px]:min-h-0 min-[1100px]:max-w-[22rem] min-[1100px]:justify-self-end min-[1100px]:self-start min-[1100px]:overflow-y-auto min-[1100px]:pe-1">
             {/* Ordine chiesto: il testo è quello che si tocca di più mentre si
                 scrive un gioco, le Daily Double una volta sola alla fine. */}
-            <ThemeBar gameId={gameId} theme={theme} onSaved={refresh} onRecord={record} />
+            <ThemeBar
+              gameId={gameId}
+              theme={theme}
+              savedTheme={rawTheme ?? theme}
+              onSaved={refresh}
+              onRecord={record}
+            />
             <DailyDoublePanel
               count={dailyDoubles.length}
               picking={ddMode}
@@ -1465,11 +1472,15 @@ function TileEditor({
 function ThemeBar({
   gameId,
   theme,
+  savedTheme,
   onSaved,
   onRecord,
 }: {
   gameId: string;
   theme: ThemeSettings;
+  /** I colori come li ha scelti l'host, prima dell'adattamento al tema scuro:
+      sono quelli su cui ha senso avvisare, perché sono quelli che si cambiano. */
+  savedTheme: ThemeSettings;
   onSaved: () => void;
   onRecord: (action: HistoryAction) => void;
 }) {
@@ -1687,6 +1698,8 @@ function ThemeBar({
           <CustomThemeSwatch theme={theme} onPick={applyColors} />
         </div>
 
+        <ContrastWarning theme={savedTheme} />
+
         <div className="mt-3 flex h-12 items-center gap-3">
           <span className={ROW_LABEL}>{t("edit.appearance.roundness")}</span>
           <input
@@ -1786,6 +1799,30 @@ function ThemeBar({
         </p>
       </Panel>
     </>
+  );
+}
+
+/**
+ * L'avviso quando i colori scelti non si leggono.
+ *
+ * Il tema dell'applicazione lo controlliamo noi; quello del tabellone no. Un
+ * accento chiaro su una casella chiara, in diretta, diventa una domanda che
+ * il pubblico non legge — e chi l'ha scelto se ne accorge troppo tardi. Qui
+ * si misura il rapporto vero e lo si dice, con il numero: non è un divieto,
+ * è un'informazione.
+ *
+ * La soglia è quella del testo grande (3:1), perché i numeri delle caselle
+ * sono grandi; il testo della domanda, più piccolo, vuole 4,5 e l'avviso lo
+ * dice quando serve.
+ */
+function ContrastWarning({ theme }: { theme: ThemeSettings }) {
+  const t = useT();
+  const ratio = contrastRatio(theme.accent, theme.card);
+  if (ratio === null || meetsContrast(ratio, true)) return null;
+  return (
+    <p className="mt-3 rounded-[20px] bg-danger/15 px-3 py-2 text-center text-[11px] leading-snug text-foreground">
+      {t("edit.appearance.lowContrast", { ratio: contrastLabel(ratio) })}
+    </p>
   );
 }
 

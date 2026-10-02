@@ -107,6 +107,16 @@ export const edit: Messages["edit"] = {
       text: "Texto",
     },
     roundness: "Redondeo",
+    lowContrast:
+      "Estos colores dan {ratio}: en el tablero las preguntas se leerán con dificultad. Prueba un acento más oscuro o una casilla más clara.",
+    pattern: "Fondo",
+    patterns: {
+      none: "Liso",
+      dots: "Puntos",
+      grid: "Cuadrícula",
+      diagonal: "Rayas",
+      glow: "Halo",
+    },
   },
   game: {
     title: "Juego",
@@ -142,6 +152,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Ir a la primera",
   },
   history: {
+    pattern: "el fondo",
     categoryOrder: "el orden de las categorías",
     undone: "Deshecho: {what}",
     redone: "Rehecho: {what}",

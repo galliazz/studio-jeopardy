@@ -19,6 +19,8 @@ import {
   Sparkles,
   BarChart3,
   Crown,
+  Volume2,
+  ImageDown,
   X,
   Check,
   Flag,
@@ -93,8 +95,13 @@ import {
 } from "@/lib/types";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { BoardGrid } from "@/components/game/BoardGrid";
+import { BoardSkeleton } from "@/components/game/BoardSkeleton";
 import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
+import { ScoreFly, type ScoreFlight } from "@/components/game/ScoreFly";
+import { buildRecap, type Recap } from "@/lib/recap";
+import { speak, speechSupported } from "@/lib/speech";
+import { drawRecap, recapLines } from "@/lib/recap-image";
 import { ScorePill } from "@/components/game/ScorePill";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
@@ -335,6 +342,9 @@ function HostPage() {
     [queryClient, sessionId],
   );
 
+  /** L'ultimo punteggio da far volare verso la pillola della squadra. */
+  const [flight, setFlight] = useState<ScoreFlight | null>(null);
+
   const judging = useRef(false);
   const runJudge = useCallback(
     async (correct: boolean, judgedPlayerId: string) => {
@@ -346,6 +356,14 @@ function HostPage() {
         // Il server ha riaperto la casella a tutti: va detto, perché la coda
         // sparisce di colpo e altrimenti sembrerebbe un errore.
         if (res.outcome === "reset") toast.success(t("host.judge.everyoneMissed"));
+        /* La squadra si legge dalla cache della query: qui `players` non è
+           ancora nello scope, e il giudizio può arrivare anche da tastiera. */
+        const cached = queryClient.getQueryData<{ players?: Player[] }>(["host", sessionId]);
+        const judgedTeam = cached?.players?.find((p) => p.id === judgedPlayerId)?.team as
+          Team | undefined;
+        if (res.delta && judgedTeam) {
+          setFlight({ id: Date.now(), delta: res.delta, team: judgedTeam });
+        }
       } catch (err) {
         toast.error(localizeError(err, "host.errors.nothingJudged"));
       } finally {
@@ -430,11 +448,7 @@ function HostPage() {
   }, [actions, keyMap]);
 
   if (!state || !session) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
-      </div>
-    );
+    return <BoardSkeleton />;
   }
 
   const { game, categories, tiles, players, queue, finalAnswers } = state;
@@ -451,6 +465,7 @@ function HostPage() {
   const pointValues = Array.from(new Set(tiles.map((tile) => tile.points))).sort((a, b) => a - b);
 
   const bumpScore = (team: Team, delta: number) => {
+    if (delta) setFlight({ id: Date.now(), delta, team });
     setHostSession(
       team === "alpha"
         ? { score_alpha: session.score_alpha + delta }
@@ -471,6 +486,8 @@ function HostPage() {
       style={teamColorVars(theme)}
       className="flex h-screen flex-col overflow-hidden text-foreground"
     >
+      {/* Il punteggio che vola verso la pillola della squadra giudicata. */}
+      <ScoreFly flight={flight} onDone={() => setFlight(null)} />
       {/*
        * TOP APP BAR — one line, vertically centred: leave + title on the left,
        * the two scores in the middle, the account menu on the right. It sits a
@@ -839,6 +856,8 @@ function HostPage() {
             session={session}
             players={players}
             theme={theme}
+            recap={buildRecap({ queue, tiles, categories, players })}
+            gameTitle={game.title}
             onExit={() => void navigate({ to: "/studio" })}
           />
         )}
@@ -1159,6 +1178,19 @@ function LiveControlPanel({
               value,
             })}
           </span>
+        )}
+        {/* La voce del dispositivo legge la domanda: serve a chi conduce da
+            solo, e a chi non vuole leggere a voce alta per venti minuti. */}
+        {tile && speechSupported() && (
+          <button
+            type="button"
+            onClick={() => speak(tile.question, t.locale)}
+            title={t("host.live.readAloud")}
+            aria-label={t("host.live.readAloud")}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/15 text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+          >
+            <Volume2 className="h-4 w-4" />
+          </button>
         )}
       </div>
 
@@ -1712,11 +1744,15 @@ function Podium({
   session,
   players,
   theme,
+  recap,
+  gameTitle,
   onExit,
 }: {
   session: Session;
   players: Player[];
   theme: ThemeSettings;
+  recap: Recap;
+  gameTitle: string;
   onExit: () => void;
 }) {
   const t = useT();
@@ -1741,6 +1777,33 @@ function Podium({
   const loseScore = loser === "alpha" ? session.score_alpha : session.score_bravo;
   const winners = players.filter((p) => p.team === winner);
   const losers = players.filter((p) => p.team === loser);
+  const lines = recapLines(recap, (key, vars) => t(key as MessageKey, vars));
+
+  /**
+   * L'immagine si disegna al momento e si scarica: niente da caricare da
+   * nessuna parte, e quindi niente da cancellare dopo.
+   */
+  const shareImage = () => {
+    const canvas = document.createElement("canvas");
+    drawRecap(canvas, {
+      title: gameTitle,
+      teams: [
+        { name: teamName(theme, "alpha"), score: session.score_alpha, colour: "#9ad0ff" },
+        { name: teamName(theme, "bravo"), score: session.score_bravo, colour: "#ffb3a7" },
+      ],
+      lines,
+      footer: t("host.recap.footer"),
+    });
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${gameTitle.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  };
 
   return (
     <motion.div
@@ -1788,6 +1851,27 @@ function Podium({
             ))}
           </div>
         </div>
+
+        {/* Quello che si racconta dopo: chi ha il dito più veloce, chi ha
+            risposto bene più volte, quale categoria ha fatto cadere tutti. */}
+        {lines.length > 0 && (
+          <ul className="mt-5 space-y-1.5 text-start text-sm text-muted-foreground">
+            {lines.map((line) => (
+              <li key={line} className="flex gap-2">
+                <span aria-hidden>·</span>
+                <span className="flex-1">{line}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <button
+          type="button"
+          onClick={shareImage}
+          className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-lilac text-sm font-bold text-foreground elev-1"
+        >
+          <ImageDown className="h-4 w-4" /> {t("host.recap.saveImage")}
+        </button>
       </motion.div>
     </motion.div>
   );

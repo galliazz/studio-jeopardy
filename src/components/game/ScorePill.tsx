@@ -316,6 +316,8 @@ export function ScorePill({
   const pill = (
     <motion.div
       layout={animateLayout}
+      /* Il punteggio che vola atterra qui: vedi ScoreFly. */
+      data-score-pill={team}
       transition={SPRING_PLAYFUL}
       className={`flex w-fit items-center gap-2.5 rounded-full px-5 py-2.5 elev-1 ${
         team === "alpha" ? "bg-team-alpha" : "bg-team-bravo"

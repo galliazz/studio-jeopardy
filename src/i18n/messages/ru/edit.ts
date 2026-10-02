@@ -104,6 +104,16 @@ export const edit: Messages["edit"] = {
       text: "Текст",
     },
     roundness: "Скругление",
+    lowContrast:
+      "Эти цвета дают {ratio}: на табло вопросы будет трудно читать. Попробуй более тёмный акцент или более светлую клетку.",
+    pattern: "Фон",
+    patterns: {
+      none: "Однотонный",
+      dots: "Точки",
+      grid: "Сетка",
+      diagonal: "Полосы",
+      glow: "Свечение",
+    },
   },
   game: {
     title: "Игра",
@@ -143,6 +153,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Перейти к первой",
   },
   history: {
+    pattern: "фон",
     categoryOrder: "порядок категорий",
     undone: "Отменено: {what}",
     redone: "Возвращено: {what}",

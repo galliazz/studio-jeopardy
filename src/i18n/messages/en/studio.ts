@@ -17,6 +17,10 @@ export const studio = {
     importJson: "Import JSON",
     searchBoards: "Search boards",
     searchPlaceholder: "Search boards…",
+    importFile: "Import file",
+    importSheet: "From Google Sheets",
+    importFileHint: "JSON, CSV or Excel",
+    generateAi: "Generate with AI",
   },
   create: {
     title: "Name your board",
@@ -76,5 +80,46 @@ export const studio = {
     clue: "Clue",
     answer: "Answer",
     hint: "Hint",
+  },
+  import: {
+    sheetTitle: "Import from Google Sheets",
+    sheetHelp:
+      "Publish the sheet to the web (File → Share → Publish to web) and paste the link here. One row per clue: category, points, clue, answer, hint. Nothing is asked of your Google account.",
+    importNow: "Import",
+    importing: "Importing…",
+    notASheet: "That doesn't look like a Google Sheets link",
+    sheetUnreachable: "Could not read that sheet. Is it published to the web?",
+    nothingUsable: "No clue in that file could be used",
+    skipped: "{count} rows left out",
+    fromSheet: "Imported sheet",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Let AI draft the board",
+    help: "Say what the game is about: AI writes 25 clues with their answers, and you fix them in the editor. Nothing is published, and nothing is final.",
+    placeholder: "e.g. history of rock, human anatomy, Naples",
+    difficulty: {
+      label: "Difficulty",
+      easy: "Easy",
+      mixed: "Mixed",
+      hard: "Hard",
+      help: "Mixed climbs from an easy first row to an expert last one.",
+    },
+    generate: "Generate",
+    generating: "Writing the clues…",
+    cancel: "Cancel",
+    done: "{count} clues written — read them through before you play.",
+    review: "Written by AI: check the facts before the game.",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "Your first game, in three moves",
+    intro: "There's already a demo board in your library — open it and the rest follows.",
+    steps: {
+      one: "Open the demo board and change a clue or two, just to see how the editor works.",
+      two: "Press Play: the board goes full screen and a join code appears.",
+      three: "Your players open the site on their phones and type that code. No app, no account.",
+    },
+    dismiss: "Hide this",
   },
 };

@@ -23,4 +23,14 @@ export const errors: Messages["errors"] = {
   network: {
     offline: "Impossible de joindre le serveur. Vérifie ta connexion et réessaie.",
   },
+  ai: {
+    noKey: "La génération par IA n'est pas configurée sur ce site.",
+    unreachable: "Impossible de joindre l'IA. Vérifie ta connexion et réessaie.",
+    badKey: "La clé de l'IA a été refusée. Vérifie-la dans les réglages du site.",
+    busy: "L'IA est occupée pour le moment. Réessaie dans un instant.",
+    failed: "L'IA n'a pas réussi à écrire le plateau. Réessaie, ou reformule le sujet.",
+    empty: "L'IA n'a rien répondu. Réessaie.",
+    noJson: "La réponse de l'IA était illisible. Réessaie.",
+    tooFew: "Trop peu d'indices sont revenus pour faire un plateau. Essaie un sujet plus large.",
+  },
 };

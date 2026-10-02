@@ -105,6 +105,16 @@ export const edit: Messages["edit"] = {
       text: "テキスト",
     },
     roundness: "角の丸み",
+    lowContrast:
+      "この配色では {ratio} しかなく、ボード上の問題が読みにくくなります。アクセントを暗く、またはマスを明るくしてみてください。",
+    pattern: "背景",
+    patterns: {
+      none: "無地",
+      dots: "ドット",
+      grid: "グリッド",
+      diagonal: "ストライプ",
+      glow: "グロー",
+    },
   },
   game: {
     title: "ゲーム",
@@ -138,6 +148,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "最初のマスへ",
   },
   history: {
+    pattern: "背景",
     categoryOrder: "カテゴリの並び",
     undone: "元に戻しました：{what}",
     redone: "やり直しました：{what}",

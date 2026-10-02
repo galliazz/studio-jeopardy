@@ -104,6 +104,16 @@ export const edit = {
       text: "Text",
     },
     roundness: "Roundness",
+    lowContrast:
+      "These colours give {ratio}: on the board the clues will be hard to read. Try a darker accent, or a lighter tile.",
+    pattern: "Background",
+    patterns: {
+      none: "Plain",
+      dots: "Dots",
+      grid: "Grid",
+      diagonal: "Stripes",
+      glow: "Glow",
+    },
   },
   game: {
     title: "Game",
@@ -140,6 +150,7 @@ export const edit = {
     goToFirst: "Go to the first one",
   },
   history: {
+    pattern: "the background",
     categoryOrder: "the category order",
     undone: "Undone: {what}",
     redone: "Redone: {what}",

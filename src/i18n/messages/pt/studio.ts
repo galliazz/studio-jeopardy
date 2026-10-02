@@ -17,6 +17,10 @@ export const studio: Messages["studio"] = {
     importJson: "Importar JSON",
     searchBoards: "Buscar painéis",
     searchPlaceholder: "Buscar painéis…",
+    importFile: "Importar arquivo",
+    importSheet: "Do Google Sheets",
+    importFileHint: "JSON, CSV ou Excel",
+    generateAi: "Gerar com IA",
   },
   create: {
     title: "Dê um nome ao painel",
@@ -76,5 +80,46 @@ export const studio: Messages["studio"] = {
     clue: "Pergunta",
     answer: "Resposta",
     hint: "Dica",
+  },
+  import: {
+    sheetTitle: "Importar do Google Sheets",
+    sheetHelp:
+      "Publique a planilha na web (Arquivo → Compartilhar → Publicar na web) e cole o link aqui. Uma linha por casa: categoria, pontos, pergunta, resposta, dica. Nada é pedido à sua conta do Google.",
+    importNow: "Importar",
+    importing: "Importando…",
+    notASheet: "Isso não parece um link do Google Sheets",
+    sheetUnreachable: "Não consigo ler essa planilha. Ela está publicada na web?",
+    nothingUsable: "Nenhuma casa utilizável nesse arquivo",
+    skipped: "{count} linhas deixadas de fora",
+    fromSheet: "Planilha importada",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Deixa a IA escrever o tabuleiro",
+    help: "Diz do que é a partida: a IA escreve 25 pistas com as respostas, e tu corriges no editor. Nada é publicado, e nada é definitivo.",
+    placeholder: "ex. história do rock, anatomia humana, Nápoles",
+    difficulty: {
+      label: "Dificuldade",
+      easy: "Fácil",
+      mixed: "Misto",
+      hard: "Difícil",
+      help: "Misto sobe de uma primeira linha fácil até uma última para especialistas.",
+    },
+    generate: "Gerar",
+    generating: "A escrever as pistas…",
+    cancel: "Cancelar",
+    done: "{count} pistas escritas — relê-as antes de jogar.",
+    review: "Escrito por IA: confirma os factos antes da partida.",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "A tua primeira partida, em três passos",
+    intro: "Já tens um tabuleiro de demonstração na biblioteca: abre-o, e o resto vem sozinho.",
+    steps: {
+      one: "Abre o tabuleiro de demonstração e muda uma pista ou duas, só para ver o editor.",
+      two: "Carrega em Jogar: o tabuleiro vai para ecrã inteiro e aparece um código de entrada.",
+      three: "Quem joga abre o site no telemóvel e escreve esse código. Sem app, sem conta.",
+    },
+    dismiss: "Esconder",
   },
 };

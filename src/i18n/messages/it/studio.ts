@@ -17,6 +17,10 @@ export const studio: Messages["studio"] = {
     importJson: "Importa JSON",
     searchBoards: "Cerca tabelloni",
     searchPlaceholder: "Cerca tabelloni…",
+    importFile: "Importa file",
+    importSheet: "Da Google Sheets",
+    importFileHint: "JSON, CSV o Excel",
+    generateAi: "Genera con l'IA",
   },
   create: {
     title: "Dai un nome al tabellone",
@@ -77,5 +81,47 @@ export const studio: Messages["studio"] = {
     clue: "Domanda",
     answer: "Risposta",
     hint: "Suggerimento",
+  },
+  import: {
+    sheetTitle: "Importa da Google Sheets",
+    sheetHelp:
+      "Pubblica il foglio sul web (File → Condividi → Pubblica sul web) e incolla qui il link. Una riga per casella: categoria, punti, domanda, risposta, suggerimento. Al tuo account Google non viene chiesto niente.",
+    importNow: "Importa",
+    importing: "Importo…",
+    notASheet: "Questo non sembra un link di Google Sheets",
+    sheetUnreachable: "Non riesco a leggere quel foglio. È pubblicato sul web?",
+    nothingUsable: "In quel file non c'era nessuna casella utilizzabile",
+    skipped: "{count} righe lasciate fuori",
+    fromSheet: "Foglio importato",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Fatti scrivere il tabellone dall'IA",
+    help: "Dì di cosa parla la partita: l'IA scrive 25 indizi con le loro risposte, e tu li correggi nell'editor. Non si pubblica niente, e niente è definitivo.",
+    placeholder: "es. storia del rock, anatomia umana, Napoli",
+    difficulty: {
+      label: "Difficoltà",
+      easy: "Facile",
+      mixed: "Misto",
+      hard: "Difficile",
+      help: "Misto sale dalla prima riga facile all'ultima da esperti.",
+    },
+    generate: "Genera",
+    generating: "Sto scrivendo gli indizi…",
+    cancel: "Annulla",
+    done: "{count} indizi scritti — rileggili prima di giocare.",
+    review: "Scritto dall'IA: controlla i fatti prima della partita.",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "La tua prima partita, in tre mosse",
+    intro: "Nella libreria c'è già un tabellone demo: aprilo, e il resto viene da sé.",
+    steps: {
+      one: "Apri il tabellone demo e cambia un indizio o due, giusto per vedere come funziona l'editor.",
+      two: "Premi Gioca: il tabellone va a schermo intero e compare un codice d'ingresso.",
+      three:
+        "Chi gioca apre il sito dal telefono e scrive quel codice. Niente app, niente account.",
+    },
+    dismiss: "Nascondi",
   },
 };

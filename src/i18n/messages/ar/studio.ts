@@ -24,6 +24,10 @@ export const studio: Messages["studio"] = {
     importJson: "استيراد JSON",
     searchBoards: "البحث في اللوحات",
     searchPlaceholder: "ابحث في اللوحات…",
+    importFile: "استيراد ملف",
+    importSheet: "من Google Sheets",
+    importFileHint: "JSON أو CSV أو Excel",
+    generateAi: "أنشئ بالذكاء الاصطناعي",
   },
   create: {
     title: "سمِّ لوحتك",
@@ -87,5 +91,46 @@ export const studio: Messages["studio"] = {
     clue: "السؤال",
     answer: "الإجابة",
     hint: "التلميح",
+  },
+  import: {
+    sheetTitle: "الاستيراد من Google Sheets",
+    sheetHelp:
+      "انشر الورقة على الويب (ملف ← مشاركة ← النشر على الويب) وألصق الرابط هنا. سطر لكل مربع: الفئة، النقاط، السؤال، الإجابة، التلميح. لا يُطلب أي شيء من حساب Google الخاص بك.",
+    importNow: "استيراد",
+    importing: "جارٍ الاستيراد…",
+    notASheet: "هذا لا يبدو رابط Google Sheets",
+    sheetUnreachable: "تعذّرت قراءة الورقة. هل هي منشورة على الويب؟",
+    nothingUsable: "لا يوجد مربع صالح في هذا الملف",
+    skipped: "تُركت {count} صفوف",
+    fromSheet: "ورقة مستوردة",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "دع الذكاء الاصطناعي يكتب اللوحة",
+    help: "قل عمّا تدور المباراة: يكتب الذكاء الاصطناعي 25 لغزًا مع أجوبتها، وتصحّحها أنت في المحرّر. لا يُنشر شيء، ولا شيء نهائي.",
+    placeholder: "مثلًا: تاريخ الروك، تشريح الإنسان، نابولي",
+    difficulty: {
+      label: "الصعوبة",
+      easy: "سهل",
+      mixed: "مختلط",
+      hard: "صعب",
+      help: "«مختلط» يتصاعد من صفّ أول سهل إلى صفّ أخير للخبراء.",
+    },
+    generate: "أنشئ",
+    generating: "أكتب الألغاز…",
+    cancel: "إلغاء",
+    done: "كُتب {count} لغزًا — اقرأها قبل اللعب.",
+    review: "كتبه الذكاء الاصطناعي: تحقّق من الوقائع قبل المباراة.",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "مباراتك الأولى في ثلاث خطوات",
+    intro: "في مكتبتك لوحة تجريبية جاهزة: افتحها، والباقي يأتي من تلقاء نفسه.",
+    steps: {
+      one: "افتح اللوحة التجريبية وغيّر لغزًا أو اثنين، فقط لترى كيف يعمل المحرّر.",
+      two: "اضغط «العب»: تنتقل اللوحة إلى ملء الشاشة ويظهر رمز الدخول.",
+      three: "يفتح اللاعبون الموقع على هواتفهم ويكتبون ذلك الرمز. لا تطبيق ولا حساب.",
+    },
+    dismiss: "إخفاء",
   },
 };

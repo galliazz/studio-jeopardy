@@ -17,6 +17,10 @@ export const studio: Messages["studio"] = {
     importJson: "JSON importieren",
     searchBoards: "Spielfelder durchsuchen",
     searchPlaceholder: "Spielfelder suchen…",
+    importFile: "Datei importieren",
+    importSheet: "Aus Google Sheets",
+    importFileHint: "JSON, CSV oder Excel",
+    generateAi: "Mit KI erstellen",
   },
   create: {
     title: "Spielfeld benennen",
@@ -77,5 +81,47 @@ export const studio: Messages["studio"] = {
     clue: "Frage",
     answer: "Antwort",
     hint: "Hinweis",
+  },
+  import: {
+    sheetTitle: "Aus Google Sheets importieren",
+    sheetHelp:
+      "Veröffentliche die Tabelle im Web (Datei → Freigeben → Im Web veröffentlichen) und füge den Link hier ein. Eine Zeile pro Feld: Kategorie, Punkte, Frage, Antwort, Hinweis. Von deinem Google-Konto wird nichts verlangt.",
+    importNow: "Importieren",
+    importing: "Wird importiert …",
+    notASheet: "Das sieht nicht nach einem Google-Sheets-Link aus",
+    sheetUnreachable: "Die Tabelle ist nicht lesbar. Ist sie im Web veröffentlicht?",
+    nothingUsable: "In dieser Datei war kein brauchbares Feld",
+    skipped: "{count} Zeilen ausgelassen",
+    fromSheet: "Importierte Tabelle",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Die KI entwirft das Spielfeld",
+    help: "Sag, worum es geht: Die KI schreibt 25 Hinweise mit Antworten, du korrigierst sie im Editor. Nichts wird veröffentlicht, nichts ist endgültig.",
+    placeholder: "z. B. Geschichte des Rock, Anatomie, Neapel",
+    difficulty: {
+      label: "Schwierigkeit",
+      easy: "Leicht",
+      mixed: "Gemischt",
+      hard: "Schwer",
+      help: "Gemischt steigt von einer leichten ersten Reihe bis zu einer letzten für Fachleute.",
+    },
+    generate: "Erstellen",
+    generating: "Die Hinweise entstehen…",
+    cancel: "Abbrechen",
+    done: "{count} Hinweise geschrieben – lies sie vor dem Spiel durch.",
+    review: "Von KI geschrieben: Prüfe die Fakten vor dem Spiel.",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "Dein erstes Spiel, in drei Schritten",
+    intro: "In deiner Bibliothek liegt schon ein Demo-Spielfeld – öffne es, der Rest ergibt sich.",
+    steps: {
+      one: "Öffne das Demo-Spielfeld und ändere ein, zwei Hinweise, nur um den Editor zu sehen.",
+      two: "Drück auf Spielen: Das Spielfeld geht auf Vollbild und ein Beitrittscode erscheint.",
+      three:
+        "Die Mitspielenden öffnen die Seite am Handy und tippen den Code ein. Keine App, kein Konto.",
+    },
+    dismiss: "Ausblenden",
   },
 };

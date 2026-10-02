@@ -48,6 +48,11 @@ export interface ThemeSettings {
    * la prima. Vedi `finalScoringOf` in game-rules.
    */
   finalScoring?: "classic" | "duel";
+  /**
+   * Il motivo di fondo del tabellone: disegnato in CSS dai colori del tema,
+   * così lo vedono anche gli overlay di OBS. Vedi `board-pattern.ts`.
+   */
+  pattern?: "none" | "dots" | "grid" | "diagonal" | "glow";
 }
 
 export const DEFAULT_THEME: ThemeSettings = {

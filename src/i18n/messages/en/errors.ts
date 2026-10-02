@@ -26,4 +26,14 @@ export const errors = {
   network: {
     offline: "Couldn't reach the server. Check your connection and try again.",
   },
+  ai: {
+    noKey: "AI generation isn't set up on this site.",
+    unreachable: "Couldn't reach the AI. Check your connection and try again.",
+    badKey: "The AI key was refused. Check it in the site settings.",
+    busy: "The AI is busy right now. Try again in a moment.",
+    failed: "The AI couldn't write the board. Try again, or reword the subject.",
+    empty: "The AI replied with nothing. Try again.",
+    noJson: "The AI's reply couldn't be read. Try again.",
+    tooFew: "Too few clues came back to make a board. Try a broader subject.",
+  },
 };

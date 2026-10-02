@@ -105,6 +105,16 @@ export const edit: Messages["edit"] = {
       text: "النص",
     },
     roundness: "استدارة الحواف",
+    lowContrast:
+      "هذه الألوان تعطي {ratio}: ستصعب قراءة الأسئلة على اللوحة. جرّب لونًا مميزًا أغمق أو مربعًا أفتح.",
+    pattern: "الخلفية",
+    patterns: {
+      none: "سادة",
+      dots: "نقاط",
+      grid: "شبكة",
+      diagonal: "خطوط",
+      glow: "توهّج",
+    },
   },
   game: {
     title: "اللعبة",
@@ -148,6 +158,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "اذهب إلى الأول",
   },
   history: {
+    pattern: "الخلفية",
     categoryOrder: "ترتيب الفئات",
     undone: "تم التراجع: {what}",
     redone: "تمت الإعادة: {what}",

@@ -23,4 +23,15 @@ export const errors: Messages["errors"] = {
   network: {
     offline: "Server nicht erreichbar. Prüf deine Verbindung und versuch es erneut.",
   },
+  ai: {
+    noKey: "Die KI-Erstellung ist auf dieser Seite nicht eingerichtet.",
+    unreachable: "Die KI ist nicht erreichbar. Prüfe die Verbindung und versuche es erneut.",
+    badKey: "Der KI-Schlüssel wurde abgelehnt. Prüfe ihn in den Einstellungen der Seite.",
+    busy: "Die KI ist gerade ausgelastet. Versuche es in einem Moment erneut.",
+    failed:
+      "Die KI konnte das Spielfeld nicht schreiben. Versuche es erneut oder formuliere das Thema anders.",
+    empty: "Die KI hat nichts geantwortet. Versuche es erneut.",
+    noJson: "Die Antwort der KI war nicht lesbar. Versuche es erneut.",
+    tooFew: "Es kamen zu wenige Hinweise für ein Spielfeld zurück. Versuche ein breiteres Thema.",
+  },
 };

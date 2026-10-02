@@ -23,4 +23,14 @@ export const errors: Messages["errors"] = {
   network: {
     offline: "无法连接服务器。请检查网络后重试。",
   },
+  ai: {
+    noKey: "本站未配置 AI 生成。",
+    unreachable: "无法连接 AI。请检查网络后重试。",
+    badKey: "AI 密钥被拒绝。请在站点设置中检查。",
+    busy: "AI 现在很忙，请稍后再试。",
+    failed: "AI 没能写出题板。请重试，或换一种说法描述主题。",
+    empty: "AI 什么也没回复。请重试。",
+    noJson: "AI 的回复无法读取。请重试。",
+    tooFew: "返回的线索太少，凑不成题板。试试更宽的主题。",
+  },
 };

@@ -95,6 +95,7 @@ export const host = {
     hostOnlyAnswer: "Host only · answer",
     hint: "Hint: {hint}",
     revealAnswer: "Reveal answer",
+    readAloud: "Read the clue aloud",
   },
   buzzer: {
     title: "Buzzer",
@@ -150,5 +151,13 @@ export const host = {
     label: "Final result",
     tie: "It's a tie!",
     wins: "{team} wins!",
+  },
+  recap: {
+    fastest: "Fastest finger: {name}, first in {count} times",
+    topScorer: "Most right answers: {name}, {count}",
+    hardest: "Hardest category: {category}, {count} wrong",
+    totals: "{buzzes} buzzes on {tiles} tiles",
+    saveImage: "Save the recap as an image",
+    footer: "JEOPARDESTINY",
   },
 };

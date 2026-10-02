@@ -95,6 +95,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "Solo para ti · respuesta",
     hint: "Pista: {hint}",
     revealAnswer: "Revelar respuesta",
+    readAloud: "Leer la pregunta en voz alta",
   },
   buzzer: {
     title: "Pulsador",
@@ -149,5 +150,13 @@ export const host: Messages["host"] = {
     label: "Resultado final",
     tie: "¡Empate!",
     wins: "¡Gana {team}!",
+  },
+  recap: {
+    fastest: "Dedo más rápido: {name}, primero {count} veces",
+    topScorer: "Más aciertos: {name}, {count}",
+    hardest: "Categoría más dura: {category}, {count} fallos",
+    totals: "{buzzes} pulsaciones en {tiles} casillas",
+    saveImage: "Guardar el resumen como imagen",
+    footer: "JEOPARDESTINY",
   },
 };

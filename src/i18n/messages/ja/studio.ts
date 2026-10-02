@@ -17,6 +17,10 @@ export const studio: Messages["studio"] = {
     importJson: "JSON をインポート",
     searchBoards: "ボードを検索",
     searchPlaceholder: "ボードを検索…",
+    importFile: "ファイルを読み込む",
+    importSheet: "Google スプレッドシートから",
+    importFileHint: "JSON、CSV、Excel",
+    generateAi: "AI で作る",
   },
   create: {
     title: "ボードの名前",
@@ -73,5 +77,46 @@ export const studio: Messages["studio"] = {
     clue: "問題",
     answer: "答え",
     hint: "ヒント",
+  },
+  import: {
+    sheetTitle: "Google スプレッドシートから読み込む",
+    sheetHelp:
+      "シートをウェブに公開し（ファイル → 共有 → ウェブに公開）、リンクをここに貼ってください。1行が1マス：カテゴリ、ポイント、問題、答え、ヒント。Google アカウントには何も要求しません。",
+    importNow: "読み込む",
+    importing: "読み込み中…",
+    notASheet: "Google スプレッドシートのリンクではないようです",
+    sheetUnreachable: "そのシートを読めません。ウェブに公開されていますか？",
+    nothingUsable: "このファイルに使えるマスがありませんでした",
+    skipped: "{count} 行を除きました",
+    fromSheet: "読み込んだシート",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "AI に問題を書かせる",
+    help: "テーマを伝えれば、AI が 25 問の問題と答えを書きます。エディタで直してください。公開されるものはなく、どれも確定ではありません。",
+    placeholder: "例：ロックの歴史、人体の解剖、ナポリ",
+    difficulty: {
+      label: "難しさ",
+      easy: "やさしい",
+      mixed: "混合",
+      hard: "むずかしい",
+      help: "「混合」は易しい 1 行目から専門的な 5 行目へ上がります。",
+    },
+    generate: "生成",
+    generating: "問題を書いています…",
+    cancel: "キャンセル",
+    done: "{count} 問できました — 始める前に目を通してください。",
+    review: "AI が書いた内容です。始める前に事実を確認してください。",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "はじめの一戦は、三手で",
+    intro: "ライブラリにはすでにデモの問題板があります。開けば、あとは見ればわかります。",
+    steps: {
+      one: "デモの問題板を開いて、問題を一つ二つ書き換えてみてください。編集画面の感じがつかめます。",
+      two: "「プレイ」を押すと、問題板が全画面になり、参加コードが出ます。",
+      three: "参加者はスマホでサイトを開き、そのコードを入力します。アプリも登録も要りません。",
+    },
+    dismiss: "隠す",
   },
 };

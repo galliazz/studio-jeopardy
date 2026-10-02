@@ -37,6 +37,16 @@ export const SERVER_ERRORS: Record<string, MessageKey> = {
   "new row violates row-level security policy": "errors.data.notAllowed",
   "The object exceeded the maximum allowed size": "errors.upload.tooLarge",
 
+  // ai-board.functions.ts: codici corti, lanciati da noi
+  "ai.noKey": "errors.ai.noKey",
+  "ai.unreachable": "errors.ai.unreachable",
+  "ai.badKey": "errors.ai.badKey",
+  "ai.busy": "errors.ai.busy",
+  "ai.failed": "errors.ai.failed",
+  "ai.empty": "errors.ai.empty",
+  "ai.noJson": "errors.ai.noJson",
+  "ai.tooFew": "errors.ai.tooFew",
+
   // fetch caduto: Chrome, Safari, Firefox
   "Failed to fetch": "errors.network.offline",
   "Load failed": "errors.network.offline",

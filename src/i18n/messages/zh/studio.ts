@@ -17,6 +17,10 @@ export const studio: Messages["studio"] = {
     importJson: "导入 JSON",
     searchBoards: "搜索题板",
     searchPlaceholder: "搜索题板…",
+    importFile: "导入文件",
+    importSheet: "从 Google 表格",
+    importFileHint: "JSON、CSV 或 Excel",
+    generateAi: "用 AI 生成",
   },
   create: {
     title: "给题板起个名字",
@@ -73,5 +77,46 @@ export const studio: Messages["studio"] = {
     clue: "题目",
     answer: "答案",
     hint: "提示",
+  },
+  import: {
+    sheetTitle: "从 Google 表格导入",
+    sheetHelp:
+      "先把表格发布到网络（文件 → 分享 → 发布到网络），再把链接贴到这里。每行一个格子：分类、分值、题目、答案、提示。不会向你的 Google 账号索取任何权限。",
+    importNow: "导入",
+    importing: "正在导入…",
+    notASheet: "这看起来不是 Google 表格的链接",
+    sheetUnreachable: "读不到这个表格。它发布到网络了吗？",
+    nothingUsable: "这个文件里没有可用的格子",
+    skipped: "略过了 {count} 行",
+    fromSheet: "导入的表格",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "让 AI 起草题板",
+    help: "说出这场游戏的主题：AI 会写出 25 条线索和答案，你在编辑器里修改。不会发布任何内容，也没有什么是定稿。",
+    placeholder: "例如：摇滚历史、人体解剖、那不勒斯",
+    difficulty: {
+      label: "难度",
+      easy: "简单",
+      mixed: "混合",
+      hard: "困难",
+      help: "「混合」从简单的第一行升到专家级的最后一行。",
+    },
+    generate: "生成",
+    generating: "正在写线索…",
+    cancel: "取消",
+    done: "已写出 {count} 条线索——开始前请通读一遍。",
+    review: "由 AI 撰写：开始前请核对事实。",
+  },
+  /** La scheda che si vede solo la prima volta. */
+  firstRun: {
+    title: "三步开始第一场游戏",
+    intro: "你的资料库里已经有一个示例题板——打开它，剩下的自然就懂了。",
+    steps: {
+      one: "打开示例题板，改一两条线索，看看编辑器怎么用。",
+      two: "按「开始游戏」：题板会全屏显示，并出现一个加入码。",
+      three: "玩家用手机打开网站，输入这个码。不用装应用，也不用注册。",
+    },
+    dismiss: "隐藏",
   },
 };

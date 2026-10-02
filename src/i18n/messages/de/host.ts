@@ -95,6 +95,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "Nur Host · Antwort",
     hint: "Hinweis: {hint}",
     revealAnswer: "Antwort aufdecken",
+    readAloud: "Frage vorlesen",
   },
   buzzer: {
     title: "Buzzer",
@@ -149,5 +150,13 @@ export const host: Messages["host"] = {
     label: "Endergebnis",
     tie: "Unentschieden!",
     wins: "{team} gewinnt!",
+  },
+  recap: {
+    fastest: "Schnellster Finger: {name}, {count}-mal zuerst",
+    topScorer: "Meiste richtige Antworten: {name}, {count}",
+    hardest: "Schwerste Kategorie: {category}, {count} falsch",
+    totals: "{buzzes} Buzzer auf {tiles} Feldern",
+    saveImage: "Zusammenfassung als Bild sichern",
+    footer: "JEOPARDESTINY",
   },
 };

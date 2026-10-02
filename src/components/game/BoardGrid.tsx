@@ -23,6 +23,7 @@
  */
 import { motion, type MotionStyle } from "framer-motion";
 import { boardTextCss, radiusCq, type ThemeSettings } from "@/lib/types";
+import { patternStyle } from "@/lib/board-pattern";
 
 export interface BoardTile {
   id: string;
@@ -65,6 +66,9 @@ export function BoardGrid({
 
   return (
     <div
+      /* La domanda si apre dalla casella: l'overlay misura la casella contro
+         questa scatola per sapere da dove partire. Vedi QuestionOverlay. */
+      data-board-root=""
       className={
         fill
           ? "h-full w-full [container-type:size]"
@@ -87,8 +91,16 @@ export function BoardGrid({
        */}
       <div
         className={`flex h-full w-full flex-col ${fill ? "overflow-hidden p-[2.2cqmin] elev-2" : "p-2.5 sm:p-5"}`}
+        /* Il motivo scelto dall'host sta qui, sotto le caselle: è disegnato
+           in CSS, quindi lo vedono anche le sorgenti di OBS. */
         style={
-          fill ? { backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) } : undefined
+          fill
+            ? {
+                backgroundColor: theme.bg,
+                borderRadius: radiusCq(theme.radius + 8),
+                ...patternStyle(theme),
+              }
+            : patternStyle(theme)
         }
       >
         <div
@@ -138,6 +150,7 @@ export function BoardGrid({
               return (
                 <motion.button
                   key={tile.id}
+                  data-board-tile={tile.id}
                   {...(used || readOnly ? {} : { whileTap: { scale: 0.94 } })}
                   disabled={used || disabled || readOnly}
                   onClick={onOpenTile ? () => onOpenTile(tile.id) : undefined}

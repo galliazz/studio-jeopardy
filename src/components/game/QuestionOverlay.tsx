@@ -11,7 +11,7 @@
  * le assegna — la stessa della board. Le unità di viewport, che c'erano prima,
  * facevano diventare enorme il testo dentro una finestra larga e bassa.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, type MotionStyle } from "framer-motion";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useT } from "@/i18n";
@@ -21,6 +21,31 @@ import { useSignedUrl } from "@/lib/media";
 import { boardTextCss, radiusCq } from "@/lib/types";
 import type { Category, Player, Session, ThemeSettings, Tile } from "@/lib/types";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
+
+/**
+ * Il rettangolo della casella rispetto alla board, in frazioni di board: lo
+ * spostamento in pixel e la scala da cui far partire la domanda.
+ *
+ * Si misura col DOM e non con lo stato del gioco perché la board si
+ * ridimensiona da sola — la stessa casella vale pixel diversi sulla console,
+ * sul telefono e su una sorgente di OBS — e qui serve la misura vera, quella
+ * di questo schermo in questo momento.
+ */
+function tileOrigin(tileId: string): { x: number; y: number; sx: number; sy: number } | null {
+  if (typeof document === "undefined") return null;
+  const tileEl = document.querySelector(`[data-board-tile="${CSS.escape(tileId)}"]`);
+  const boardEl = tileEl?.closest("[data-board-root]");
+  if (!tileEl || !boardEl) return null;
+  const tileBox = tileEl.getBoundingClientRect();
+  const boardBox = boardEl.getBoundingClientRect();
+  if (!boardBox.width || !boardBox.height || !tileBox.width) return null;
+  return {
+    x: tileBox.left - boardBox.left,
+    y: tileBox.top - boardBox.top,
+    sx: tileBox.width / boardBox.width,
+    sy: tileBox.height / boardBox.height,
+  };
+}
 
 export function QuestionOverlay({
   session,
@@ -93,6 +118,19 @@ export function QuestionOverlay({
     ...boardTextCss(theme, "questions", 3, 5.2),
   } as MotionStyle;
 
+  /*
+   * Da dove si apre la domanda: la casella che l'ha generata, misurata
+   * contro la board. Si misura una volta sola, al montaggio, perché in quel
+   * momento la casella è ancora lì sotto; dopo, chiudendo, serve lo stesso
+   * rettangolo per tornarci.
+   *
+   * `useState` con la funzione e non un effetto: l'effetto arriverebbe dopo
+   * il primo disegno, e si vedrebbe un fotogramma a schermo intero prima del
+   * movimento. Se la casella non si trova — gli overlay di OBS disegnano la
+   * domanda senza board sotto — si torna al vecchio ingresso in dissolvenza.
+   */
+  const [origin] = useState(() => tileOrigin(tile.id));
+
   const flashRed =
     countdown.expired && session.phase === "answering" && armed.current === session.timer_ends_at;
   const showTimer = countdown.seconds != null && session.phase !== "reveal";
@@ -105,12 +143,26 @@ export function QuestionOverlay({
     >
       <motion.div
         layout
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.97 }}
+        initial={
+          origin
+            ? { opacity: 0.85, x: origin.x, y: origin.y, scaleX: origin.sx, scaleY: origin.sy }
+            : { opacity: 0, scale: 0.97 }
+        }
+        animate={{ opacity: 1, x: 0, y: 0, scaleX: 1, scaleY: 1, scale: 1 }}
+        exit={
+          origin
+            ? { opacity: 0, x: origin.x, y: origin.y, scaleX: origin.sx, scaleY: origin.sy }
+            : { opacity: 0, scale: 0.97 }
+        }
         transition={SPRING_UI}
         className="pointer-events-auto flex h-full w-full flex-col overflow-hidden p-[clamp(6px,2.2cqmin,20px)] elev-2"
-        style={{ backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) }}
+        style={{
+          backgroundColor: theme.bg,
+          borderRadius: radiusCq(theme.radius + 8),
+          /* L'angolo in alto a sinistra è il punto fermo del movimento: con
+             l'origine al centro, la scala sposterebbe anche la posizione. */
+          transformOrigin: "top left",
+        }}
       >
         {/* Daily Double: si annuncia sempre, nel momento in cui la casella si apre. */}
         {isDailyDouble && (

@@ -94,6 +94,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "司会者のみ · 答え",
     hint: "ヒント：{hint}",
     revealAnswer: "答えを表示",
+    readAloud: "問題を読み上げる",
   },
   buzzer: {
     title: "早押し",
@@ -145,5 +146,13 @@ export const host: Messages["host"] = {
     label: "最終結果",
     tie: "引き分け！",
     wins: "{team}の勝利！",
+  },
+  recap: {
+    fastest: "最速ボタン：{name}、{count} 回先取",
+    topScorer: "正解数トップ：{name}、{count} 回",
+    hardest: "最難関カテゴリ：{category}、不正解 {count} 回",
+    totals: "{tiles} マスで {buzzes} 回の早押し",
+    saveImage: "まとめを画像で保存",
+    footer: "JEOPARDESTINY",
   },
 };

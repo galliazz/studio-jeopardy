@@ -65,6 +65,9 @@ export function BoardGrid({
 
   return (
     <div
+      /* La domanda si apre dalla casella: l'overlay misura la casella contro
+         questa scatola per sapere da dove partire. Vedi QuestionOverlay. */
+      data-board-root=""
       className={
         fill
           ? "h-full w-full [container-type:size]"
@@ -138,6 +141,7 @@ export function BoardGrid({
               return (
                 <motion.button
                   key={tile.id}
+                  data-board-tile={tile.id}
                   {...(used || readOnly ? {} : { whileTap: { scale: 0.94 } })}
                   disabled={used || disabled || readOnly}
                   onClick={onOpenTile ? () => onOpenTile(tile.id) : undefined}

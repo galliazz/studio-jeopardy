@@ -95,6 +95,7 @@ import { useThemeMode } from "@/components/ThemeToggle";
 import { BoardGrid } from "@/components/game/BoardGrid";
 import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
+import { ScoreFly, type ScoreFlight } from "@/components/game/ScoreFly";
 import { ScorePill } from "@/components/game/ScorePill";
 import { darkBoardColors } from "@/lib/theme-mode";
 import { SPRING_PLAYFUL, SPRING_UI } from "@/lib/motion";
@@ -335,6 +336,9 @@ function HostPage() {
     [queryClient, sessionId],
   );
 
+  /** L'ultimo punteggio da far volare verso la pillola della squadra. */
+  const [flight, setFlight] = useState<ScoreFlight | null>(null);
+
   const judging = useRef(false);
   const runJudge = useCallback(
     async (correct: boolean, judgedPlayerId: string) => {
@@ -346,6 +350,14 @@ function HostPage() {
         // Il server ha riaperto la casella a tutti: va detto, perché la coda
         // sparisce di colpo e altrimenti sembrerebbe un errore.
         if (res.outcome === "reset") toast.success(t("host.judge.everyoneMissed"));
+        /* La squadra si legge dalla cache della query: qui `players` non è
+           ancora nello scope, e il giudizio può arrivare anche da tastiera. */
+        const cached = queryClient.getQueryData<{ players?: Player[] }>(["host", sessionId]);
+        const judgedTeam = cached?.players?.find((p) => p.id === judgedPlayerId)?.team as
+          Team | undefined;
+        if (res.delta && judgedTeam) {
+          setFlight({ id: Date.now(), delta: res.delta, team: judgedTeam });
+        }
       } catch (err) {
         toast.error(localizeError(err, "host.errors.nothingJudged"));
       } finally {
@@ -451,6 +463,7 @@ function HostPage() {
   const pointValues = Array.from(new Set(tiles.map((tile) => tile.points))).sort((a, b) => a - b);
 
   const bumpScore = (team: Team, delta: number) => {
+    if (delta) setFlight({ id: Date.now(), delta, team });
     setHostSession(
       team === "alpha"
         ? { score_alpha: session.score_alpha + delta }
@@ -471,6 +484,8 @@ function HostPage() {
       style={teamColorVars(theme)}
       className="flex h-screen flex-col overflow-hidden text-foreground"
     >
+      {/* Il punteggio che vola verso la pillola della squadra giudicata. */}
+      <ScoreFly flight={flight} onDone={() => setFlight(null)} />
       {/*
        * TOP APP BAR — one line, vertically centred: leave + title on the left,
        * the two scores in the middle, the account menu on the right. It sits a

@@ -62,6 +62,7 @@ import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/l
 import { useThemeMode } from "@/components/ThemeToggle";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { BoardPreview } from "@/components/game/BoardPreview";
+import { BoardSkeleton } from "@/components/game/BoardSkeleton";
 import { AccountMenu } from "@/components/AccountMenu";
 import { AppBar } from "@/components/AppBar";
 import { APP_GUTTER, NAV_BUTTON } from "@/components/app-bar";
@@ -375,13 +376,7 @@ function EditorPage() {
     [board, gameId, record, refresh, t],
   );
 
-  if (!board || !theme) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
-      </div>
-    );
-  }
+  if (!board || !theme) return <BoardSkeleton withColumns />;
 
   return (
     /*

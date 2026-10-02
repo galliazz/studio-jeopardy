@@ -93,6 +93,7 @@ import {
 } from "@/lib/types";
 import { useThemeMode } from "@/components/ThemeToggle";
 import { BoardGrid } from "@/components/game/BoardGrid";
+import { BoardSkeleton } from "@/components/game/BoardSkeleton";
 import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
 import { ScoreFly, type ScoreFlight } from "@/components/game/ScoreFly";
@@ -442,11 +443,7 @@ function HostPage() {
   }, [actions, keyMap]);
 
   if (!state || !session) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-16 w-16 animate-pulse rounded-[28px] bg-lilac" />
-      </div>
-    );
+    return <BoardSkeleton />;
   }
 
   const { game, categories, tiles, players, queue, finalAnswers } = state;

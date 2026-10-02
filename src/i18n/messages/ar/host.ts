@@ -108,6 +108,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "للمقدّم فقط · الإجابة",
     hint: "تلميح: {hint}",
     revealAnswer: "كشف الإجابة",
+    readAloud: "اقرأ السؤال بصوت عالٍ",
   },
   buzzer: {
     title: "الأجراس",

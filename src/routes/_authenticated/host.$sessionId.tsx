@@ -19,6 +19,7 @@ import {
   Sparkles,
   BarChart3,
   Crown,
+  Volume2,
   ImageDown,
   X,
   Check,
@@ -99,6 +100,7 @@ import { QuestionOverlay } from "@/components/game/QuestionOverlay";
 import { QueueList } from "@/components/game/QueueList";
 import { ScoreFly, type ScoreFlight } from "@/components/game/ScoreFly";
 import { buildRecap, type Recap } from "@/lib/recap";
+import { speak, speechSupported } from "@/lib/speech";
 import { drawRecap, recapLines } from "@/lib/recap-image";
 import { ScorePill } from "@/components/game/ScorePill";
 import { darkBoardColors } from "@/lib/theme-mode";
@@ -1176,6 +1178,19 @@ function LiveControlPanel({
               value,
             })}
           </span>
+        )}
+        {/* La voce del dispositivo legge la domanda: serve a chi conduce da
+            solo, e a chi non vuole leggere a voce alta per venti minuti. */}
+        {tile && speechSupported() && (
+          <button
+            type="button"
+            onClick={() => speak(tile.question, t.locale)}
+            title={t("host.live.readAloud")}
+            aria-label={t("host.live.readAloud")}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/15 text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+          >
+            <Volume2 className="h-4 w-4" />
+          </button>
         )}
       </div>
 

@@ -98,6 +98,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "Só você vê · resposta",
     hint: "Dica: {hint}",
     revealAnswer: "Mostrar a resposta",
+    readAloud: "Ler a pergunta em voz alta",
   },
   buzzer: {
     title: "Buzzer",

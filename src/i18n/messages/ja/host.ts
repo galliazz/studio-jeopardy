@@ -94,6 +94,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "司会者のみ · 答え",
     hint: "ヒント：{hint}",
     revealAnswer: "答えを表示",
+    readAloud: "問題を読み上げる",
   },
   buzzer: {
     title: "早押し",

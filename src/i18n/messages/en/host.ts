@@ -95,6 +95,7 @@ export const host = {
     hostOnlyAnswer: "Host only · answer",
     hint: "Hint: {hint}",
     revealAnswer: "Reveal answer",
+    readAloud: "Read the clue aloud",
   },
   buzzer: {
     title: "Buzzer",

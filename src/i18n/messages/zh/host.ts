@@ -94,6 +94,7 @@ export const host: Messages["host"] = {
     hostOnlyAnswer: "答案 · 仅主持人可见",
     hint: "提示：{hint}",
     revealAnswer: "揭晓答案",
+    readAloud: "朗读题目",
   },
   buzzer: {
     title: "抢答",

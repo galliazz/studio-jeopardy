@@ -109,6 +109,14 @@ export const edit: Messages["edit"] = {
     roundness: "Arrondi",
     lowContrast:
       "Ces couleurs donnent {ratio} : sur le tableau, les questions seront difficiles à lire. Essaie un accent plus foncé, ou une case plus claire.",
+    pattern: "Fond",
+    patterns: {
+      none: "Uni",
+      dots: "Pois",
+      grid: "Grille",
+      diagonal: "Rayures",
+      glow: "Halo",
+    },
   },
   game: {
     title: "Partie",
@@ -144,6 +152,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "Aller à la première",
   },
   history: {
+    pattern: "le fond",
     categoryOrder: "l'ordre des catégories",
     undone: "Annulé : {what}",
     redone: "Rétabli : {what}",

@@ -58,6 +58,7 @@ import {
 } from "@/lib/types";
 import { finalScoringOf, type FinalScoring } from "@/lib/game-rules";
 import { contrastLabel, contrastRatio, meetsContrast } from "@/lib/contrast";
+import { BOARD_PATTERNS, patternOf, patternStyle, type BoardPattern } from "@/lib/board-pattern";
 import { stripHtml } from "@/lib/sanitize";
 import { uploadMedia, useSignedUrl, IMAGE_CAP_BYTES, AUDIO_CAP_BYTES } from "@/lib/media";
 import { useThemeMode } from "@/components/ThemeToggle";
@@ -518,7 +519,13 @@ function EditorPage() {
                 stessi che si vedranno in partita e in trasmissione. */}
             <div
               className="h-full w-full overflow-hidden p-[2.2cqmin] elev-3"
-              style={{ backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) }}
+              /* Anche qui il motivo scelto: l'host deve vederlo mentre lo
+                 sceglie, non scoprirlo in partita. */
+              style={{
+                backgroundColor: theme.bg,
+                borderRadius: radiusCq(theme.radius + 8),
+                ...patternStyle(theme),
+              }}
             >
               <div
                 onKeyDown={onBoardKeyDown}
@@ -1588,6 +1595,11 @@ function ThemeBar({
    * La regola della finale. Vive sul tema come le Daily Double: la sceglie
    * l'host qui, e ogni partita di questo gioco la eredita.
    */
+  const applyPattern = async (pattern: BoardPattern) => {
+    patchThemeCache({ pattern });
+    await saveTheme({ pattern }, t("edit.history.pattern"));
+  };
+
   const applyFinalScoring = async (rule: FinalScoring) => {
     patchThemeCache({ finalScoring: rule });
     await saveTheme({ finalScoring: rule }, t("edit.history.finalScoring"));
@@ -1699,6 +1711,19 @@ function ThemeBar({
         </div>
 
         <ContrastWarning theme={savedTheme} />
+
+        <div className="mt-3 flex h-12 items-center gap-3">
+          <span className={ROW_LABEL}>{t("edit.appearance.pattern")}</span>
+          <PillSelect
+            value={patternOf(theme)}
+            onChange={(v) => void applyPattern(v as BoardPattern)}
+            options={BOARD_PATTERNS.map((p) => ({
+              value: p,
+              label: t(`edit.appearance.patterns.${p}` as MessageKey),
+            }))}
+            label={t("edit.appearance.pattern")}
+          />
+        </div>
 
         <div className="mt-3 flex h-12 items-center gap-3">
           <span className={ROW_LABEL}>{t("edit.appearance.roundness")}</span>

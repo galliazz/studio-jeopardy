@@ -23,6 +23,7 @@
  */
 import { motion, type MotionStyle } from "framer-motion";
 import { boardTextCss, radiusCq, type ThemeSettings } from "@/lib/types";
+import { patternStyle } from "@/lib/board-pattern";
 
 export interface BoardTile {
   id: string;
@@ -90,8 +91,16 @@ export function BoardGrid({
        */}
       <div
         className={`flex h-full w-full flex-col ${fill ? "overflow-hidden p-[2.2cqmin] elev-2" : "p-2.5 sm:p-5"}`}
+        /* Il motivo scelto dall'host sta qui, sotto le caselle: è disegnato
+           in CSS, quindi lo vedono anche le sorgenti di OBS. */
         style={
-          fill ? { backgroundColor: theme.bg, borderRadius: radiusCq(theme.radius + 8) } : undefined
+          fill
+            ? {
+                backgroundColor: theme.bg,
+                borderRadius: radiusCq(theme.radius + 8),
+                ...patternStyle(theme),
+              }
+            : patternStyle(theme)
         }
       >
         <div

@@ -106,6 +106,14 @@ export const edit: Messages["edit"] = {
     roundness: "गोलाई",
     lowContrast:
       "इन रंगों का अनुपात {ratio} है: बोर्ड पर सवाल मुश्किल से पढ़े जाएँगे। गहरा एक्सेंट या हल्का खाना आज़माएँ।",
+    pattern: "पृष्ठभूमि",
+    patterns: {
+      none: "सादा",
+      dots: "बिंदु",
+      grid: "ग्रिड",
+      diagonal: "धारियाँ",
+      glow: "आभा",
+    },
   },
   game: {
     title: "गेम",
@@ -141,6 +149,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "पहले पर जाएँ",
   },
   history: {
+    pattern: "पृष्ठभूमि",
     categoryOrder: "श्रेणियों का क्रम",
     undone: "पूर्ववत किया: {what}",
     redone: "फिर से किया: {what}",

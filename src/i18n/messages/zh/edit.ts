@@ -104,6 +104,14 @@ export const edit: Messages["edit"] = {
     },
     roundness: "圆角",
     lowContrast: "这组颜色只有 {ratio}：题目在板上会很难看清。试试更深的强调色，或更浅的格子。",
+    pattern: "背景",
+    patterns: {
+      none: "纯色",
+      dots: "圆点",
+      grid: "网格",
+      diagonal: "斜纹",
+      glow: "光晕",
+    },
   },
   game: {
     title: "游戏",
@@ -137,6 +145,7 @@ export const edit: Messages["edit"] = {
     goToFirst: "跳到第一个",
   },
   history: {
+    pattern: "背景",
     categoryOrder: "分类顺序",
     undone: "已撤销：{what}",
     redone: "已重做：{what}",

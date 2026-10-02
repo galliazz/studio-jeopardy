@@ -20,6 +20,7 @@ export const studio: Messages["studio"] = {
     importFile: "Importar arquivo",
     importSheet: "Do Google Sheets",
     importFileHint: "JSON, CSV ou Excel",
+    generateAi: "Gerar com IA",
   },
   create: {
     title: "Dê um nome ao painel",
@@ -91,5 +92,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "Nenhuma casa utilizável nesse arquivo",
     skipped: "{count} linhas deixadas de fora",
     fromSheet: "Planilha importada",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Deixa a IA escrever o tabuleiro",
+    help: "Diz do que é a partida: a IA escreve 25 pistas com as respostas, e tu corriges no editor. Nada é publicado, e nada é definitivo.",
+    placeholder: "ex. história do rock, anatomia humana, Nápoles",
+    difficulty: {
+      easy: "Fácil",
+      mixed: "Misto",
+      hard: "Difícil",
+      help: "Misto sobe de uma primeira linha fácil até uma última para especialistas.",
+    },
+    generate: "Gerar",
+    generating: "A escrever as pistas…",
+    cancel: "Cancelar",
+    done: "{count} pistas escritas — relê-as antes de jogar.",
+    review: "Escrito por IA: confirma os factos antes da partida.",
   },
 };

@@ -20,6 +20,7 @@ export const studio = {
     importFile: "Import file",
     importSheet: "From Google Sheets",
     importFileHint: "JSON, CSV or Excel",
+    generateAi: "Generate with AI",
   },
   create: {
     title: "Name your board",
@@ -91,5 +92,22 @@ export const studio = {
     nothingUsable: "No clue in that file could be used",
     skipped: "{count} rows left out",
     fromSheet: "Imported sheet",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Let AI draft the board",
+    help: "Say what the game is about: AI writes 25 clues with their answers, and you fix them in the editor. Nothing is published, and nothing is final.",
+    placeholder: "e.g. history of rock, human anatomy, Naples",
+    difficulty: {
+      easy: "Easy",
+      mixed: "Mixed",
+      hard: "Hard",
+      help: "Mixed climbs from an easy first row to an expert last one.",
+    },
+    generate: "Generate",
+    generating: "Writing the clues…",
+    cancel: "Cancel",
+    done: "{count} clues written — read them through before you play.",
+    review: "Written by AI: check the facts before the game.",
   },
 };

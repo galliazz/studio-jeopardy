@@ -20,6 +20,7 @@ export const studio: Messages["studio"] = {
     importFile: "फ़ाइल आयात करें",
     importSheet: "Google Sheets से",
     importFileHint: "JSON, CSV या Excel",
+    generateAi: "AI से बनाएँ",
   },
   create: {
     title: "बोर्ड का नाम रखो",
@@ -92,5 +93,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "उस फ़ाइल में कोई उपयोगी खाना नहीं था",
     skipped: "{count} पंक्तियाँ छोड़ी गईं",
     fromSheet: "आयातित शीट",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "AI से बोर्ड लिखवाएँ",
+    help: "बताइए खेल किस बारे में है: AI 25 सुराग और उनके जवाब लिखेगा, और आप उन्हें एडिटर में ठीक करेंगे। कुछ भी प्रकाशित नहीं होता, और कुछ भी अंतिम नहीं है।",
+    placeholder: "जैसे रॉक का इतिहास, मानव शरीर रचना, नेपल्स",
+    difficulty: {
+      easy: "आसान",
+      mixed: "मिश्रित",
+      hard: "कठिन",
+      help: "मिश्रित पहली आसान पंक्ति से आख़िरी विशेषज्ञ पंक्ति तक चढ़ता है।",
+    },
+    generate: "बनाएँ",
+    generating: "सुराग लिखे जा रहे हैं…",
+    cancel: "रद्द करें",
+    done: "{count} सुराग लिखे गए — खेलने से पहले पढ़ लें।",
+    review: "AI ने लिखा है: खेल से पहले तथ्य जाँच लें।",
   },
 };

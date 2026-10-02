@@ -20,6 +20,7 @@ export const studio: Messages["studio"] = {
     importFile: "Datei importieren",
     importSheet: "Aus Google Sheets",
     importFileHint: "JSON, CSV oder Excel",
+    generateAi: "Mit KI erstellen",
   },
   create: {
     title: "Spielfeld benennen",
@@ -92,5 +93,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "In dieser Datei war kein brauchbares Feld",
     skipped: "{count} Zeilen ausgelassen",
     fromSheet: "Importierte Tabelle",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Die KI entwirft das Spielfeld",
+    help: "Sag, worum es geht: Die KI schreibt 25 Hinweise mit Antworten, du korrigierst sie im Editor. Nichts wird veröffentlicht, nichts ist endgültig.",
+    placeholder: "z. B. Geschichte des Rock, Anatomie, Neapel",
+    difficulty: {
+      easy: "Leicht",
+      mixed: "Gemischt",
+      hard: "Schwer",
+      help: "Gemischt steigt von einer leichten ersten Reihe bis zu einer letzten für Fachleute.",
+    },
+    generate: "Erstellen",
+    generating: "Die Hinweise entstehen…",
+    cancel: "Abbrechen",
+    done: "{count} Hinweise geschrieben – lies sie vor dem Spiel durch.",
+    review: "Von KI geschrieben: Prüfe die Fakten vor dem Spiel.",
   },
 };

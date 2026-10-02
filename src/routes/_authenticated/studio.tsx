@@ -13,6 +13,7 @@ import {
   Trash2,
   Upload,
   Table2,
+  Sparkles,
   Play,
   Pencil,
   QrCode,
@@ -39,6 +40,8 @@ import { StudioTopBar } from "@/components/StudioTopBar";
 import { APP_GUTTER } from "@/components/app-bar";
 import { localizeError, useT } from "@/i18n";
 import { boardFromRows, parseCsv, sheetCsvUrl } from "@/lib/csv-import";
+import { aiAvailable, generateBoard } from "@/lib/ai-board.functions";
+import type { AiDifficulty } from "@/lib/ai-board";
 
 import { getSettings } from "@/lib/settings";
 import {
@@ -214,6 +217,10 @@ function StudioPage() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetUrl, setSheetUrl] = useState("");
   const [importingSheet, setImportingSheet] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiDifficulty, setAiDifficulty] = useState<AiDifficulty>("mixed");
+  const [generating, setGenerating] = useState(false);
 
   const handleExport = async (gameId: string) => {
     try {
@@ -352,6 +359,42 @@ function StudioPage() {
     }
   };
 
+  /* Se la chiave API non c'è, il bottone non compare: meglio un'interfaccia
+     più corta che un bottone che si scusa. La risposta è un booleano e non
+     cambia durante la visita, quindi non si ricontrolla. */
+  const askAi = useServerFn(aiAvailable);
+  const { data: ai } = useQuery({
+    queryKey: ["ai-available"],
+    queryFn: () => askAi(),
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const makeBoard = useServerFn(generateBoard);
+  const handleGenerate = async () => {
+    const topic = aiTopic.trim();
+    if (topic.length < 2) return;
+    setGenerating(true);
+    try {
+      const { board, tiles } = await makeBoard({
+        data: { topic, language: t.locale, difficulty: aiDifficulty },
+      });
+      const game = await importGame({ data: board as never });
+      /* Due messaggi: quanto è arrivato, e che va riletto. Il secondo resta
+         più a lungo, perché è quello che conta: una data inventata si
+         riconosce solo rileggendo. */
+      toast.success(t("studio.ai.done", { count: tiles }));
+      toast.warning(t("studio.ai.review"), { duration: 8000 });
+      setAiOpen(false);
+      setAiTopic("");
+      void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+    } catch (err) {
+      toast.error(localizeError(err, "errors.ai.failed"));
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const username = data?.profile?.username;
   const boardCount = (data?.games ?? []).length;
 
@@ -410,11 +453,25 @@ function StudioPage() {
             <Upload className="h-4 w-4" /> {t("studio.actions.importFile")}
           </button>
           <button
-            onClick={() => setSheetOpen(true)}
+            onClick={() => {
+              setSheetOpen(true);
+              setAiOpen(false);
+            }}
             className="flex h-12 items-center gap-2 rounded-full border-2 border-foreground/20 bg-transparent px-6 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
           >
             <Table2 className="h-4 w-4" /> {t("studio.actions.importSheet")}
           </button>
+          {ai?.available && (
+            <button
+              onClick={() => {
+                setAiOpen((v) => !v);
+                setSheetOpen(false);
+              }}
+              className="flex h-12 items-center gap-2 rounded-full border-2 border-ink-accent/40 bg-transparent px-6 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+            >
+              <Sparkles className="h-4 w-4" /> {t("studio.actions.generateAi")}
+            </button>
+          )}
           <div className="flex-1" />
           {/* Search grows leftward over the buttons, keeping the spring feel */}
           <motion.div
@@ -464,6 +521,74 @@ function StudioPage() {
             }}
           />
         </div>
+
+        {/* Genera con l'IA: argomento, difficoltà, e la lingua è quella della UI. */}
+        {aiOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={SPRING_UI}
+            className="mb-6 rounded-[32px] bg-card p-6 elev-2"
+          >
+            <h2 className="flex items-center gap-2 font-display text-lg font-black">
+              <Sparkles className="h-4 w-4 text-ink-accent" /> {t("studio.ai.title")}
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("studio.ai.help")}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <input
+                autoFocus
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !generating) void handleGenerate();
+                }}
+                maxLength={120}
+                disabled={generating}
+                placeholder={t("studio.ai.placeholder")}
+                className="h-12 min-w-0 flex-1 basis-64 rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent disabled:opacity-60"
+              />
+              {/* Tre livelli, visibili tutti e tre: una tendina a tre voci
+                  costa un clic in più e non spiega niente di più. */}
+              <div
+                role="radiogroup"
+                aria-label={t("studio.ai.difficulty.help")}
+                className="flex h-12 shrink-0 items-center gap-1 rounded-full bg-muted p-1"
+              >
+                {(["easy", "mixed", "hard"] as const).map((level) => (
+                  <button
+                    key={level}
+                    role="radio"
+                    aria-checked={aiDifficulty === level}
+                    disabled={generating}
+                    onClick={() => setAiDifficulty(level)}
+                    className={`h-10 rounded-full px-4 text-sm font-bold transition-colors ${
+                      aiDifficulty === level
+                        ? "bg-card text-foreground elev-1"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t(`studio.ai.difficulty.${level}`)}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => void handleGenerate()}
+                disabled={generating || aiTopic.trim().length < 2}
+                className="h-12 shrink-0 rounded-full bg-coral px-6 font-display text-sm font-black text-foreground elev-1 disabled:opacity-50"
+              >
+                {generating ? t("studio.ai.generating") : t("studio.ai.generate")}
+              </button>
+              <button
+                onClick={() => setAiOpen(false)}
+                disabled={generating}
+                className="h-12 shrink-0 rounded-full border-2 border-foreground/20 px-5 text-sm font-bold disabled:opacity-50"
+              >
+                {t("studio.ai.cancel")}
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">{t("studio.ai.difficulty.help")}</p>
+          </motion.div>
+        )}
 
         {/* Importa da Google Sheets: basta il link del foglio pubblicato. */}
         {sheetOpen && (

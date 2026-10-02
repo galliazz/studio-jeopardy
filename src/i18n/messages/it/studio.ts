@@ -20,6 +20,7 @@ export const studio: Messages["studio"] = {
     importFile: "Importa file",
     importSheet: "Da Google Sheets",
     importFileHint: "JSON, CSV o Excel",
+    generateAi: "Genera con l'IA",
   },
   create: {
     title: "Dai un nome al tabellone",
@@ -92,5 +93,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "In quel file non c'era nessuna casella utilizzabile",
     skipped: "{count} righe lasciate fuori",
     fromSheet: "Foglio importato",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Fatti scrivere il tabellone dall'IA",
+    help: "Dì di cosa parla la partita: l'IA scrive 25 indizi con le loro risposte, e tu li correggi nell'editor. Non si pubblica niente, e niente è definitivo.",
+    placeholder: "es. storia del rock, anatomia umana, Napoli",
+    difficulty: {
+      easy: "Facile",
+      mixed: "Misto",
+      hard: "Difficile",
+      help: "Misto sale dalla prima riga facile all'ultima da esperti.",
+    },
+    generate: "Genera",
+    generating: "Sto scrivendo gli indizi…",
+    cancel: "Annulla",
+    done: "{count} indizi scritti — rileggili prima di giocare.",
+    review: "Scritto dall'IA: controlla i fatti prima della partita.",
   },
 };

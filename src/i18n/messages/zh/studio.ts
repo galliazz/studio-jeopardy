@@ -20,6 +20,7 @@ export const studio: Messages["studio"] = {
     importFile: "导入文件",
     importSheet: "从 Google 表格",
     importFileHint: "JSON、CSV 或 Excel",
+    generateAi: "用 AI 生成",
   },
   create: {
     title: "给题板起个名字",
@@ -88,5 +89,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "这个文件里没有可用的格子",
     skipped: "略过了 {count} 行",
     fromSheet: "导入的表格",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "让 AI 起草题板",
+    help: "说出这场游戏的主题：AI 会写出 25 条线索和答案，你在编辑器里修改。不会发布任何内容，也没有什么是定稿。",
+    placeholder: "例如：摇滚历史、人体解剖、那不勒斯",
+    difficulty: {
+      easy: "简单",
+      mixed: "混合",
+      hard: "困难",
+      help: "「混合」从简单的第一行升到专家级的最后一行。",
+    },
+    generate: "生成",
+    generating: "正在写线索…",
+    cancel: "取消",
+    done: "已写出 {count} 条线索——开始前请通读一遍。",
+    review: "由 AI 撰写：开始前请核对事实。",
   },
 };

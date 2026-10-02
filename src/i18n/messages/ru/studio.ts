@@ -25,6 +25,7 @@ export const studio: Messages["studio"] = {
     importFile: "Импорт файла",
     importSheet: "Из Google Таблиц",
     importFileHint: "JSON, CSV или Excel",
+    generateAi: "Создать с ИИ",
   },
   create: {
     title: "Назови табло",
@@ -99,5 +100,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "В этом файле нет подходящих клеток",
     skipped: "{count} строк пропущено",
     fromSheet: "Импортированная таблица",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Пусть ИИ составит табло",
+    help: "Скажите, о чём игра: ИИ напишет 25 подсказок с ответами, а вы поправите их в редакторе. Ничего не публикуется и ничего не окончательно.",
+    placeholder: "например: история рока, анатомия, Неаполь",
+    difficulty: {
+      easy: "Легко",
+      mixed: "Смешанно",
+      hard: "Сложно",
+      help: "«Смешанно» растёт от простого первого ряда до последнего для знатоков.",
+    },
+    generate: "Создать",
+    generating: "Пишу подсказки…",
+    cancel: "Отмена",
+    done: "Написано подсказок: {count} — перечитайте их перед игрой.",
+    review: "Написано ИИ: проверьте факты перед игрой.",
   },
 };

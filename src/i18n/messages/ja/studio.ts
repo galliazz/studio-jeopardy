@@ -20,6 +20,7 @@ export const studio: Messages["studio"] = {
     importFile: "ファイルを読み込む",
     importSheet: "Google スプレッドシートから",
     importFileHint: "JSON、CSV、Excel",
+    generateAi: "AI で作る",
   },
   create: {
     title: "ボードの名前",
@@ -88,5 +89,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "このファイルに使えるマスがありませんでした",
     skipped: "{count} 行を除きました",
     fromSheet: "読み込んだシート",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "AI に問題を書かせる",
+    help: "テーマを伝えれば、AI が 25 問の問題と答えを書きます。エディタで直してください。公開されるものはなく、どれも確定ではありません。",
+    placeholder: "例：ロックの歴史、人体の解剖、ナポリ",
+    difficulty: {
+      easy: "やさしい",
+      mixed: "混合",
+      hard: "むずかしい",
+      help: "「混合」は易しい 1 行目から専門的な 5 行目へ上がります。",
+    },
+    generate: "生成",
+    generating: "問題を書いています…",
+    cancel: "キャンセル",
+    done: "{count} 問できました — 始める前に目を通してください。",
+    review: "AI が書いた内容です。始める前に事実を確認してください。",
   },
 };

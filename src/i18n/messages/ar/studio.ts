@@ -27,6 +27,7 @@ export const studio: Messages["studio"] = {
     importFile: "استيراد ملف",
     importSheet: "من Google Sheets",
     importFileHint: "JSON أو CSV أو Excel",
+    generateAi: "أنشئ بالذكاء الاصطناعي",
   },
   create: {
     title: "سمِّ لوحتك",
@@ -102,5 +103,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "لا يوجد مربع صالح في هذا الملف",
     skipped: "تُركت {count} صفوف",
     fromSheet: "ورقة مستوردة",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "دع الذكاء الاصطناعي يكتب اللوحة",
+    help: "قل عمّا تدور المباراة: يكتب الذكاء الاصطناعي 25 لغزًا مع أجوبتها، وتصحّحها أنت في المحرّر. لا يُنشر شيء، ولا شيء نهائي.",
+    placeholder: "مثلًا: تاريخ الروك، تشريح الإنسان، نابولي",
+    difficulty: {
+      easy: "سهل",
+      mixed: "مختلط",
+      hard: "صعب",
+      help: "«مختلط» يتصاعد من صفّ أول سهل إلى صفّ أخير للخبراء.",
+    },
+    generate: "أنشئ",
+    generating: "أكتب الألغاز…",
+    cancel: "إلغاء",
+    done: "كُتب {count} لغزًا — اقرأها قبل اللعب.",
+    review: "كتبه الذكاء الاصطناعي: تحقّق من الوقائع قبل المباراة.",
   },
 };

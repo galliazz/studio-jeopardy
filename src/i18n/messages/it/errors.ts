@@ -23,4 +23,16 @@ export const errors: Messages["errors"] = {
   network: {
     offline: "Impossibile raggiungere il server. Controlla la connessione e riprova.",
   },
+  ai: {
+    noKey: "La generazione con l'IA non è configurata su questo sito.",
+    unreachable: "Non riesco a raggiungere l'IA. Controlla la connessione e riprova.",
+    badKey: "La chiave dell'IA è stata rifiutata. Controllala nelle impostazioni del sito.",
+    busy: "L'IA è occupata in questo momento. Riprova fra poco.",
+    failed:
+      "L'IA non è riuscita a scrivere il tabellone. Riprova, o cambia il modo di dire l'argomento.",
+    empty: "L'IA non ha risposto niente. Riprova.",
+    noJson: "La risposta dell'IA non si è potuta leggere. Riprova.",
+    tooFew:
+      "Sono tornati troppi pochi indizi per farne un tabellone. Prova con un argomento più ampio.",
+  },
 };

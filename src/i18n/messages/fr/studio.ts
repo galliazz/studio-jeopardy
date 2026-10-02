@@ -24,6 +24,7 @@ export const studio: Messages["studio"] = {
     importFile: "Importer un fichier",
     importSheet: "Depuis Google Sheets",
     importFileHint: "JSON, CSV ou Excel",
+    generateAi: "Générer avec l'IA",
   },
   create: {
     title: "Nomme ton plateau",
@@ -98,5 +99,22 @@ export const studio: Messages["studio"] = {
     nothingUsable: "Aucune case utilisable dans ce fichier",
     skipped: "{count} lignes laissées de côté",
     fromSheet: "Feuille importée",
+  },
+  /** Il pannello che chiede argomento e difficoltà all'IA. */
+  ai: {
+    title: "Laisse l'IA écrire le plateau",
+    help: "Dis de quoi parle la partie : l'IA écrit 25 indices avec leurs réponses, et tu les corriges dans l'éditeur. Rien n'est publié, et rien n'est définitif.",
+    placeholder: "ex. histoire du rock, anatomie humaine, Naples",
+    difficulty: {
+      easy: "Facile",
+      mixed: "Mixte",
+      hard: "Difficile",
+      help: "Mixte monte d'une première ligne facile à une dernière pour experts.",
+    },
+    generate: "Générer",
+    generating: "Écriture des indices…",
+    cancel: "Annuler",
+    done: "{count} indices écrits — relis-les avant de jouer.",
+    review: "Écrit par l'IA : vérifie les faits avant la partie.",
   },
 };

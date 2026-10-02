@@ -23,4 +23,15 @@ export const errors: Messages["errors"] = {
   network: {
     offline: "Não conseguimos falar com o servidor. Confira sua conexão e tente de novo.",
   },
+  ai: {
+    noKey: "A geração com IA não está configurada neste site.",
+    unreachable: "Não consigo alcançar a IA. Verifica a ligação e tenta outra vez.",
+    badKey: "A chave da IA foi recusada. Verifica-a nas definições do site.",
+    busy: "A IA está ocupada neste momento. Tenta dentro de pouco.",
+    failed:
+      "A IA não conseguiu escrever o tabuleiro. Tenta outra vez, ou muda a forma de dizer o tema.",
+    empty: "A IA não respondeu nada. Tenta outra vez.",
+    noJson: "Não foi possível ler a resposta da IA. Tenta outra vez.",
+    tooFew: "Voltaram pistas insuficientes para fazer um tabuleiro. Tenta um tema mais amplo.",
+  },
 };

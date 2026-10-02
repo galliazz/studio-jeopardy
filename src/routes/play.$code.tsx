@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type MotionStyle } from "framer-motion";
 import { Zap, Clock, Ban, Trophy, Hourglass, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/lib/play.functions";
 import { GUEST_TABLES, useSessionRealtime } from "@/hooks/use-session-realtime";
 import { useCountdown } from "@/hooks/use-countdown";
+import { useWakeLock } from "@/hooks/use-wake-lock";
 import { sfx, vibrate } from "@/lib/sfx";
 import {
   PLAYER_AVATARS,
@@ -391,6 +392,9 @@ function LivePlayer({
     refetchOnWindowFocus: true,
   });
   useSessionRealtime(sessionId, [["play", sessionId]], GUEST_TABLES);
+  /* Il telefono resta sveglio mentre si gioca: spegnendosi, chi prenota per
+     primo perderebbe il turno nel tempo di riaccenderlo. */
+  useWakeLock(true);
 
   const state = data && !("error" in data) ? (data as unknown as PlayerState) : null;
   const session = state?.session ?? null;
@@ -521,8 +525,25 @@ function LivePlayer({
     !locked &&
     !myEntry;
 
+  /*
+   * In che situazione si trova chi tiene il telefono, in una parola sola.
+   * Serve a tingere tutto lo schermo: a mezzo metro di distanza, al buio di
+   * un salotto, il colore si legge prima di qualunque scritta.
+   */
+  const buzzerOpen = status === "live" && (phase === "question_open" || phase === "answering");
+  const phoneState: "active" | "queued" | "locked" | "ready" | "idle" = iAmActive
+    ? "active"
+    : !buzzerOpen
+      ? "idle"
+      : locked
+        ? "locked"
+        : myEntry
+          ? "queued"
+          : "ready";
+
   return (
     <Shell title={gameTitle}>
+      <PhoneAmbience state={phoneState} team={myTeam} theme={theme} />
       {/* Le tinte scelte dall'host per le squadre valgono anche sul telefono:
           il buzzer è del colore della propria squadra. */}
       <div className="flex w-full flex-col items-center" style={teamColorVars(theme)}>
@@ -889,6 +910,63 @@ function StatusCard({
       <h2 className="mt-3 font-display text-xl font-black">{title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{children}</p>
     </motion.div>
+  );
+}
+
+/**
+ * La tinta di fondo dello schermo, decisa dallo stato: il colore della
+ * squadra quando si può premere, oro mentre tocca a te, lilla in coda, rosso
+ * spento quando si è fuori.
+ *
+ * Il telefono si guarda di sfuggita, in mano, mentre si ascolta la domanda:
+ * una scritta la si legge, un colore lo si vede. Mentre tocca a te respira
+ * piano, così si capisce anche con la coda dell'occhio — e si ferma da sola
+ * se chi gioca ha chiesto meno animazioni, perché MotionConfig alla radice
+ * spegne le trasformazioni.
+ */
+function PhoneAmbience({
+  state,
+  team,
+  theme,
+}: {
+  state: "active" | "queued" | "locked" | "ready" | "idle";
+  team: Team;
+  theme: ThemeSettings;
+}) {
+  const colour =
+    state === "active"
+      ? "var(--ink-gold)"
+      : state === "queued"
+        ? "var(--lilac)"
+        : state === "locked"
+          ? "var(--danger-ink)"
+          : state === "ready"
+            ? team === "alpha"
+              ? "var(--team-alpha)"
+              : "var(--team-bravo)"
+            : "transparent";
+  const strength = state === "active" ? 0.4 : state === "idle" ? 0 : 0.22;
+
+  /* `as MotionStyle`: con exactOptionalPropertyTypes le variabili CSS del tema
+     non entrano nel tipo di stile di framer-motion. */
+  const style = {
+    ...teamColorVars(theme),
+    backgroundImage: `radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, ${colour} 70%, transparent), transparent 70%)`,
+  } as MotionStyle;
+
+  return (
+    <motion.div
+      aria-hidden
+      style={style}
+      initial={false}
+      animate={{ opacity: state === "active" ? [strength, strength * 0.6, strength] : strength }}
+      transition={
+        state === "active"
+          ? { repeat: Infinity, duration: 1.6, ease: "easeInOut" }
+          : { duration: 0.4 }
+      }
+      className="pointer-events-none fixed inset-0 z-0"
+    />
   );
 }
 

@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "Importa JSON",
     searchBoards: "Cerca tabelloni",
     searchPlaceholder: "Cerca tabelloni…",
+    importFile: "Importa file",
+    importSheet: "Da Google Sheets",
+    importFileHint: "JSON, CSV o Excel",
   },
   create: {
     title: "Dai un nome al tabellone",
@@ -77,5 +80,17 @@ export const studio: Messages["studio"] = {
     clue: "Domanda",
     answer: "Risposta",
     hint: "Suggerimento",
+  },
+  import: {
+    sheetTitle: "Importa da Google Sheets",
+    sheetHelp:
+      "Pubblica il foglio sul web (File → Condividi → Pubblica sul web) e incolla qui il link. Una riga per casella: categoria, punti, domanda, risposta, suggerimento. Al tuo account Google non viene chiesto niente.",
+    importNow: "Importa",
+    importing: "Importo…",
+    notASheet: "Questo non sembra un link di Google Sheets",
+    sheetUnreachable: "Non riesco a leggere quel foglio. È pubblicato sul web?",
+    nothingUsable: "In quel file non c'era nessuna casella utilizzabile",
+    skipped: "{count} righe lasciate fuori",
+    fromSheet: "Foglio importato",
   },
 };

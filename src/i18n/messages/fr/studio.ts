@@ -7,7 +7,7 @@ export const studio: Messages["studio"] = {
   defaultHostName: "Animateur",
   header: {
     welcomeBack: "Te revoilà, {name}",
-    welcomeBackGuest: "Te revoilà !",
+    welcomeBackGuest: "Te revoilà !",
     loadingBoards: "Chargement des plateaux…",
     signInToLoad: "Connecte-toi pour charger tes plateaux",
     boardCount: {
@@ -21,6 +21,9 @@ export const studio: Messages["studio"] = {
     importJson: "Importer un JSON",
     searchBoards: "Rechercher des plateaux",
     searchPlaceholder: "Rechercher un plateau…",
+    importFile: "Importer un fichier",
+    importSheet: "Depuis Google Sheets",
+    importFileHint: "JSON, CSV ou Excel",
   },
   create: {
     title: "Nomme ton plateau",
@@ -31,7 +34,7 @@ export const studio: Messages["studio"] = {
     body: "Connecte-toi pour charger et créer des plateaux.",
     signIn: "Se connecter",
   },
-  empty: "Pas encore de plateau — crée le premier !",
+  empty: "Pas encore de plateau — crée le premier !",
   card: {
     openInEditor: "Ouvrir dans l'éditeur",
     options: "Options du plateau",
@@ -54,7 +57,7 @@ export const studio: Messages["studio"] = {
     linkCopied: "Lien d'invitation copié",
   },
   deleteDialog: {
-    title: "Supprimer « {title} » ?",
+    title: "Supprimer « {title} » ?",
     description:
       "Le plateau et toutes ses questions seront supprimés. Tu pourras annuler juste après.",
     confirm: "Supprimer le plateau",
@@ -64,7 +67,7 @@ export const studio: Messages["studio"] = {
     createFailed: "Impossible de créer le plateau",
     duplicated: "Plateau dupliqué",
     duplicateFailed: "Échec de la duplication",
-    deleted: "« {title} » supprimé",
+    deleted: "« {title} » supprimé",
     deleteFailed: "Échec de la suppression",
     exportedJson: "Exporté en JSON",
     exportedExcel: "Exporté en Excel",
@@ -83,5 +86,17 @@ export const studio: Messages["studio"] = {
     clue: "Question",
     answer: "Réponse",
     hint: "Indice",
+  },
+  import: {
+    sheetTitle: "Importer depuis Google Sheets",
+    sheetHelp:
+      "Publie la feuille sur le web (Fichier → Partager → Publier sur le web) et colle le lien ici. Une ligne par case : catégorie, points, question, réponse, indice. Rien n'est demandé à ton compte Google.",
+    importNow: "Importer",
+    importing: "Importation…",
+    notASheet: "Ça ne ressemble pas à un lien Google Sheets",
+    sheetUnreachable: "Impossible de lire cette feuille. Est-elle publiée sur le web ?",
+    nothingUsable: "Aucune case utilisable dans ce fichier",
+    skipped: "{count} lignes laissées de côté",
+    fromSheet: "Feuille importée",
   },
 };

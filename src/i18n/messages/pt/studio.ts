@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "Importar JSON",
     searchBoards: "Buscar painéis",
     searchPlaceholder: "Buscar painéis…",
+    importFile: "Importar arquivo",
+    importSheet: "Do Google Sheets",
+    importFileHint: "JSON, CSV ou Excel",
   },
   create: {
     title: "Dê um nome ao painel",
@@ -76,5 +79,17 @@ export const studio: Messages["studio"] = {
     clue: "Pergunta",
     answer: "Resposta",
     hint: "Dica",
+  },
+  import: {
+    sheetTitle: "Importar do Google Sheets",
+    sheetHelp:
+      "Publique a planilha na web (Arquivo → Compartilhar → Publicar na web) e cole o link aqui. Uma linha por casa: categoria, pontos, pergunta, resposta, dica. Nada é pedido à sua conta do Google.",
+    importNow: "Importar",
+    importing: "Importando…",
+    notASheet: "Isso não parece um link do Google Sheets",
+    sheetUnreachable: "Não consigo ler essa planilha. Ela está publicada na web?",
+    nothingUsable: "Nenhuma casa utilizável nesse arquivo",
+    skipped: "{count} linhas deixadas de fora",
+    fromSheet: "Planilha importada",
   },
 };

@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "JSON इम्पोर्ट करो",
     searchBoards: "बोर्ड खोजो",
     searchPlaceholder: "बोर्ड खोजो…",
+    importFile: "फ़ाइल आयात करें",
+    importSheet: "Google Sheets से",
+    importFileHint: "JSON, CSV या Excel",
   },
   create: {
     title: "बोर्ड का नाम रखो",
@@ -77,5 +80,17 @@ export const studio: Messages["studio"] = {
     clue: "सवाल",
     answer: "जवाब",
     hint: "संकेत",
+  },
+  import: {
+    sheetTitle: "Google Sheets से आयात करें",
+    sheetHelp:
+      "शीट को वेब पर प्रकाशित करें (फ़ाइल → शेयर → वेब पर प्रकाशित करें) और लिंक यहाँ चिपकाएँ। हर पंक्ति एक खाना: श्रेणी, अंक, सवाल, जवाब, संकेत। आपके Google खाते से कुछ नहीं माँगा जाता।",
+    importNow: "आयात करें",
+    importing: "आयात हो रहा है…",
+    notASheet: "यह Google Sheets का लिंक नहीं लगता",
+    sheetUnreachable: "वह शीट पढ़ी नहीं जा सकी। क्या वह वेब पर प्रकाशित है?",
+    nothingUsable: "उस फ़ाइल में कोई उपयोगी खाना नहीं था",
+    skipped: "{count} पंक्तियाँ छोड़ी गईं",
+    fromSheet: "आयातित शीट",
   },
 };

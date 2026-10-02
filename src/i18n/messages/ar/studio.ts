@@ -24,6 +24,9 @@ export const studio: Messages["studio"] = {
     importJson: "استيراد JSON",
     searchBoards: "البحث في اللوحات",
     searchPlaceholder: "ابحث في اللوحات…",
+    importFile: "استيراد ملف",
+    importSheet: "من Google Sheets",
+    importFileHint: "JSON أو CSV أو Excel",
   },
   create: {
     title: "سمِّ لوحتك",
@@ -87,5 +90,17 @@ export const studio: Messages["studio"] = {
     clue: "السؤال",
     answer: "الإجابة",
     hint: "التلميح",
+  },
+  import: {
+    sheetTitle: "الاستيراد من Google Sheets",
+    sheetHelp:
+      "انشر الورقة على الويب (ملف ← مشاركة ← النشر على الويب) وألصق الرابط هنا. سطر لكل مربع: الفئة، النقاط، السؤال، الإجابة، التلميح. لا يُطلب أي شيء من حساب Google الخاص بك.",
+    importNow: "استيراد",
+    importing: "جارٍ الاستيراد…",
+    notASheet: "هذا لا يبدو رابط Google Sheets",
+    sheetUnreachable: "تعذّرت قراءة الورقة. هل هي منشورة على الويب؟",
+    nothingUsable: "لا يوجد مربع صالح في هذا الملف",
+    skipped: "تُركت {count} صفوف",
+    fromSheet: "ورقة مستوردة",
   },
 };

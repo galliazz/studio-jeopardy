@@ -22,6 +22,9 @@ export const studio: Messages["studio"] = {
     importJson: "Импорт JSON",
     searchBoards: "Поиск табло",
     searchPlaceholder: "Искать табло…",
+    importFile: "Импорт файла",
+    importSheet: "Из Google Таблиц",
+    importFileHint: "JSON, CSV или Excel",
   },
   create: {
     title: "Назови табло",
@@ -84,5 +87,17 @@ export const studio: Messages["studio"] = {
     clue: "Вопрос",
     answer: "Ответ",
     hint: "Подсказка",
+  },
+  import: {
+    sheetTitle: "Импорт из Google Таблиц",
+    sheetHelp:
+      "Опубликуй таблицу в интернете (Файл → Опубликовать в интернете) и вставь ссылку сюда. Одна строка на клетку: категория, очки, вопрос, ответ, подсказка. У твоего аккаунта Google ничего не запрашивается.",
+    importNow: "Импортировать",
+    importing: "Импортирую…",
+    notASheet: "Это не похоже на ссылку Google Таблиц",
+    sheetUnreachable: "Не удалось прочитать таблицу. Она опубликована в интернете?",
+    nothingUsable: "В этом файле нет подходящих клеток",
+    skipped: "{count} строк пропущено",
+    fromSheet: "Импортированная таблица",
   },
 };

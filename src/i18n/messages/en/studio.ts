@@ -17,6 +17,9 @@ export const studio = {
     importJson: "Import JSON",
     searchBoards: "Search boards",
     searchPlaceholder: "Search boards…",
+    importFile: "Import file",
+    importSheet: "From Google Sheets",
+    importFileHint: "JSON, CSV or Excel",
   },
   create: {
     title: "Name your board",
@@ -76,5 +79,17 @@ export const studio = {
     clue: "Clue",
     answer: "Answer",
     hint: "Hint",
+  },
+  import: {
+    sheetTitle: "Import from Google Sheets",
+    sheetHelp:
+      "Publish the sheet to the web (File → Share → Publish to web) and paste the link here. One row per clue: category, points, clue, answer, hint. Nothing is asked of your Google account.",
+    importNow: "Import",
+    importing: "Importing…",
+    notASheet: "That doesn't look like a Google Sheets link",
+    sheetUnreachable: "Could not read that sheet. Is it published to the web?",
+    nothingUsable: "No clue in that file could be used",
+    skipped: "{count} rows left out",
+    fromSheet: "Imported sheet",
   },
 };

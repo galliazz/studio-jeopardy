@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "JSON をインポート",
     searchBoards: "ボードを検索",
     searchPlaceholder: "ボードを検索…",
+    importFile: "ファイルを読み込む",
+    importSheet: "Google スプレッドシートから",
+    importFileHint: "JSON、CSV、Excel",
   },
   create: {
     title: "ボードの名前",
@@ -73,5 +76,17 @@ export const studio: Messages["studio"] = {
     clue: "問題",
     answer: "答え",
     hint: "ヒント",
+  },
+  import: {
+    sheetTitle: "Google スプレッドシートから読み込む",
+    sheetHelp:
+      "シートをウェブに公開し（ファイル → 共有 → ウェブに公開）、リンクをここに貼ってください。1行が1マス：カテゴリ、ポイント、問題、答え、ヒント。Google アカウントには何も要求しません。",
+    importNow: "読み込む",
+    importing: "読み込み中…",
+    notASheet: "Google スプレッドシートのリンクではないようです",
+    sheetUnreachable: "そのシートを読めません。ウェブに公開されていますか？",
+    nothingUsable: "このファイルに使えるマスがありませんでした",
+    skipped: "{count} 行を除きました",
+    fromSheet: "読み込んだシート",
   },
 };

@@ -12,6 +12,7 @@ import {
   FileSpreadsheet,
   Trash2,
   Upload,
+  Table2,
   Play,
   Pencil,
   QrCode,
@@ -37,6 +38,7 @@ import { SettingsDialog } from "@/components/SettingsDialog";
 import { StudioTopBar } from "@/components/StudioTopBar";
 import { APP_GUTTER } from "@/components/app-bar";
 import { localizeError, useT } from "@/i18n";
+import { boardFromRows, parseCsv, sheetCsvUrl } from "@/lib/csv-import";
 
 import { getSettings } from "@/lib/settings";
 import {
@@ -209,6 +211,10 @@ function StudioPage() {
     });
   };
 
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetUrl, setSheetUrl] = useState("");
+  const [importingSheet, setImportingSheet] = useState(false);
+
   const handleExport = async (gameId: string) => {
     try {
       const payload = await exportGame({ data: { gameId } });
@@ -267,14 +273,82 @@ function StudioPage() {
     }
   };
 
+  /**
+   * Importa un tabellone. Il tipo si decide dal contenuto e non
+   * dall'estensione: un foglio esportato da Google a volte arriva con un
+   * nome qualunque, e chi importa non deve saperlo.
+   */
+  const importBoard = async (payload: unknown, note?: string) => {
+    const game = await importGame({ data: payload as never });
+    toast.success(note ? `${t("studio.toast.imported")} — ${note}` : t("studio.toast.imported"));
+    void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+  };
+
+  const importRows = async (rows: string[][], fallbackTitle: string) => {
+    const { board, skipped } = boardFromRows(rows, fallbackTitle);
+    // Le colonne vuote le aggiunge l'importatore: quello che conta è se è
+    // arrivata almeno una casella vera.
+    if (!board.categories.some((c) => c.tiles.length)) {
+      throw new Error(t("studio.import.nothingUsable"));
+    }
+    await importBoard(board, skipped ? t("studio.import.skipped", { count: skipped }) : undefined);
+  };
+
+  const importCsvText = (text: string, fallbackTitle: string) =>
+    importRows(parseCsv(text), fallbackTitle);
+
+  /**
+   * Un bottone solo per tre formati.
+   *
+   * Chi esporta in Excel si aspetta di poter ricaricare quel file: l'estensione
+   * la guarda solo per il foglio di calcolo, che è binario. Per gli altri due
+   * decide il contenuto, perché i nomi dei file mentono — un `.txt` con dentro
+   * del JSON è JSON, e un CSV rinominato resta un CSV.
+   */
   const handleImportFile = async (file: File) => {
+    const fallbackTitle = file.name.replace(/\.[^.]+$/, "").slice(0, 80) || "Import";
     try {
-      const parsed = JSON.parse(await file.text()) as unknown;
-      const game = await importGame({ data: parsed as never });
-      toast.success(t("studio.toast.imported"));
-      void navigate({ to: "/edit/$gameId", params: { gameId: game.id } });
+      if (/\.xlsx?$/i.test(file.name)) {
+        const XLSX = await import("xlsx");
+        const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0] ?? ""];
+        if (!sheet) throw new Error(t("studio.import.nothingUsable"));
+        /* Via Excel le celle tornano già divise: si salta il CSV e si passano
+           le righe come sono, numeri compresi. */
+        const rows = XLSX.utils
+          .sheet_to_json<unknown[]>(sheet, { header: 1, blankrows: false, raw: false })
+          .map((row) => row.map((cell) => (cell == null ? "" : String(cell))));
+        await importRows(rows, fallbackTitle);
+        return;
+      }
+      const text = await file.text();
+      const looksJson = text.trimStart().startsWith("{");
+      if (looksJson) await importBoard(JSON.parse(text) as unknown);
+      else await importCsvText(text, fallbackTitle);
     } catch (err) {
       toast.error(localizeError(err, "studio.toast.importFailed"));
+    }
+  };
+
+  /** Il foglio dev'essere pubblicato sul web: così non si chiede l'accesso
+      all'account di Google, e non passa di qui nessun dato in più. */
+  const handleImportSheet = async () => {
+    const url = sheetCsvUrl(sheetUrl);
+    if (!url) {
+      toast.error(t("studio.import.notASheet"));
+      return;
+    }
+    setImportingSheet(true);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(t("studio.import.sheetUnreachable"));
+      await importCsvText(await res.text(), t("studio.import.fromSheet"));
+      setSheetOpen(false);
+      setSheetUrl("");
+    } catch (err) {
+      toast.error(localizeError(err, "studio.import.sheetUnreachable"));
+    } finally {
+      setImportingSheet(false);
     }
   };
 
@@ -330,9 +404,16 @@ function StudioPage() {
           </motion.button>
           <button
             onClick={() => importRef.current?.click()}
+            title={t("studio.actions.importFileHint")}
             className="flex h-12 items-center gap-2 rounded-full border-2 border-foreground/20 bg-transparent px-6 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
           >
-            <Upload className="h-4 w-4" /> {t("studio.actions.importJson")}
+            <Upload className="h-4 w-4" /> {t("studio.actions.importFile")}
+          </button>
+          <button
+            onClick={() => setSheetOpen(true)}
+            className="flex h-12 items-center gap-2 rounded-full border-2 border-foreground/20 bg-transparent px-6 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+          >
+            <Table2 className="h-4 w-4" /> {t("studio.actions.importSheet")}
           </button>
           <div className="flex-1" />
           {/* Search grows leftward over the buttons, keeping the spring feel */}
@@ -374,7 +455,7 @@ function StudioPage() {
           <input
             ref={importRef}
             type="file"
-            accept="application/json"
+            accept="application/json,text/csv,.csv,.json,.xlsx,.xls"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
@@ -383,6 +464,42 @@ function StudioPage() {
             }}
           />
         </div>
+
+        {/* Importa da Google Sheets: basta il link del foglio pubblicato. */}
+        {sheetOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={SPRING_UI}
+            className="mb-6 rounded-[32px] bg-card p-6 elev-2"
+          >
+            <h2 className="font-display text-lg font-black">{t("studio.import.sheetTitle")}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t("studio.import.sheetHelp")}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <input
+                autoFocus
+                value={sheetUrl}
+                onChange={(e) => setSheetUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && void handleImportSheet()}
+                placeholder="https://docs.google.com/spreadsheets/…"
+                className="h-12 min-w-0 flex-1 rounded-full bg-muted px-5 text-sm outline-none ring-2 ring-transparent focus:ring-ink-accent"
+              />
+              <button
+                onClick={() => void handleImportSheet()}
+                disabled={importingSheet || !sheetUrl.trim()}
+                className="h-12 rounded-full bg-coral px-6 font-display text-sm font-black text-foreground elev-1 disabled:opacity-50"
+              >
+                {importingSheet ? t("studio.import.importing") : t("studio.import.importNow")}
+              </button>
+              <button
+                onClick={() => setSheetOpen(false)}
+                className="h-12 rounded-full border-2 border-foreground/20 px-5 text-sm font-bold"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Create dialog (inline card) */}
         {creating && (

@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "导入 JSON",
     searchBoards: "搜索题板",
     searchPlaceholder: "搜索题板…",
+    importFile: "导入文件",
+    importSheet: "从 Google 表格",
+    importFileHint: "JSON、CSV 或 Excel",
   },
   create: {
     title: "给题板起个名字",
@@ -73,5 +76,17 @@ export const studio: Messages["studio"] = {
     clue: "题目",
     answer: "答案",
     hint: "提示",
+  },
+  import: {
+    sheetTitle: "从 Google 表格导入",
+    sheetHelp:
+      "先把表格发布到网络（文件 → 分享 → 发布到网络），再把链接贴到这里。每行一个格子：分类、分值、题目、答案、提示。不会向你的 Google 账号索取任何权限。",
+    importNow: "导入",
+    importing: "正在导入…",
+    notASheet: "这看起来不是 Google 表格的链接",
+    sheetUnreachable: "读不到这个表格。它发布到网络了吗？",
+    nothingUsable: "这个文件里没有可用的格子",
+    skipped: "略过了 {count} 行",
+    fromSheet: "导入的表格",
   },
 };

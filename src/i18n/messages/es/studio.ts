@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "Importar JSON",
     searchBoards: "Buscar tableros",
     searchPlaceholder: "Buscar tableros…",
+    importFile: "Importar archivo",
+    importSheet: "Desde Google Sheets",
+    importFileHint: "JSON, CSV o Excel",
   },
   create: {
     title: "Ponle nombre a tu tablero",
@@ -77,5 +80,17 @@ export const studio: Messages["studio"] = {
     clue: "Pregunta",
     answer: "Respuesta",
     hint: "Pista",
+  },
+  import: {
+    sheetTitle: "Importar desde Google Sheets",
+    sheetHelp:
+      "Publica la hoja en la web (Archivo → Compartir → Publicar en la web) y pega el enlace aquí. Una fila por casilla: categoría, puntos, pregunta, respuesta, pista. A tu cuenta de Google no se le pide nada.",
+    importNow: "Importar",
+    importing: "Importando…",
+    notASheet: "Esto no parece un enlace de Google Sheets",
+    sheetUnreachable: "No puedo leer esa hoja. ¿Está publicada en la web?",
+    nothingUsable: "Ese archivo no tenía ninguna casilla utilizable",
+    skipped: "{count} filas descartadas",
+    fromSheet: "Hoja importada",
   },
 };

@@ -17,6 +17,9 @@ export const studio: Messages["studio"] = {
     importJson: "JSON importieren",
     searchBoards: "Spielfelder durchsuchen",
     searchPlaceholder: "Spielfelder suchen…",
+    importFile: "Datei importieren",
+    importSheet: "Aus Google Sheets",
+    importFileHint: "JSON, CSV oder Excel",
   },
   create: {
     title: "Spielfeld benennen",
@@ -77,5 +80,17 @@ export const studio: Messages["studio"] = {
     clue: "Frage",
     answer: "Antwort",
     hint: "Hinweis",
+  },
+  import: {
+    sheetTitle: "Aus Google Sheets importieren",
+    sheetHelp:
+      "Veröffentliche die Tabelle im Web (Datei → Freigeben → Im Web veröffentlichen) und füge den Link hier ein. Eine Zeile pro Feld: Kategorie, Punkte, Frage, Antwort, Hinweis. Von deinem Google-Konto wird nichts verlangt.",
+    importNow: "Importieren",
+    importing: "Wird importiert …",
+    notASheet: "Das sieht nicht nach einem Google-Sheets-Link aus",
+    sheetUnreachable: "Die Tabelle ist nicht lesbar. Ist sie im Web veröffentlicht?",
+    nothingUsable: "In dieser Datei war kein brauchbares Feld",
+    skipped: "{count} Zeilen ausgelassen",
+    fromSheet: "Importierte Tabelle",
   },
 };
